@@ -4,6 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${default}",
+                "${workspaceFolder}/include",
                 "${workspaceFolder}/build/_deps/raylib-build/raylib/include"
             ],
             "defines": [],

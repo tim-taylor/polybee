@@ -40,5 +40,8 @@
 # debug information files
 *.dwo
 
-# Proeject specific ignores
-/build/
+# Project specific ignores
+/build
+/bin
+old
+*.old
