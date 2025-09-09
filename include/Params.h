@@ -7,6 +7,7 @@
 #ifndef _PARAMS_H
 #define _PARAMS_H
 
+#include "utils.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -67,13 +68,13 @@ public:
     // Bee configuration
     static int numBees;
 
-
     // Hive configuration
+    static std::vector<iPos> hivePositions;
 
     // Visualisation
     static bool bVis;
     static int visCellSize;
-    static int visFPS;
+    static int visTargetFPS;
 
     // Generic options (not included in registry)
     static std::string strConfigFilename;

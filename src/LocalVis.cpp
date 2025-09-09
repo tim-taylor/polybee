@@ -58,7 +58,7 @@ LocalVis::LocalVis(PolyBee* pPolyBee) : m_pPolyBee(pPolyBee)
     // Tell the window to use vsync and work on high DPI displays
     SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
 
-    SetTargetFPS(Params::visFPS); // Set our game to run at 60 frames-per-second
+    SetTargetFPS(Params::visTargetFPS); // Set our game to run at 60 frames-per-second
 
     if (true && !IsWindowFullscreen())
     {

@@ -1,4 +1,5 @@
 #include "Params.h"
+#include "utils.h"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -14,10 +15,20 @@ namespace po = boost::program_options;
 
 int Params::envW;
 int Params::envH;
+int Params::tunnelW;
+int Params::tunnelH;
+int Params::tunnelX;
+int Params::tunnelY;
+
+// Bee configuration
+int Params::numBees;
+
+// Hive configuration
+std::vector<iPos> Params::hivePositions;
 
 bool Params::bVis;
 int Params::visCellSize;
-int Params::visFPS;
+int Params::visTargetFPS;
 
 std::string Params::strConfigFilename = "polybee.cfg";
 std::string Params::strRngSeed;
@@ -37,22 +48,22 @@ void Params::initRegistry()
 {
     REGISTRY.emplace_back("env-width", "envW", ParamType::INT, &envW, 450, "Width (number of cells) of environment");
     REGISTRY.emplace_back("env-height", "envH", ParamType::INT, &envH, 250, "Height (number of cells) of environment");
+    REGISTRY.emplace_back("tunnel-width", "tunnelW", ParamType::INT, &tunnelW, 50, "Width (number of cells) of tunnel");
+    REGISTRY.emplace_back("tunnel-height", "tunnelH", ParamType::INT, &tunnelH, 50, "Height (number of cells) of tunnel");
+    REGISTRY.emplace_back("tunnel-x", "tunnelX", ParamType::INT, &tunnelX, 200, "X position of left edge of tunnel");
+    REGISTRY.emplace_back("tunnel-y", "tunnelY", ParamType::INT, &tunnelY, 100, "Y position of top edge of tunnel");
+    REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
     REGISTRY.emplace_back("visualise", "bVis", ParamType::BOOL, &bVis, true, "Determines whether graphical output is displayed");
     REGISTRY.emplace_back("vis-cell-size", "visCellSize", ParamType::INT, &visCellSize, 4, "Size of an individual cell for visualisation");
-    REGISTRY.emplace_back("vis-fps", "visFPS", ParamType::INT, &visFPS, 60, "Target frames per second for visualisation");
+    REGISTRY.emplace_back("vis-target-fps", "visTargetFPS", ParamType::INT, &visTargetFPS, 100, "Target frames per second for visualisation");
     REGISTRY.emplace_back("rng-seed", "strRngSeed", ParamType::STRING, &strRngSeed, "", "Seed (an alphanumeric string) for random number generator");
     REGISTRY.emplace_back("command-line-quiet", "bCommandLineQuiet", ParamType::BOOL, &bCommandLineQuiet, false, "Silence messages to command line");
 }
 
 
-struct Position {
-    int x, y;
-    Position(int x, int y) : x(x), y(y) {}
-};
-
-std::vector<Position> parse_positions(const std::vector<std::string>& pos_strings) {
-    std::vector<Position> positions;
-    //std::regex pos_regex(R"(\((\d+),(\d+)\))");
+// Helper function to parse hive positions from strings of the form "x,y"
+std::vector<iPos> parse_positions(const std::vector<std::string>& pos_strings) {
+    std::vector<iPos> positions;
     std::regex pos_regex(R"((\d+),(\d+))");
 
     for (const auto& pos_str : pos_strings) {
@@ -122,12 +133,10 @@ void Params::initialise(int argc, char* argv[])
             }
         }
 
+        // Special case for hive positions (multiple allowed)
         config.add_options()
             ("hive", po::value<std::vector<std::string>>()->multitoken(),
              "Hive positions in format x,y, e.g., --hive 10,8 --hive 4,6");
-
-
-
 
         // Hidden options, will be allowed both on command line and
         // in config file, but will not be shown to the user.
@@ -159,15 +168,6 @@ void Params::initialise(int argc, char* argv[])
         store(po::command_line_parser(argc, argv).options(cmdline_options).run(), vm);
         notify(vm);
 
-        if (vm.count("hive")) {
-            auto positions = parse_positions(vm["hive"].as<std::vector<std::string>>());
-            // TODO need to store these hive positions in Params somewhere
-            for (size_t i = 0; i < positions.size(); ++i) {
-                std::cout << "Hive " << (i+1) << " at (" << positions[i].x
-                            << "," << positions[i].y << ")\n";
-            }
-        }
-
         if (!(Params::strConfigFilename.empty()))
         {
             std::ifstream ifs(Params::strConfigFilename.c_str());
@@ -180,6 +180,17 @@ void Params::initialise(int argc, char* argv[])
             {
                 store(parse_config_file(ifs, config_file_options), vm);
                 notify(vm);
+            }
+        }
+
+        if (vm.count("hive")) {
+            auto positions = parse_positions(vm["hive"].as<std::vector<std::string>>());
+            for (size_t i = 0; i < positions.size(); ++i) {
+                hivePositions.push_back(positions[i]);
+                if (!bCommandLineQuiet) {
+                    std::cout << "Hive " << (i+1) << " at (" << positions[i].x
+                              << "," << positions[i].y << ")\n";
+                }
             }
         }
 
@@ -229,6 +240,16 @@ void Params::print(std::ostream& os)
     for (auto& vinfo : REGISTRY)
     {
         os << vinfo.uname << valsep << vinfo.valueAsStr() << linesep;
+    }
+
+    os << "Hives:" << linesep;
+    if (hivePositions.empty()) {
+        os << "(none)" << linesep;
+    }
+    else {
+        for (size_t i = 0; i < hivePositions.size(); ++i) {
+            os << "hive" << (i+1) << valsep << "(" << hivePositions[i].x << "," << hivePositions[i].y << ")" << linesep;
+        }
     }
 }
 
