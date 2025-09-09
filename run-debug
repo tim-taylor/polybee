@@ -1,2 +1,2 @@
 #!/bin/bash
-./bin/debug/polybee
+./build/bin/debug/polybee $@

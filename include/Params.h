@@ -56,9 +56,19 @@ struct ParamInfo
 class Params
 {
 public:
-    // Arena configuration
+    // Environment configuration
     static int envW;
     static int envH;
+    static int tunnelW;
+    static int tunnelH;
+    static int tunnelX;
+    static int tunnelY;
+
+    // Bee configuration
+    static int numBees;
+
+
+    // Hive configuration
 
     // Visualisation
     static bool bVis;

@@ -8,7 +8,7 @@
                 "${workspaceFolder}/build/_deps/raylib-build/raylib/include"
             ],
             "defines": [],
-            "compilerPath": "/usr/bin/clang",
+            "compilerPath": "/usr/bin/g++",
             "cStandard": "c17"
         }
     ],

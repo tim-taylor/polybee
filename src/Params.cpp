@@ -2,6 +2,9 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <vector>
+#include <string>
+#include <regex>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -20,8 +23,6 @@ std::string Params::strConfigFilename = "polybee.cfg";
 std::string Params::strRngSeed;
 
 bool Params::bCommandLineQuiet;
-
-
 
 bool Params::bInitialised = false;
 
@@ -42,6 +43,29 @@ void Params::initRegistry()
     REGISTRY.emplace_back("rng-seed", "strRngSeed", ParamType::STRING, &strRngSeed, "", "Seed (an alphanumeric string) for random number generator");
     REGISTRY.emplace_back("command-line-quiet", "bCommandLineQuiet", ParamType::BOOL, &bCommandLineQuiet, false, "Silence messages to command line");
 }
+
+
+struct Position {
+    int x, y;
+    Position(int x, int y) : x(x), y(y) {}
+};
+
+std::vector<Position> parse_positions(const std::vector<std::string>& pos_strings) {
+    std::vector<Position> positions;
+    //std::regex pos_regex(R"(\((\d+),(\d+)\))");
+    std::regex pos_regex(R"((\d+),(\d+))");
+
+    for (const auto& pos_str : pos_strings) {
+        std::smatch match;
+        if (std::regex_match(pos_str, match, pos_regex)) {
+            positions.emplace_back(std::stoi(match[1]), std::stoi(match[2]));
+        } else {
+            throw std::invalid_argument("Invalid position format: " + pos_str);
+        }
+    }
+    return positions;
+}
+
 
 // Initialise all parameters using configuartion file and command line specs if given, otherwise
 // using default values
@@ -98,6 +122,13 @@ void Params::initialise(int argc, char* argv[])
             }
         }
 
+        config.add_options()
+            ("hive", po::value<std::vector<std::string>>()->multitoken(),
+             "Hive positions in format x,y, e.g., --hive 10,8 --hive 4,6");
+
+
+
+
         // Hidden options, will be allowed both on command line and
         // in config file, but will not be shown to the user.
         po::options_description hidden("Hidden options");
@@ -127,6 +158,15 @@ void Params::initialise(int argc, char* argv[])
         // store(po::command_line_parser(ac, av).options(cmdline_options).positional(p).run(), vm);
         store(po::command_line_parser(argc, argv).options(cmdline_options).run(), vm);
         notify(vm);
+
+        if (vm.count("hive")) {
+            auto positions = parse_positions(vm["hive"].as<std::vector<std::string>>());
+            // TODO need to store these hive positions in Params somewhere
+            for (size_t i = 0; i < positions.size(); ++i) {
+                std::cout << "Hive " << (i+1) << " at (" << positions[i].x
+                            << "," << positions[i].y << ")\n";
+            }
+        }
 
         if (!(Params::strConfigFilename.empty()))
         {
