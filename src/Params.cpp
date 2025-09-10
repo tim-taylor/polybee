@@ -32,7 +32,7 @@ std::vector<fPos> Params::hivePositions;
 
 bool Params::bVis;
 int Params::visCellSize;
-int Params::visTargetFPS;
+int Params::visDelayPerStep;
 
 std::string Params::strConfigFilename = "polybee.cfg";
 std::string Params::strRngSeed;
@@ -60,7 +60,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("visualise", "bVis", ParamType::BOOL, &bVis, true, "Determines whether graphical output is displayed");
     REGISTRY.emplace_back("vis-cell-size", "visCellSize", ParamType::INT, &visCellSize, 4, "Size of an individual cell for visualisation");
-    REGISTRY.emplace_back("vis-target-fps", "visTargetFPS", ParamType::INT, &visTargetFPS, 100, "Target frames per second for visualisation");
+    REGISTRY.emplace_back("vis-delay-per-step", "visDelayPerStep", ParamType::INT, &visDelayPerStep, 100, "Delay (in milliseconds) per step when visualising");
     REGISTRY.emplace_back("rng-seed", "strRngSeed", ParamType::STRING, &strRngSeed, "", "Seed (an alphanumeric string) for random number generator");
     REGISTRY.emplace_back("command-line-quiet", "bCommandLineQuiet", ParamType::BOOL, &bCommandLineQuiet, false, "Silence messages to command line");
 }

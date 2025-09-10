@@ -18,12 +18,14 @@ class Bee {
 
 public:
     Bee(fPos pos, Environment* pEnv);
+    Bee(fPos pos, float angle, Environment* pEnv);
     ~Bee() {}
 
     void move();
 
     float x;
     float y;
+    float angle; // direction of travel in radians
 
 private:
     Environment* m_pEnv;

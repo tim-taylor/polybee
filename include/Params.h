@@ -77,7 +77,7 @@ public:
     // Visualisation
     static bool bVis;
     static int visCellSize;
-    static int visTargetFPS;
+    static int visDelayPerStep;
 
     // Generic options (not included in registry)
     static std::string strConfigFilename;

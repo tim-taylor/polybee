@@ -28,10 +28,13 @@
   */
 
 #include "raylib.h"
+#include "raymath.h"
 //#include "resource_dir.h" // utility header for SearchAndSetResourceDir
 #include "Params.h"
 #include "PolyBeeCore.h"
 #include <format>
+#include <chrono>
+#include <thread>
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
@@ -39,12 +42,17 @@
 
 #include "LocalVis.h"
 
+const int ENV_MARGIN = 50;
+const int HIVE_SIZE = 15;
+const std::vector<Vector2> BEE_SHAPE = { {10, 0}, {-6, -6}, {-6, 6} }; // triangle shape for drawing bees
+
 LocalVis::LocalVis(PolyBeeCore* pPolyBeeCore) : m_pPolyBeeCore(pPolyBeeCore)
 {
     SetTraceLogLevel(4); // Level 4 suppresses INFO msgs from RayLib
 
     // Create the window and OpenGL context
-    InitWindow(Params::envW * Params::visCellSize, Params::envH * Params::visCellSize, "polybee");
+    InitWindow(Params::envW * Params::visCellSize + 2 * ENV_MARGIN,
+        Params::envH * Params::visCellSize + 2 * ENV_MARGIN, "polybee");
 
     // Utility function from resource_dir.h to find the resources folder and set it as the current
     // working directory so we can load from it
@@ -59,7 +67,7 @@ LocalVis::LocalVis(PolyBeeCore* pPolyBeeCore) : m_pPolyBeeCore(pPolyBeeCore)
     // Tell the window to use vsync and work on high DPI displays
     SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI);
 
-    SetTargetFPS(Params::visTargetFPS); // Set our game to run at 60 frames-per-second
+    //SetTargetFPS(60.0); // Set our game to run at 60 frames-per-second
 
     if (true && !IsWindowFullscreen())
     {
@@ -110,14 +118,37 @@ void LocalVis::updateDrawFrame()
     //   Matrix GetCameraMatrix(Camera camera);                            // Get camera transform matrix (view matrix)
     //   Matrix GetCameraMatrix2D(Camera2D camera);                        // Get camera 2d transform matrix
 
-    DrawFPS(10, 10); // display current FPS in corner of screen
-    DrawRectangle(100, 100, 100, 100, BLUE);
-    DrawCircle(250, 250, 50, GREEN);
-    DrawCircle(250, 250, 30, YELLOW);
+    // draw environment boundary
+    DrawRectangleLines(ENV_MARGIN, ENV_MARGIN,
+        Params::envW * Params::visCellSize, Params::envH * Params::visCellSize, WHITE);
+
+    // draw hives
+    for (const fPos& hivepos : Params::hivePositions) {
+        DrawRectangleLines(ENV_MARGIN + static_cast<int>(hivepos.x * Params::visCellSize) - HIVE_SIZE / 2,
+            ENV_MARGIN + static_cast<int>(hivepos.y * Params::visCellSize) - HIVE_SIZE / 2,
+            HIVE_SIZE, HIVE_SIZE, GOLD);
+    }
+
+    // draw bees
+    for (const Bee& bee : m_pPolyBeeCore->m_bees) {
+        std::vector<Vector2> BeeShapeAbs = BEE_SHAPE;
+        for (Vector2& v : BeeShapeAbs) {
+            v = Vector2Rotate(v, bee.angle);
+            v.x += ENV_MARGIN + bee.x * Params::visCellSize;
+            v.y += ENV_MARGIN + bee.y * Params::visCellSize;
+        }
+
+        DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], LIME);
+    }
+
+    //DrawFPS(10, 10); // display current FPS in corner of screen
+    //DrawRectangle(100, 100, 100, 100, BLUE);
+    //DrawCircle(250, 250, 50, GREEN);
+    //DrawCircle(250, 250, 30, YELLOW);
 
     //std::string msg = "Iteration " + std::to_string(m_pPolyBeeCore->m_iIteration);
     std::string msg = std::format("Iteration {}", m_pPolyBeeCore->m_iIteration);
-    DrawText(msg.c_str(), 330, 330, 20, RAYWHITE);
+    DrawText(msg.c_str(), 10, 10, 20, RAYWHITE);
 
 
 
@@ -142,6 +173,8 @@ void LocalVis::updateDrawFrame()
     //if (IsKeyPressed(KEY_ENTER)) {
     //m_pPolyBeeCore->updateCells();
     //}
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(Params::visDelayPerStep));
 }
 
 
