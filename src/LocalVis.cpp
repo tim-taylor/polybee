@@ -30,7 +30,8 @@
 #include "raylib.h"
 //#include "resource_dir.h" // utility header for SearchAndSetResourceDir
 #include "Params.h"
-#include "PolyBee.h"
+#include "PolyBeeCore.h"
+#include <format>
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
@@ -38,7 +39,7 @@
 
 #include "LocalVis.h"
 
-LocalVis::LocalVis(PolyBee* pPolyBee) : m_pPolyBee(pPolyBee)
+LocalVis::LocalVis(PolyBeeCore* pPolyBeeCore) : m_pPolyBeeCore(pPolyBeeCore)
 {
     SetTraceLogLevel(4); // Level 4 suppresses INFO msgs from RayLib
 
@@ -72,77 +73,27 @@ LocalVis::LocalVis(PolyBee* pPolyBee) : m_pPolyBee(pPolyBee)
             << ", sw " << sw << ", sh " << sh << std::endl;
         // SetWindowSize(, );
     }
-
-    //--------------------------------------------------------------------------------------
-
-    // Main game loop
-    //while (!WindowShouldClose()) // Detect window close button or ESC key
-    //{
-    //    updateDrawFrame();
-    //}
 #endif
+}
 
+
+LocalVis::~LocalVis()
+{
     // cleanup
     // unload our textures so it can be cleaned up
     // UnloadTexture(myTexture);
 
     // destroy the window and cleanup the OpenGL context
-    //CloseWindow(); - this is now done in destructor
-    //return 0;
-}
-
-LocalVis::~LocalVis()
-{
-      // destroy the window and cleanup the OpenGL context
-      CloseWindow();
+    CloseWindow();
 }
 
 
-void LocalVis::run()
-{
-    ////////////////////////////////////////////////////////////////////////////////////////////
-    // TODO - this code borrowed from Raylib example YouTube guy
-
-    // Initialization
-	const int screenWidth = 1280;
-    const int screenHeight = 768;
-    const char *windowTitle = "polybee";
-    const char *message = "polybee - coming very soon!";
-    const int fontSize = 40;
-    const float msgSpacing = 1.0f;
-
-    //InitWindow(screenWidth, screenHeight, windowTitle);
-
-    // NOTE: The following only works after calling InitWindow() (i.e,. RayLib is initialized)
-    const Font font = GetFontDefault();
-    const Vector2 msgSize = MeasureTextEx(font, message, fontSize, msgSpacing);
-    const Vector2 msgPos = Vector2{(screenWidth - msgSize.x) / 2, (screenHeight - msgSize.y) / 2};
-
-    //SetTargetFPS(60);
-    ////////////////////////////////////////////////////////////////////////////////////////////
-
-
-    // TODO
-    while (!WindowShouldClose()) // Detect window close button or ESC key
-    {
-        updateDrawFrame();
-    }
-}
-
-
-//----------------------------------------------------------------------------------
-// Module Functions Definition
-//----------------------------------------------------------------------------------
 void LocalVis::updateDrawFrame()
 {
-    // Update
-    //----------------------------------------------------------------------------------
-    // TODO: Update your variables here
-    //----------------------------------------------------------------------------------
 
-    if (IsKeyPressed(KEY_R))
+    if (WindowShouldClose()) //(IsKeyPressed(KEY_ESCAPE))
     {
-        //m_pPolyBee->initialiseCells();
+        m_pPolyBeeCore->earlyExit();
     }
 
     // Draw
@@ -160,32 +111,22 @@ void LocalVis::updateDrawFrame()
     //   Matrix GetCameraMatrix2D(Camera2D camera);                        // Get camera 2d transform matrix
 
     DrawFPS(10, 10); // display current FPS in corner of screen
+    DrawRectangle(100, 100, 100, 100, BLUE);
+    DrawCircle(250, 250, 50, GREEN);
+    DrawCircle(250, 250, 30, YELLOW);
+
+    //std::string msg = "Iteration " + std::to_string(m_pPolyBeeCore->m_iIteration);
+    std::string msg = std::format("Iteration {}", m_pPolyBeeCore->m_iIteration);
+    DrawText(msg.c_str(), 330, 330, 20, RAYWHITE);
 
 
-
-    // Main loop
-    //while(!WindowShouldClose()) {
-
-        // Update the display
-        //BeginDrawing();
-            //ClearBackground(RAYWHITE);
-            //DrawTextEx(font, message, msgPos, fontSize, msgSpacing, RED);
-        DrawRectangle(100, 100, 100, 100, BLUE);
-        DrawCircle(250, 250, 50, GREEN);
-        DrawCircle(250, 250, 30, YELLOW);
-        //EndDrawing();
-    //}
-
-    // Cleanup
-    //CloseWindow();
-    ////////////////////////////////////////////////////////////////////////////////////////////
 
     /*
     for (int y = 0; y < Params::envH; ++y)
     {
         for (int x = 0; x < Params::envW; ++x)
         {
-            State state = (*(m_pPolyBee->m_pCurrentCells))[m_pPolyBee->cellIdx(x, y)];
+            State state = (*(m_pPolyBeeCore->m_pCurrentCells))[m_pPolyBeeCore->cellIdx(x, y)];
             if (state > 0)
             {
                 DrawRectangle(x * Params::visCellSize, y * Params::visCellSize, Params::visCellSize, Params::visCellSize,
@@ -197,12 +138,17 @@ void LocalVis::updateDrawFrame()
 
     // end the frame and get ready for the next one  (display frame, poll input, etc...)
     EndDrawing();
-    //----------------------------------------------------------------------------------
 
-    // Post-draw update
-    //----------------------------------------------------------------------------------
-    // if (IsKeyPressed(KEY_ENTER)) {
-    //m_pPolyBee->updateCells();
+    //if (IsKeyPressed(KEY_ENTER)) {
+    //m_pPolyBeeCore->updateCells();
     //}
 }
 
+
+void LocalVis::continueUntilClosed()
+{
+    while (!WindowShouldClose()) // Detect window close button or ESC key
+    {
+        updateDrawFrame();
+    }
+}

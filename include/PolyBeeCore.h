@@ -1,35 +1,38 @@
 /**
  * @file
  *
- * Declaration of the PolyBee class
+ * Declaration of the PolyBeeCore class
  *
- * PolyBee employs a 3 state version of the Game of Life as defined by Boris Lejkin
+ * PolyBeeCore employs a 3 state version of the Game of Life as defined by Boris Lejkin
  * in PolyState Life (https://conwaylife.com/wiki/Polystate_Life)
  */
 
-#ifndef _PolyBee_H
-#define _PolyBee_H
+#ifndef _POLYBEECORE_H
+#define _POLYBEECORE_H
 
 #include <random>
 #include <memory>
+#include <vector>
 #include "Params.h"
 #include "LocalVis.h"
+#include "Bee.h"
+#include "Environment.h"
 
 using State = unsigned char;
 
 /**
- * The PolyBee class ...
+ * The PolyBeeCore class ...
  */
-class PolyBee {
+class PolyBeeCore {
 
 public:
     // constructors and destructors
-    PolyBee(int argc, char* argv[]);
-    ~PolyBee() {}
+    PolyBeeCore(int argc, char* argv[]);
+    ~PolyBeeCore() {}
 
     // public methods
-    void run();         ///< run evolutionary algorithm with no visualisation
-    void runWithVis();  ///< run visual front-end with manual control over evolutionary algorithm
+    void run();
+    void earlyExit();
 
     // public static methods
 
@@ -51,8 +54,11 @@ private:
     //////////////////////////////////////////////////////////////
     // private members
 
-    int m_iIteration;
+    std::vector<Bee> m_bees;
+    Environment m_env;
 
+    int m_iIteration;
+    bool m_bEarlyExitRequested;
     std::unique_ptr<LocalVis> m_pLocalVis;
 
      // private static members
@@ -62,4 +68,4 @@ private:
     friend LocalVis;
 };
 
-#endif /* _PolyBee_H */
+#endif /* _PolyBeeCore_H */

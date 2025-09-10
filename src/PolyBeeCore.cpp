@@ -1,47 +1,58 @@
 /**
  * @file
  *
- * Implementation of the PolyBee class
+ * Implementation of the PolyBeeCore class
  */
 
 #include <memory>
 #include <ctime>
 #include <cassert>
 #include <algorithm>
+#include <format>
 #include "Params.h"
 #include "LocalVis.h"
+#include "Bee.h"
+#include "utils.h"
 
-#include "PolyBee.h"
+#include "PolyBeeCore.h"
 
- // Initialise static members
-bool PolyBee::m_sbRngInitialised = false;
-// -- create our static random number generator engine
-std::mt19937 PolyBee::m_sRngEngine;
-// -- and define  commonly used distributions
-std::uniform_real_distribution<float> PolyBee::m_sUniformProbDistrib(0.0, 1.0);
+// Initialise static members
+bool PolyBeeCore::m_sbRngInitialised = false;
+// - create our static random number generator engine
+std::mt19937 PolyBeeCore::m_sRngEngine;
+// - and define commonly used distributions
+std::uniform_real_distribution<float> PolyBeeCore::m_sUniformProbDistrib(0.0, 1.0);
 
 
 
-PolyBee::PolyBee(int argc, char* argv[])
-: m_iIteration{0}
+PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
+    m_iIteration{0}, m_pLocalVis{nullptr}, m_bEarlyExitRequested{false}
 {
     Params::initialise(argc, argv);
 
     seedRng();
 
     if (!Params::bCommandLineQuiet) {
-        // TODO - remove this TEMP code
         std::cout << "~~~~~~~~~~ FINAL PARAM VALUES ~~~~~~~~~~\n";
         Params::print(std::cout);
     }
 
-    // TODO
-    /*
-    m_Cells1.insert(m_Cells1.end(), Params::numCells, State{});
-    m_Cells2.insert(m_Cells2.end(), Params::numCells, State{});
+    if (Params::hivePositions.empty()) {
+        msg_error_and_exit("Error: No hive positions have been defined!");
+    }
 
-    initialiseIslands();
-    */
+    auto& hivepos = Params::hivePositions[0];
+
+    if (Params::hivePositions.size() > 1) {
+        msg_warning(std::format("Multiple hive positions defined! Using the first one only ({},{})", hivepos.x, hivepos.y));
+    }
+
+    m_env.initialise(&m_bees);
+
+    // instantiate the required number of bees, initialised in the hive position
+    for (int i = 0; i < Params::numBees; ++i) {
+        m_bees.emplace_back(hivepos, &m_env);
+    }
 
     if (Params::bVis) {
         m_pLocalVis = std::unique_ptr<LocalVis>(new LocalVis(this));
@@ -53,36 +64,26 @@ PolyBee::PolyBee(int argc, char* argv[])
  * @brief Initiate an entire evolutionary run across the number of islands specified in @Params
  *
  */
-void PolyBee::run()
+void PolyBeeCore::run()
 {
-    /*
-    while (true) {
-        evaluateIslands();
-        reportState();
-        if (stopCriteriaReached() || m_iGeneration >= 100) {
-            break; // should also allow user to press escape to stop if vis is active?
+    while (!stopCriteriaReached()) {
+        // TODO
+        // update bee pos
+        for (Bee& bee : m_bees) {
+            bee.move();
         }
-        migrateBetweenIslands();
-        createNewGenerations();
-        ++m_iGeneration;
+
+        if (Params::bVis && m_pLocalVis) {
+            m_pLocalVis->updateDrawFrame();
+        }
+
+        ++m_iIteration;
     }
-    */
 
-    //initialiseCells(); -- need to do this in evaluateIslands for each evaluation
-    // also need to update vis if needed during each evaluation
+    if (m_pLocalVis  && !m_bEarlyExitRequested) {
+        m_pLocalVis->continueUntilClosed();
+    }
 }
-
-
-/**
- * @brief Run the main PolyBee evolutionary algorithm under manual control by the user
- * via the vidual frontend
- */
- void PolyBee::runWithVis()
- {
-    // TODO
-    assert(m_pLocalVis);
-    m_pLocalVis->run();
- }
 
 
 /**
@@ -95,19 +96,17 @@ void PolyBee::run()
  * If no seed was defined in Params, the randomly generated seed created
  * in this method is then stored in the Params class for later inspection.
  */
-void PolyBee::seedRng()
+void PolyBeeCore::seedRng()
 {
     assert(Params::initialised());
     assert(!m_sbRngInitialised);
-
-    //const std::string& seedStr = Params::getRngSeedStr();
 
     if (Params::strRngSeed.empty()) {
         // if no seed string has been supplied, we generate a seed here
         // We keep it consistent with the format of user-supplied seeds by creating
         // a random string of alphanumeric characters (of length 20).
         std::srand(std::random_device()());
-        std::string alphanum{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789" };
+        std::string alphanum{"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"};
         std::string newSeedStr(20, 0);
         std::generate(newSeedStr.begin(),
             newSeedStr.end(),
@@ -126,22 +125,23 @@ void PolyBee::seedRng()
         m_sRngEngine.seed(seed2);
     }
 
-    if (!Params::bCommandLineQuiet)
-    {
-        std::cout << "rng-seed (actual): " << Params::strRngSeed << std::endl;
-    }
-
     m_sbRngInitialised = true;
 }
 
-void PolyBee::reportState()
+
+void PolyBeeCore::reportState()
 {
     // TODO
 }
 
 
-bool PolyBee::stopCriteriaReached()
+void PolyBeeCore::earlyExit()
 {
-    // TODO
-    return false;
+    m_bEarlyExitRequested = true;
+}
+
+
+bool PolyBeeCore::stopCriteriaReached()
+{
+    return (m_iIteration >= Params::numIterations || m_bEarlyExitRequested);
 }

@@ -7,7 +7,7 @@
 #ifndef _LOCALVIS_H
 #define _LOCALVIS_H
 
-class PolyBee;
+class PolyBeeCore;
 
 /**
  * The LocalVis class ...
@@ -15,15 +15,14 @@ class PolyBee;
 class LocalVis {
 
 public:
-    LocalVis(PolyBee* PolyBee);
+    LocalVis(PolyBeeCore* PolyBeeCore);
     ~LocalVis();
 
-    void run();
-
     void updateDrawFrame();
+    void continueUntilClosed();
 
 private:
-    PolyBee* m_pPolyBee;
+    PolyBeeCore* m_pPolyBeeCore;
 };
 
 #endif /* _LOCALVIS_H */

@@ -57,6 +57,9 @@ struct ParamInfo
 class Params
 {
 public:
+    // Simulation control
+    static int numIterations;
+
     // Environment configuration
     static int envW;
     static int envH;
@@ -69,7 +72,7 @@ public:
     static int numBees;
 
     // Hive configuration
-    static std::vector<iPos> hivePositions;
+    static std::vector<fPos> hivePositions;
 
     // Visualisation
     static bool bVis;

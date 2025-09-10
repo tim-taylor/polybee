@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.24)
 project(polybee)
 
-# Set a build type if none is specified
+# Set the C++ standard (we use C++20 features such as std::format)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED On)
+set(CMAKE_CXX_EXTENSIONS Off)
 
+# Set a build type if none is specified
 ## Set a default build type. You can override this on the command line as follows:
 ##  cmake -D CMAKE_BUILD_TYPE=Release ..
 ## Avaiable build types are [Debug|Release|MinSizeRel|RelWithDebInfo]
@@ -44,9 +48,12 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 set(SOURCE_FILES
 	src/main.cpp
-    src/PolyBee.cpp
+    src/PolyBeeCore.cpp
+    src/Bee.cpp
+    src/Environment.cpp
     src/Params.cpp
-    src/LocalVis.cpp)
+    src/LocalVis.cpp
+    src/utils.cpp)
 
 # include directories
 include_directories(

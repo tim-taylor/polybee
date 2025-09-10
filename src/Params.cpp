@@ -13,6 +13,10 @@ namespace po = boost::program_options;
 // Instantiate all static members
 // Note, default values are assigned in Params::initRegistry()
 
+// Simulation control
+int Params::numIterations;
+
+// Environment configuration
 int Params::envW;
 int Params::envH;
 int Params::tunnelW;
@@ -24,7 +28,7 @@ int Params::tunnelY;
 int Params::numBees;
 
 // Hive configuration
-std::vector<iPos> Params::hivePositions;
+std::vector<fPos> Params::hivePositions;
 
 bool Params::bVis;
 int Params::visCellSize;
@@ -53,6 +57,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("tunnel-x", "tunnelX", ParamType::INT, &tunnelX, 200, "X position of left edge of tunnel");
     REGISTRY.emplace_back("tunnel-y", "tunnelY", ParamType::INT, &tunnelY, 100, "Y position of top edge of tunnel");
     REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
+    REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("visualise", "bVis", ParamType::BOOL, &bVis, true, "Determines whether graphical output is displayed");
     REGISTRY.emplace_back("vis-cell-size", "visCellSize", ParamType::INT, &visCellSize, 4, "Size of an individual cell for visualisation");
     REGISTRY.emplace_back("vis-target-fps", "visTargetFPS", ParamType::INT, &visTargetFPS, 100, "Target frames per second for visualisation");
@@ -61,15 +66,15 @@ void Params::initRegistry()
 }
 
 
-// Helper function to parse hive positions from strings of the form "x,y"
-std::vector<iPos> parse_positions(const std::vector<std::string>& pos_strings) {
-    std::vector<iPos> positions;
-    std::regex pos_regex(R"((\d+),(\d+))");
+// Helper function to parse hive positions from strings of the form "x,y" (x and y are floats)
+std::vector<fPos> parse_positions(const std::vector<std::string>& pos_strings) {
+    std::vector<fPos> positions;
+    std::regex pos_regex(R"((\d+|\d+\.\d+),(\d+|\d+\.\d+))");
 
     for (const auto& pos_str : pos_strings) {
         std::smatch match;
         if (std::regex_match(pos_str, match, pos_regex)) {
-            positions.emplace_back(std::stoi(match[1]), std::stoi(match[2]));
+            positions.emplace_back(std::stof(match[1]), std::stof(match[2]));
         } else {
             throw std::invalid_argument("Invalid position format: " + pos_str);
         }
@@ -187,10 +192,6 @@ void Params::initialise(int argc, char* argv[])
             auto positions = parse_positions(vm["hive"].as<std::vector<std::string>>());
             for (size_t i = 0; i < positions.size(); ++i) {
                 hivePositions.push_back(positions[i]);
-                if (!bCommandLineQuiet) {
-                    std::cout << "Hive " << (i+1) << " at (" << positions[i].x
-                              << "," << positions[i].y << ")\n";
-                }
             }
         }
 
@@ -203,7 +204,7 @@ void Params::initialise(int argc, char* argv[])
         if (vm.count("version"))
         {
             // TODO get the version number from somewhere reliable!
-            std::cout << "PolyBee server, version 0.1\n";
+            std::cout << "PolyBeeCore server, version 0.1\n";
             exit(0);
         }
     }
@@ -248,7 +249,7 @@ void Params::print(std::ostream& os)
     }
     else {
         for (size_t i = 0; i < hivePositions.size(); ++i) {
-            os << "hive" << (i+1) << valsep << "(" << hivePositions[i].x << "," << hivePositions[i].y << ")" << linesep;
+            os << "hive" << (i+1) << valsep << "(" << hivePositions[i].x << ", " << hivePositions[i].y << ")" << linesep;
         }
     }
 }

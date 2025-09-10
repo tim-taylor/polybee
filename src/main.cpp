@@ -1,15 +1,19 @@
-#include "PolyBee.h"
+#include "PolyBeeCore.h"
 
 int main(int argc, char **argv)
 {
-	PolyBee PolyBee(argc, argv);
+	PolyBeeCore PolyBeeCore(argc, argv);
 
+	PolyBeeCore.run();
+
+	/*
 	if (Params::bVis)
 	{
-		PolyBee.runWithVis();
+		PolyBeeCore.runWithVis();
 	}
 	else
 	{
-		PolyBee.run();
+		PolyBeeCore.run();
 	}
+	*/
 }
