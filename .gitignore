@@ -43,5 +43,6 @@
 # Project specific ignores
 /build
 /bin
+/output
 old
 *.old

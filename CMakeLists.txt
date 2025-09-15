@@ -52,6 +52,7 @@ set(SOURCE_FILES
     src/Bee.cpp
     src/Environment.cpp
     src/Params.cpp
+    src/Heatmap.cpp
     src/LocalVis.cpp
     src/utils.cpp)
 

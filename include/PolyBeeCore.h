@@ -17,6 +17,7 @@
 #include "LocalVis.h"
 #include "Bee.h"
 #include "Environment.h"
+#include "Heatmap.h"
 
 using State = unsigned char;
 
@@ -26,14 +27,17 @@ using State = unsigned char;
 class PolyBeeCore {
 
 public:
+    //////////////////////////////////////////////////////////////
     // constructors and destructors
     PolyBeeCore(int argc, char* argv[]);
     ~PolyBeeCore() {}
 
+    //////////////////////////////////////////////////////////////
     // public methods
     void run();
     void earlyExit();
 
+    //////////////////////////////////////////////////////////////
     // public static methods
 
     /**
@@ -41,29 +45,37 @@ public:
      */
     static void seedRng();
 
+    //////////////////////////////////////////////////////////////
     // public static members
     static std::mt19937 m_sRngEngine;
     static std::uniform_real_distribution<float> m_sUniformProbDistrib; ///< Uniform distrib 0.0--1.0
 
 private:
+    //////////////////////////////////////////////////////////////
     // private methods
+    void generateTimestampString();
+    void initialiseBees();
     void reportState();
     bool stopCriteriaReached();
-
+    void writeOutputFiles();
 
     //////////////////////////////////////////////////////////////
     // private members
-
     std::vector<Bee> m_bees;
     Environment m_env;
+    Heatmap m_heatmap;
+
+    std::string m_timestampStr; // timestamp string for this run, used in output filenames
 
     int m_iIteration;
     bool m_bEarlyExitRequested;
     std::unique_ptr<LocalVis> m_pLocalVis;
 
-     // private static members
+    //////////////////////////////////////////////////////////////
+    // private static members
     static bool m_sbRngInitialised;
 
+    //////////////////////////////////////////////////////////////
     // friends
     friend LocalVis;
 };

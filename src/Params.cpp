@@ -7,6 +7,7 @@
 #include <vector>
 #include <string>
 #include <regex>
+#include <filesystem>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
@@ -15,6 +16,7 @@ namespace po = boost::program_options;
 // Note, default values are assigned in Params::initRegistry()
 
 // Simulation control
+std::string Params::strRngSeed;
 int Params::numIterations;
 
 // Environment configuration
@@ -33,20 +35,26 @@ int Params::beePathRecordLen;
 // Hive configuration
 std::vector<HiveSpec> Params::hiveSpecs;
 
+// Logging and output
+int Params::heatmapCellSize;
+std::string Params::logDir;
+std::string Params::logFilenamePrefix;
+bool Params::bCommandLineQuiet;
+
+// Visualisation
 bool Params::bVis;
 int Params::visCellSize;
 int Params::visDelayPerStep;
 int Params::visBeePathDrawLen;
 float Params::visBeePathThickness;
 
+// Options that can be specified on command line but are not in a config file
 std::string Params::strConfigFilename = "polybee.cfg";
-std::string Params::strRngSeed;
 
-bool Params::bCommandLineQuiet;
-
+// Derived and other internal parameters (not set by user, calculated internally)
 bool Params::bInitialised = false;
 
-// private variables
+// private variables (not set by user, used internally)
 std::vector<ParamInfo> Params::REGISTRY;
 
 /////////////////////////////////////////////////////////////////
@@ -70,6 +78,9 @@ void Params::initRegistry()
     REGISTRY.emplace_back("vis-delay-per-step", "visDelayPerStep", ParamType::INT, &visDelayPerStep, 100, "Delay (in milliseconds) per step when visualising");
     REGISTRY.emplace_back("vis-bee-path-draw-len", "visBeePathDrawLen", ParamType::INT, &visBeePathDrawLen, 250, "Maximum number of path segments to draw for each bee");
     REGISTRY.emplace_back("vis-bee-path-thickness", "visBeePathThickness", ParamType::FLOAT, &visBeePathThickness, 5.0f, "Thickness of bee path lines");
+    REGISTRY.emplace_back("heatmap-cell-size", "heatmapCellSize", ParamType::INT, &heatmapCellSize, 10, "Size of each cell in the heatmap of bee positions");
+    REGISTRY.emplace_back("log-dir", "logDir", ParamType::STRING, &logDir, ".", "Directory for output files");
+    REGISTRY.emplace_back("log-filename-prefix", "logFilenamePrefix", ParamType::STRING, &logFilenamePrefix, "polybee", "Prefix for output file names");
     REGISTRY.emplace_back("rng-seed", "strRngSeed", ParamType::STRING, &strRngSeed, "", "Seed (an alphanumeric string) for random number generator");
     REGISTRY.emplace_back("command-line-quiet", "bCommandLineQuiet", ParamType::BOOL, &bCommandLineQuiet, false, "Silence messages to command line");
 }
@@ -290,12 +301,40 @@ void Params::setAllDefault()
 
 void Params::checkConsistency()
 {
+    //  check the the requested bee path draw length in the visualisation is not longer than the
+    //  length of the path that is actually recorded for each bee
     if (visBeePathDrawLen > beePathRecordLen) {
         msg_warning(
             std::format("vis-bee-path-draw-len ({0}) cannot be larger than bee-path-record-len ({1}). Resetting vis-bee-path-draw-len to {1}.",
             visBeePathDrawLen, beePathRecordLen));
         visBeePathDrawLen = beePathRecordLen;
     }
+
+    // check whether logDir ends with a '/' and remove it if so
+    if (!logDir.empty() && logDir.back() == '/') {
+        logDir.pop_back();
+    }
+
+    // check whether logDir exists and is a directory, create it if necessary
+    if (!logDir.empty()) {
+        std::filesystem::path dir_path(logDir);
+        std::error_code ec;
+
+        if (!std::filesystem::exists(dir_path, ec)) {
+            // Directory doesn't exist, try to create it
+            if (std::filesystem::create_directories(dir_path, ec)) {
+                msg_info(std::format("Created log directory: {}", logDir));
+            } else {
+                msg_error_and_exit(std::format("Failed to create log directory '{}': {}", logDir, ec.message()));
+            }
+        } else if (!std::filesystem::is_directory(dir_path, ec)) {
+            // Path exists but is not a directory
+            msg_error_and_exit(std::format("Log directory path '{}' exists but is not a directory", logDir));
+        }
+    }
+
+
+
 }
 
 /////////////////////////////////////////////////////////////////

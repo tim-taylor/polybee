@@ -4,17 +4,18 @@
  * Implementation of the PolyBeeCore class
  */
 
+#include "PolyBeeCore.h"
+#include "Params.h"
+#include "LocalVis.h"
+#include "Bee.h"
+#include "utils.h"
 #include <memory>
 #include <ctime>
 #include <cassert>
 #include <algorithm>
 #include <format>
-#include "Params.h"
-#include "LocalVis.h"
-#include "Bee.h"
-#include "utils.h"
-
-#include "PolyBeeCore.h"
+#include <chrono>
+#include <fstream>
 
 // Initialise static members
 bool PolyBeeCore::m_sbRngInitialised = false;
@@ -41,19 +42,41 @@ PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
         msg_error_and_exit("Error: No hive positions have been defined!");
     }
 
-    /*
-    auto& hivepos = Params::hivePositions[0];
+    // get a timestamp string for this run, used in output filenames
+    generateTimestampString();
 
-    if (Params::hivePositions.size() > 1) {
-        msg_warning(std::format("Multiple hive positions defined! Using the first one only ({},{})", hivepos.x, hivepos.y));
+    // create the required number of bees, evenly distributed among the hives
+    initialiseBees();
+
+    // initialise environment
+    m_env.initialise(&m_bees);
+
+    // initialise heatmap
+    m_heatmap.initialise(&m_bees);
+
+    if (Params::bVis) {
+        m_pLocalVis = std::unique_ptr<LocalVis>(new LocalVis(this));
     }
+}
 
-    // instantiate the required number of bees, initialised in the hive position
-    for (int i = 0; i < Params::numBees; ++i) {
-        m_bees.emplace_back(hivepos, &m_env);
+void PolyBeeCore::generateTimestampString()
+{
+    // create a timestamp string for this run, used in output filenames
+    // Format: YYYYMMDD-HHMMSS-XXXXXXXX where XXXXXXXX is a random
+    // string of 8 hex digits to help ensure uniqueness
+
+    auto now = std::chrono::system_clock::now();
+    auto truncated = std::chrono::floor<std::chrono::seconds>(now);
+    m_timestampStr = std::format("{:%Y%m%d-%H%M%S-}", truncated);
+    std::uniform_int_distribution<> distrib(0, 15);
+    for (int i = 0; i < 8; ++i) {
+        m_timestampStr += std::format("{:x}", distrib(PolyBeeCore::m_sRngEngine));
     }
-    */
+}
 
+// a private helper method to create the bees at the start of the simulation
+void PolyBeeCore::initialiseBees()
+{
     auto numHives = Params::hiveSpecs.size();
     int numBeesPerHive = Params::numBees / numHives;
     for (int i = 0; i < numHives; ++i) {
@@ -74,26 +97,22 @@ PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
         }
     }
 
-    m_env.initialise(&m_bees);
-
-    if (Params::bVis) {
-        m_pLocalVis = std::unique_ptr<LocalVis>(new LocalVis(this));
+    if (numBeesPerHive * numHives < Params::numBees) {
+        msg_warning(std::format("Number of bees ({0}) is not a multiple of number of hives ({1}). Created {2} bees instead of the requested {0}.",
+            Params::numBees, numHives, numBeesPerHive * numHives));
     }
 }
 
-
-/**
- * @brief Initiate an entire evolutionary run across the number of islands specified in @Params
- *
- */
 void PolyBeeCore::run()
 {
+    // main simulation loop
     while (!stopCriteriaReached()) {
-        // TODO
         // update bee pos
         for (Bee& bee : m_bees) {
             bee.move();
         }
+
+        m_heatmap.update();
 
         if (Params::bVis && m_pLocalVis) {
             m_pLocalVis->updateDrawFrame();
@@ -102,8 +121,38 @@ void PolyBeeCore::run()
         ++m_iIteration;
     }
 
+    writeOutputFiles();
+
+    // if visualisation is enabled, keep the window open until it is closed by the user
     if (m_pLocalVis  && !m_bEarlyExitRequested) {
         m_pLocalVis->continueUntilClosed();
+    }
+}
+
+void PolyBeeCore::writeOutputFiles()
+{
+    // write config to file
+    // TODO
+
+    // write heatmap to file
+    std::string heatmapFilename = std::format("{0}/{1}heatmap-{2}.csv",
+        Params::logDir,
+        Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
+        m_timestampStr);
+    std::ofstream heatmapFile(heatmapFilename);
+    if (!heatmapFile) {
+        msg_warning(
+            std::format("Unable to open heatmap output file {} for writing. Heatmap will not be saved to file, printing to stdout instead.",
+                heatmapFilename));
+        std::cout << "~~~~~~~~~~ HEATMAP OUTPUT ~~~~~~~~~~\n";
+        m_heatmap.print(std::cout);
+    }
+    else {
+        m_heatmap.print(heatmapFile);
+        heatmapFile.close();
+        if (!Params::bCommandLineQuiet) {
+            std::cout << std::format("Heatmap output written to file: {}\n", heatmapFilename);
+        }
     }
 }
 

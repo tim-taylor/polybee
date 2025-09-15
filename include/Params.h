@@ -65,6 +65,7 @@ class Params
 {
 public:
     // Simulation control
+    static std::string strRngSeed;        ///< Seed string used to seed RNG
     static int numIterations;
 
     // Environment configuration
@@ -83,6 +84,12 @@ public:
     // Hive configuration
     static std::vector<HiveSpec> hiveSpecs;
 
+    // Logging and output
+    static int heatmapCellSize; // size of each cell in the heatmap of bee positions
+    static std::string logDir; // directory for output files
+    static std::string logFilenamePrefix; // prefix for output file names
+    static bool bCommandLineQuiet;
+
     // Visualisation
     static bool bVis;
     static int visCellSize;
@@ -90,18 +97,11 @@ public:
     static int visBeePathDrawLen; // maximum number of path segments to draw for each bee
     static float visBeePathThickness; // thickness of bee path lines
 
-    // Generic options (not included in registry)
+    // Options that can be specified on command line but are not in a config file
     static std::string strConfigFilename;
 
-    // Derived parameters. Do not set directly, call calculateDerivedParameters()!
+    // Derived and other internal parameters (not set by user, calculated internally)
     // static int numCells;
-
-
-    // RNG
-    static std::string strRngSeed;        ///< Seed string used to seed RNG
-
-    // Miscellaneous control flags
-    static bool bCommandLineQuiet;
 
     // Parameter registry
     static std::vector<ParamInfo> REGISTRY;
