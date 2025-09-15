@@ -258,7 +258,7 @@ void Params::print(std::ostream& os)
     }
     else {
         for (size_t i = 0; i < hiveSpecs.size(); ++i) {
-            os << "hive" << (i+1) << valsep << "(" << hiveSpecs[i].x << ", " << hiveSpecs[i].y << ", " << hiveSpecs[i].direction << ")" << linesep;
+            os << "hive" << (i+1) << valsep << "(" << hiveSpecs[i].x << ", " << hiveSpecs[i].y << "):" << hiveSpecs[i].direction << linesep;
         }
     }
 }
