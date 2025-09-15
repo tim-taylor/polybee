@@ -123,9 +123,9 @@ void LocalVis::updateDrawFrame()
         Params::envW * Params::visCellSize, Params::envH * Params::visCellSize, WHITE);
 
     // draw hives
-    for (const fPos& hivepos : Params::hivePositions) {
-        DrawRectangleLines(ENV_MARGIN + static_cast<int>(hivepos.x * Params::visCellSize) - HIVE_SIZE / 2,
-            ENV_MARGIN + static_cast<int>(hivepos.y * Params::visCellSize) - HIVE_SIZE / 2,
+    for (const HiveSpec& hiveSpec : Params::hiveSpecs) {
+        DrawRectangleLines(ENV_MARGIN + static_cast<int>(hiveSpec.x * Params::visCellSize) - HIVE_SIZE / 2,
+            ENV_MARGIN + static_cast<int>(hiveSpec.y * Params::visCellSize) - HIVE_SIZE / 2,
             HIVE_SIZE, HIVE_SIZE, GOLD);
     }
 
@@ -138,34 +138,25 @@ void LocalVis::updateDrawFrame()
             v.y += ENV_MARGIN + bee.y * Params::visCellSize;
         }
 
-        DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], LIME);
-    }
+        //DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], LIME);
+        DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], ColorFromHSV(bee.colorHue, 0.7f, 0.9f));
 
-    //DrawFPS(10, 10); // display current FPS in corner of screen
-    //DrawRectangle(100, 100, 100, 100, BLUE);
-    //DrawCircle(250, 250, 50, GREEN);
-    //DrawCircle(250, 250, 30, YELLOW);
-
-    //std::string msg = "Iteration " + std::to_string(m_pPolyBeeCore->m_iIteration);
-    std::string msg = std::format("Iteration {}", m_pPolyBeeCore->m_iIteration);
-    DrawText(msg.c_str(), 10, 10, 20, RAYWHITE);
-
-
-
-    /*
-    for (int y = 0; y < Params::envH; ++y)
-    {
-        for (int x = 0; x < Params::envW; ++x)
-        {
-            State state = (*(m_pPolyBeeCore->m_pCurrentCells))[m_pPolyBeeCore->cellIdx(x, y)];
-            if (state > 0)
-            {
-                DrawRectangle(x * Params::visCellSize, y * Params::visCellSize, Params::visCellSize, Params::visCellSize,
-                    (state == 1) ? YELLOW : GREEN);
-            }
+        // draw path
+        size_t pathIdxMax = bee.path.size()-1;
+        int drawCount = 0;
+        for (size_t i = pathIdxMax; i >= 1 && drawCount < Params::visBeePathDrawLen; --i) {
+            Vector2 p1 = { ENV_MARGIN + bee.path[i - 1].x * Params::visCellSize,
+                           ENV_MARGIN + bee.path[i - 1].y * Params::visCellSize };
+            Vector2 p2 = { ENV_MARGIN + bee.path[i].x * Params::visCellSize,
+                           ENV_MARGIN + bee.path[i].y * Params::visCellSize };
+            float alpha = 1.0f - ((pathIdxMax - static_cast<float>(i)) / Params::visBeePathDrawLen); // fade out older parts of path
+            DrawLineEx(p1, p2, Params::visBeePathThickness, ColorAlpha(ColorFromHSV(bee.colorHue, 0.3f, 0.7f), alpha));
+            ++drawCount;
         }
     }
-    */
+
+    std::string msg = std::format("Iteration {}", m_pPolyBeeCore->m_iIteration);
+    DrawText(msg.c_str(), 10, 10, 20, RAYWHITE);
 
     // end the frame and get ready for the next one  (display frame, poll input, etc...)
     EndDrawing();
@@ -174,7 +165,9 @@ void LocalVis::updateDrawFrame()
     //m_pPolyBeeCore->updateCells();
     //}
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(Params::visDelayPerStep));
+    if (Params::visDelayPerStep > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(Params::visDelayPerStep));
+    }
 }
 
 

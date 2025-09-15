@@ -24,7 +24,6 @@ enum ParamType
     STRING
 };
 
-
 struct ParamInfo
 {
     // variables
@@ -44,6 +43,14 @@ struct ParamInfo
 
     // methods
     std::string valueAsStr();
+};
+
+struct HiveSpec {
+    float x;
+    float y;
+    int direction; // 0=North, 1=East, 2=South, 3=West
+
+    HiveSpec(float x, float y, int direction) : x(x), y(y), direction(direction) {}
 };
 
 /**
@@ -70,14 +77,18 @@ public:
 
     // Bee configuration
     static int numBees;
+    static float beeMaxDirDelta; // maximum change in direction (radians) per step
+    static int beePathRecordLen; // maximum number of positions to record in bee's path
 
     // Hive configuration
-    static std::vector<fPos> hivePositions;
+    static std::vector<HiveSpec> hiveSpecs;
 
     // Visualisation
     static bool bVis;
     static int visCellSize;
     static int visDelayPerStep;
+    static int visBeePathDrawLen; // maximum number of path segments to draw for each bee
+    static float visBeePathThickness; // thickness of bee path lines
 
     // Generic options (not included in registry)
     static std::string strConfigFilename;
@@ -103,6 +114,7 @@ public:
     static void calculateDerivedParams();
     static void print(std::ostream& os);
     static void setAllDefault();
+    static void checkConsistency();
 
 private:
     // private methods

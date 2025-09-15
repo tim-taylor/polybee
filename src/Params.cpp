@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <format>
 #include <vector>
 #include <string>
 #include <regex>
@@ -26,13 +27,17 @@ int Params::tunnelY;
 
 // Bee configuration
 int Params::numBees;
+float Params::beeMaxDirDelta;
+int Params::beePathRecordLen;
 
 // Hive configuration
-std::vector<fPos> Params::hivePositions;
+std::vector<HiveSpec> Params::hiveSpecs;
 
 bool Params::bVis;
 int Params::visCellSize;
 int Params::visDelayPerStep;
+int Params::visBeePathDrawLen;
+float Params::visBeePathThickness;
 
 std::string Params::strConfigFilename = "polybee.cfg";
 std::string Params::strRngSeed;
@@ -57,29 +62,33 @@ void Params::initRegistry()
     REGISTRY.emplace_back("tunnel-x", "tunnelX", ParamType::INT, &tunnelX, 200, "X position of left edge of tunnel");
     REGISTRY.emplace_back("tunnel-y", "tunnelY", ParamType::INT, &tunnelY, 100, "Y position of top edge of tunnel");
     REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
+    REGISTRY.emplace_back("bee-max-dir-delta", "beeMaxDirDelta", ParamType::FLOAT, &beeMaxDirDelta, 0.4f, "Maximum change in direction (radians) per step");
+    REGISTRY.emplace_back("bee-path-record-len", "beePathRecordLen", ParamType::INT, &beePathRecordLen, 250, "Maximum number of positions to record in bee's path");
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("visualise", "bVis", ParamType::BOOL, &bVis, true, "Determines whether graphical output is displayed");
     REGISTRY.emplace_back("vis-cell-size", "visCellSize", ParamType::INT, &visCellSize, 4, "Size of an individual cell for visualisation");
     REGISTRY.emplace_back("vis-delay-per-step", "visDelayPerStep", ParamType::INT, &visDelayPerStep, 100, "Delay (in milliseconds) per step when visualising");
+    REGISTRY.emplace_back("vis-bee-path-draw-len", "visBeePathDrawLen", ParamType::INT, &visBeePathDrawLen, 250, "Maximum number of path segments to draw for each bee");
+    REGISTRY.emplace_back("vis-bee-path-thickness", "visBeePathThickness", ParamType::FLOAT, &visBeePathThickness, 5.0f, "Thickness of bee path lines");
     REGISTRY.emplace_back("rng-seed", "strRngSeed", ParamType::STRING, &strRngSeed, "", "Seed (an alphanumeric string) for random number generator");
     REGISTRY.emplace_back("command-line-quiet", "bCommandLineQuiet", ParamType::BOOL, &bCommandLineQuiet, false, "Silence messages to command line");
 }
 
 
 // Helper function to parse hive positions from strings of the form "x,y" (x and y are floats)
-std::vector<fPos> parse_positions(const std::vector<std::string>& pos_strings) {
-    std::vector<fPos> positions;
-    std::regex pos_regex(R"((\d+|\d+\.\d+),(\d+|\d+\.\d+))");
+std::vector<HiveSpec> parse_positions(const std::vector<std::string>& pos_strings) {
+    std::vector<HiveSpec> hives;
+    std::regex pos_regex(R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):(\d+))");
 
     for (const auto& pos_str : pos_strings) {
         std::smatch match;
         if (std::regex_match(pos_str, match, pos_regex)) {
-            positions.emplace_back(std::stof(match[1]), std::stof(match[2]));
+            hives.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stoi(match[3]));
         } else {
-            throw std::invalid_argument("Invalid position format: " + pos_str);
+            throw std::invalid_argument("Invalid hive specification: " + pos_str);
         }
     }
-    return positions;
+    return hives;
 }
 
 
@@ -141,7 +150,7 @@ void Params::initialise(int argc, char* argv[])
         // Special case for hive positions (multiple allowed)
         config.add_options()
             ("hive", po::value<std::vector<std::string>>()->multitoken(),
-             "Hive positions in format x,y, e.g., --hive 10,8 --hive 4,6");
+             "Hive specification in format x,y:d where d is the direction of the opening (0=North, 1=East, 2=South, 3=West), e.g., --hive 10,8:0 --hive 4,6:1");
 
         // Hidden options, will be allowed both on command line and
         // in config file, but will not be shown to the user.
@@ -189,10 +198,7 @@ void Params::initialise(int argc, char* argv[])
         }
 
         if (vm.count("hive")) {
-            auto positions = parse_positions(vm["hive"].as<std::vector<std::string>>());
-            for (size_t i = 0; i < positions.size(); ++i) {
-                hivePositions.push_back(positions[i]);
-            }
+            hiveSpecs = parse_positions(vm["hive"].as<std::vector<std::string>>());
         }
 
         if (vm.count("help"))
@@ -223,6 +229,9 @@ void Params::initialise(int argc, char* argv[])
     // the values of derived parameters as well
     calculateDerivedParams();
 
+    // check parameter consistency
+    checkConsistency();
+
     bInitialised = true;
 }
 
@@ -244,12 +253,12 @@ void Params::print(std::ostream& os)
     }
 
     os << "Hives:" << linesep;
-    if (hivePositions.empty()) {
+    if (hiveSpecs.empty()) {
         os << "(none)" << linesep;
     }
     else {
-        for (size_t i = 0; i < hivePositions.size(); ++i) {
-            os << "hive" << (i+1) << valsep << "(" << hivePositions[i].x << ", " << hivePositions[i].y << ")" << linesep;
+        for (size_t i = 0; i < hiveSpecs.size(); ++i) {
+            os << "hive" << (i+1) << valsep << "(" << hiveSpecs[i].x << ", " << hiveSpecs[i].y << ", " << hiveSpecs[i].direction << ")" << linesep;
         }
     }
 }
@@ -276,6 +285,16 @@ void Params::setAllDefault()
             std::cerr << "Unexpected type " << vinfo.type << " encountered in Params::setAllDefault!" << std::endl;
             exit(1);
         }
+    }
+}
+
+void Params::checkConsistency()
+{
+    if (visBeePathDrawLen > beePathRecordLen) {
+        msg_warning(
+            std::format("vis-bee-path-draw-len ({0}) cannot be larger than bee-path-record-len ({1}). Resetting vis-bee-path-draw-len to {1}.",
+            visBeePathDrawLen, beePathRecordLen));
+        visBeePathDrawLen = beePathRecordLen;
     }
 }
 

@@ -37,22 +37,44 @@ PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
         Params::print(std::cout);
     }
 
-    if (Params::hivePositions.empty()) {
+    if (Params::hiveSpecs.empty()) {
         msg_error_and_exit("Error: No hive positions have been defined!");
     }
 
+    /*
     auto& hivepos = Params::hivePositions[0];
 
     if (Params::hivePositions.size() > 1) {
         msg_warning(std::format("Multiple hive positions defined! Using the first one only ({},{})", hivepos.x, hivepos.y));
     }
 
-    m_env.initialise(&m_bees);
-
     // instantiate the required number of bees, initialised in the hive position
     for (int i = 0; i < Params::numBees; ++i) {
         m_bees.emplace_back(hivepos, &m_env);
     }
+    */
+
+    auto numHives = Params::hiveSpecs.size();
+    int numBeesPerHive = Params::numBees / numHives;
+    for (int i = 0; i < numHives; ++i) {
+        const HiveSpec& hive = Params::hiveSpecs[i];
+        float angle = 0.0f;
+        switch (hive.direction) {
+        case 0: angle = -std::numbers::pi_v<float> / 2.0f; break; // North
+        case 1: angle = 0.0f; break; // East
+        case 2: angle = std::numbers::pi_v<float> / 2.0f; break; // South
+        case 3: angle = std::numbers::pi_v<float>; break; // West
+        default:
+            msg_error_and_exit(std::format("Invalid hive direction {} specified for hive at ({},{}). Must be 0=North, 1=East, 2=South, or 3=West.",
+                hive.direction, hive.x, hive.y));
+        }
+
+        for (int j = 0; j < numBeesPerHive; ++j) {
+            m_bees.emplace_back(fPos(hive.x, hive.y), angle, &m_env);
+        }
+    }
+
+    m_env.initialise(&m_bees);
 
     if (Params::bVis) {
         m_pLocalVis = std::unique_ptr<LocalVis>(new LocalVis(this));
