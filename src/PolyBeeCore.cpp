@@ -62,14 +62,14 @@ PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
 void PolyBeeCore::generateTimestampString()
 {
     // create a timestamp string for this run, used in output filenames
-    // Format: YYYYMMDD-HHMMSS-XXXXXXXX where XXXXXXXX is a random
-    // string of 8 hex digits to help ensure uniqueness
+    // Format: YYYYMMDD-HHMMSS-XXXXXX where XXXXXX is a random
+    // string of 6 hex digits to help ensure uniqueness
 
     auto now = std::chrono::system_clock::now();
     auto truncated = std::chrono::floor<std::chrono::seconds>(now);
     m_timestampStr = std::format("{:%Y%m%d-%H%M%S-}", truncated);
-    std::uniform_int_distribution<> distrib(0, 15);
-    for (int i = 0; i < 8; ++i) {
+    std::uniform_int_distribution<int> distrib(0, 15);
+    for (int i = 0; i < 6; ++i) {
         m_timestampStr += std::format("{:x}", distrib(PolyBeeCore::m_sRngEngine));
     }
 }
@@ -131,8 +131,30 @@ void PolyBeeCore::run()
 
 void PolyBeeCore::writeOutputFiles()
 {
+    if (!Params::logging) {
+        return;
+    }
+
     // write config to file
-    // TODO
+    std::string configFilename = std::format("{0}/{1}config-{2}.cfg",
+        Params::logDir,
+        Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
+        m_timestampStr);
+    std::ofstream configFile(configFilename);
+    if (!configFile) {
+        msg_warning(
+            std::format("Unable to open config output file {} for writing. Config will not be saved to file, printing to stdout instead.",
+                configFilename));
+        std::cout << "~~~~~~~~~~ FINAL PARAM VALUES ~~~~~~~~~~";
+        Params::print(std::cout);
+    }
+    else {
+        Params::print(configFile, true);
+        configFile.close();
+        if (!Params::bCommandLineQuiet) {
+            std::cout << std::format("Config output written to file: {}\n", configFilename);
+        }
+    }
 
     // write heatmap to file
     std::string heatmapFilename = std::format("{0}/{1}heatmap-{2}.csv",

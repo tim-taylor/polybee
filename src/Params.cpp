@@ -39,6 +39,7 @@ std::vector<HiveSpec> Params::hiveSpecs;
 int Params::heatmapCellSize;
 std::string Params::logDir;
 std::string Params::logFilenamePrefix;
+bool Params::logging;
 bool Params::bCommandLineQuiet;
 
 // Visualisation
@@ -79,6 +80,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("vis-bee-path-draw-len", "visBeePathDrawLen", ParamType::INT, &visBeePathDrawLen, 250, "Maximum number of path segments to draw for each bee");
     REGISTRY.emplace_back("vis-bee-path-thickness", "visBeePathThickness", ParamType::FLOAT, &visBeePathThickness, 5.0f, "Thickness of bee path lines");
     REGISTRY.emplace_back("heatmap-cell-size", "heatmapCellSize", ParamType::INT, &heatmapCellSize, 10, "Size of each cell in the heatmap of bee positions");
+    REGISTRY.emplace_back("logging", "logging", ParamType::BOOL, &logging, true, "Determines whether output files are written at the end of a run");
     REGISTRY.emplace_back("log-dir", "logDir", ParamType::STRING, &logDir, ".", "Directory for output files");
     REGISTRY.emplace_back("log-filename-prefix", "logFilenamePrefix", ParamType::STRING, &logFilenamePrefix, "polybee", "Prefix for output file names");
     REGISTRY.emplace_back("rng-seed", "strRngSeed", ParamType::STRING, &strRngSeed, "", "Seed (an alphanumeric string) for random number generator");
@@ -251,25 +253,38 @@ void Params::calculateDerivedParams()
 {
 }
 
-void Params::print(std::ostream& os)
+void Params::print(std::ostream& os, bool bGenerateForConfigFile)
 {
-    auto valsep = ": ";
+    auto valsep = bGenerateForConfigFile ? "=" : ": ";
     auto linesep = '\n';
+    auto coordOpen = bGenerateForConfigFile ? "(" : "";
+    auto coordClose = bGenerateForConfigFile ? ")" : "";
 
-    os << "config-filename" << valsep << strConfigFilename << linesep;
+    if (!bGenerateForConfigFile) {
+        os << "config-filename" << valsep << strConfigFilename << linesep;
+    }
 
-    for (auto& vinfo : REGISTRY)
-    {
+    for (auto& vinfo : REGISTRY) {
         os << vinfo.uname << valsep << vinfo.valueAsStr() << linesep;
     }
 
-    os << "Hives:" << linesep;
-    if (hiveSpecs.empty()) {
-        os << "(none)" << linesep;
+    if (!bGenerateForConfigFile) {
+        os << "Hives:" << linesep;
+    }
+
+    if (!hiveSpecs.empty()) {
+        for (size_t i = 0; i < hiveSpecs.size(); ++i) {
+            os << "hive";
+            if (bGenerateForConfigFile) {
+                os << (i+1);
+            }
+            os << valsep << coordOpen << hiveSpecs[i].x << "," << hiveSpecs[i].y << coordClose << ":" << hiveSpecs[i].direction << linesep;
+
+        }
     }
     else {
-        for (size_t i = 0; i < hiveSpecs.size(); ++i) {
-            os << "hive" << (i+1) << valsep << "(" << hiveSpecs[i].x << ", " << hiveSpecs[i].y << "):" << hiveSpecs[i].direction << linesep;
+        if (!bGenerateForConfigFile) {
+            os << "(none)" << linesep;
         }
     }
 }

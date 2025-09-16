@@ -88,6 +88,7 @@ public:
     static int heatmapCellSize; // size of each cell in the heatmap of bee positions
     static std::string logDir; // directory for output files
     static std::string logFilenamePrefix; // prefix for output file names
+    static bool logging; // determines whether output files are written at the end of a run
     static bool bCommandLineQuiet;
 
     // Visualisation
@@ -112,7 +113,7 @@ public:
     // public helper methods
     static bool initialised() { return bInitialised; }
     static void calculateDerivedParams();
-    static void print(std::ostream& os);
+    static void print(std::ostream& os, bool bGenerateForConfigFile = false);
     static void setAllDefault();
     static void checkConsistency();
 
