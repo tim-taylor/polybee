@@ -257,8 +257,8 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
 {
     auto valsep = bGenerateForConfigFile ? "=" : ": ";
     auto linesep = '\n';
-    auto coordOpen = bGenerateForConfigFile ? "(" : "";
-    auto coordClose = bGenerateForConfigFile ? ")" : "";
+    auto coordOpen = bGenerateForConfigFile ? "" : "(";
+    auto coordClose = bGenerateForConfigFile ? "" : ")";
 
     if (!bGenerateForConfigFile) {
         os << "config-filename" << valsep << strConfigFilename << linesep;
@@ -275,7 +275,7 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
     if (!hiveSpecs.empty()) {
         for (size_t i = 0; i < hiveSpecs.size(); ++i) {
             os << "hive";
-            if (bGenerateForConfigFile) {
+            if (!bGenerateForConfigFile) {
                 os << (i+1);
             }
             os << valsep << coordOpen << hiveSpecs[i].x << "," << hiveSpecs[i].y << coordClose << ":" << hiveSpecs[i].direction << linesep;
