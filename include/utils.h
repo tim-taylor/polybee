@@ -16,17 +16,23 @@ struct Position {
 using iPos = Position<int>;
 using fPos = Position<float>;
 
+namespace Polybee {
+
 void msg_error_and_exit(std::string msg);
 void msg_warning(std::string msg);
 void msg_info(std::string msg);
 
 float earthMoversDistanceLemon(const std::vector<std::vector<float>>& heatmap1,
-                               const std::vector<std::vector<float>>& heatmap2);
+                            const std::vector<std::vector<float>>& heatmap2);
 
 float earthMoversDistanceApprox(const std::vector<std::vector<float>>& heatmap1,
-                               const std::vector<std::vector<float>>& heatmap2);
+                            const std::vector<std::vector<float>>& heatmap2);
 
 float earthMoversDistanceFull(const std::vector<std::vector<float>>& heatmap1,
-                             const std::vector<std::vector<float>>& heatmap2);
+                            const std::vector<std::vector<float>>& heatmap2);
+
+} // namespace Polybee
+
+namespace pb = Polybee;
 
 #endif // UTILS_H

@@ -319,7 +319,7 @@ void Params::checkConsistency()
     //  check the the requested bee path draw length in the visualisation is not longer than the
     //  length of the path that is actually recorded for each bee
     if (visBeePathDrawLen > beePathRecordLen) {
-        msg_warning(
+        pb::msg_warning(
             std::format("vis-bee-path-draw-len ({0}) cannot be larger than bee-path-record-len ({1}). Resetting vis-bee-path-draw-len to {1}.",
             visBeePathDrawLen, beePathRecordLen));
         visBeePathDrawLen = beePathRecordLen;
@@ -338,13 +338,13 @@ void Params::checkConsistency()
         if (!std::filesystem::exists(dir_path, ec)) {
             // Directory doesn't exist, try to create it
             if (std::filesystem::create_directories(dir_path, ec)) {
-                msg_info(std::format("Created log directory: {}", logDir));
+                pb::msg_info(std::format("Created log directory: {}", logDir));
             } else {
-                msg_error_and_exit(std::format("Failed to create log directory '{}': {}", logDir, ec.message()));
+                pb::msg_error_and_exit(std::format("Failed to create log directory '{}': {}", logDir, ec.message()));
             }
         } else if (!std::filesystem::is_directory(dir_path, ec)) {
             // Path exists but is not a directory
-            msg_error_and_exit(std::format("Log directory path '{}' exists but is not a directory", logDir));
+            pb::msg_error_and_exit(std::format("Log directory path '{}' exists but is not a directory", logDir));
         }
     }
 

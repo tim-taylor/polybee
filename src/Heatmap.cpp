@@ -22,12 +22,12 @@ void Heatmap::initialise(std::vector<Bee>* bees) {
     m_numCellsY = Params::envH / m_cellSize;
 
     if (Params::envW % m_cellSize != 0) {
-        msg_warning(std::format("Warning: env-w ({0}) is not a multiple of heatmap-cell-size ({1}). The heatmap will extend beyond the environment width.",
+        pb::msg_warning(std::format("env-w ({0}) is not a multiple of heatmap-cell-size ({1}). The heatmap will extend beyond the environment width.",
             Params::envW, m_cellSize));
         ++m_numCellsX;
     }
     if (Params::envH % m_cellSize != 0) {
-        msg_warning(std::format("Warning: env-h ({0}) is not a multiple of heatmap-cell-size ({1}). The heatmap will extend beyond the environment height.",
+        pb::msg_warning(std::format("env-h ({0}) is not a multiple of heatmap-cell-size ({1}). The heatmap will extend beyond the environment height.",
             Params::envH, m_cellSize));
         ++m_numCellsY;
     }
@@ -54,7 +54,7 @@ void Heatmap::update() {
         }
         else {
             // This should not happen if bees are correctly constrained within the environment
-            msg_error_and_exit(std::format("Bee at position ({}, {}) is out of bounds for the heatmap.", bee.x, bee.y));
+            pb::msg_error_and_exit(std::format("Bee at position ({}, {}) is out of bounds for the heatmap.", bee.x, bee.y));
         }
     }
 }

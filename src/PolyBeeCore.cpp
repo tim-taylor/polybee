@@ -39,7 +39,7 @@ PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
     }
 
     if (Params::hiveSpecs.empty()) {
-        msg_error_and_exit("Error: No hive positions have been defined!");
+        pb::msg_error_and_exit("No hive positions have been defined!");
     }
 
     // get a timestamp string for this run, used in output filenames
@@ -88,7 +88,7 @@ void PolyBeeCore::initialiseBees()
         case 2: angle = std::numbers::pi_v<float> / 2.0f; break; // South
         case 3: angle = std::numbers::pi_v<float>; break; // West
         default:
-            msg_error_and_exit(std::format("Invalid hive direction {} specified for hive at ({},{}). Must be 0=North, 1=East, 2=South, or 3=West.",
+            pb::msg_error_and_exit(std::format("Invalid hive direction {} specified for hive at ({},{}). Must be 0=North, 1=East, 2=South, or 3=West.",
                 hive.direction, hive.x, hive.y));
         }
 
@@ -98,7 +98,7 @@ void PolyBeeCore::initialiseBees()
     }
 
     if (numBeesPerHive * numHives < Params::numBees) {
-        msg_warning(std::format("Number of bees ({0}) is not a multiple of number of hives ({1}). Created {2} bees instead of the requested {0}.",
+        pb::msg_warning(std::format("Number of bees ({0}) is not a multiple of number of hives ({1}). Created {2} bees instead of the requested {0}.",
             Params::numBees, numHives, numBeesPerHive * numHives));
     }
 }
@@ -142,7 +142,7 @@ void PolyBeeCore::writeOutputFiles()
         m_timestampStr);
     std::ofstream configFile(configFilename);
     if (!configFile) {
-        msg_warning(
+        pb::msg_warning(
             std::format("Unable to open config output file {} for writing. Config will not be saved to file, printing to stdout instead.",
                 configFilename));
         std::cout << "~~~~~~~~~~ FINAL PARAM VALUES ~~~~~~~~~~";
@@ -163,7 +163,7 @@ void PolyBeeCore::writeOutputFiles()
         m_timestampStr);
     std::ofstream heatmapFile(heatmapFilename);
     if (!heatmapFile) {
-        msg_warning(
+        pb::msg_warning(
             std::format("Unable to open heatmap output file {} for writing. Heatmap will not be saved to file, printing to stdout instead.",
                 heatmapFilename));
         std::cout << "~~~~~~~~~~ HEATMAP OUTPUT ~~~~~~~~~~\n";
