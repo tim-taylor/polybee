@@ -38,6 +38,10 @@ endif()
 
 find_package(Boost 1.83 REQUIRED COMPONENTS program_options)
 
+## LEMON library for graph algorithms (for full EMD)
+# Using local modified version with C++20 compatibility fixes
+add_subdirectory(3rdparty/lemon-a278d16bd2d0)
+
 # Our Project
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_BINARY_DIR}/bin/debug)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/release)
@@ -56,16 +60,19 @@ set(SOURCE_FILES
     src/LocalVis.cpp
     src/utils.cpp)
 
-# include directories
-include_directories(
-    "${PROJECT_SOURCE_DIR}/include"
-)
 
 # add the executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
+# include directories
+target_include_directories(${PROJECT_NAME} PRIVATE
+    "${PROJECT_SOURCE_DIR}/include"
+    "${PROJECT_SOURCE_DIR}/3rdparty/lemon-a278d16bd2d0"
+    "${CMAKE_BINARY_DIR}/3rdparty/lemon-a278d16bd2d0"
+)
+
 # link libraries
-target_link_libraries(${PROJECT_NAME} raylib Boost::program_options)
+target_link_libraries(${PROJECT_NAME} raylib Boost::program_options lemon)
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)
 if (APPLE)

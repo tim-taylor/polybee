@@ -5,7 +5,9 @@
             "includePath": [
                 "${default}",
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/build/_deps/raylib-build/raylib/include"
+                "${workspaceFolder}/build/_deps/raylib-build/raylib/include",
+                "${workspaceFolder}/build/3rdparty/lemon-a278d16bd2d0",
+                "${workspaceFolder}/3rdparty/lemon-a278d16bd2d0"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",
