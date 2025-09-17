@@ -1,3 +1,12 @@
+## 17/9/25:
+
+Added a modified version of the LEMON library under the 3rdparty folder. This has been modified to run with C++20 as its original code used some deprecated and removed features of the language. Also added Pele's FastEMD code in the include file lemon_thresholded_emd.hpp, and a new function in utils.cpp earthMoversDistanceLemon that uses it.
+
+Next step is to actually use the earthMoversDistanceLemon functon to calculate the distance between two heatmaps, and then to implement an optimisation method (evolutionary algorithm) to optimise simulation param(s) based on a target heatmap.
+
+Could also compare against the other implementations of EMD in utils.h, but probably best from a scientific perspective to stick with the one provided by Pele.
+
+
 ## 16/9/25:
 
 Looking for a reliable and fast implementation of **Earth Mover's Distance**
