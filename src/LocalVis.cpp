@@ -192,26 +192,107 @@ void LocalVis::continueUntilClosed()
 
 void LocalVis::drawHistogram()
 {
-    // TO DO
-    DrawText("HISTOGRAM COMING SOON!", 100, 100, 20, RAYWHITE);
+    if (!m_pPolyBeeCore->m_heatmap.isNormalisedCalculated()) {
+        DrawText("Normalised heatmap not available!", 100, 100, 20, RAYWHITE);
+        return;
+    }
 
     int numCellsX = m_pPolyBeeCore->m_heatmap.size_x();
     int numCellsY = m_pPolyBeeCore->m_heatmap.size_y();
+    int numCells = numCellsX * numCellsY;
     int cellW = (Params::envW * Params::visCellSize) / numCellsX;
     int cellH = (Params::envH * Params::visCellSize) / numCellsY;
 
-    int cellSize = Params::visCellSize; // for now, just use
+    // Helper lambda to convert normalized value [0,1] to blue-red heatmap color
+    auto getHeatmapColor = [](float normalized) -> Color {
+        // Clamp to [0, 1] range
+        if (normalized < 0.0f) normalized = 0.0f;
+        if (normalized > 1.0f) normalized = 1.0f;
 
-    for (int x=0; x < m_pPolyBeeCore->m_heatmap.size_x(); ++x) {
-        for (int y=0; y < m_pPolyBeeCore->m_heatmap.size_y(); ++y) {
+        // Blue to red color mapping through cyan, green, yellow
+        // Blue (0): RGB(0, 0, 255)
+        // Cyan (0.25): RGB(0, 255, 255)
+        // Green (0.5): RGB(0, 255, 0)
+        // Yellow (0.75): RGB(255, 255, 0)
+        // Red (1): RGB(255, 0, 0)
 
-            float value = m_pPolyBeeCore->m_heatmap.cells()[x][y];
-            Color color = Color(value, value, value, 128);
+        unsigned char r, g, b;
 
-            //float value = m_pPolyBeeCore->m_heatmap.cellsNormalised()[x][y];
-            //Color color = ColorAlpha(ColorFromHSV(value * 360, 1.0f, 1.0f), 0.5f);
+        if (normalized < 0.25f) {
+            // Blue to Cyan
+            float t = normalized / 0.25f;
+            r = 0;
+            g = static_cast<unsigned char>(255 * t);
+            b = 255;
+        } else if (normalized < 0.5f) {
+            // Cyan to Green
+            float t = (normalized - 0.25f) / 0.25f;
+            r = 0;
+            g = 255;
+            b = static_cast<unsigned char>(255 * (1.0f - t));
+        } else if (normalized < 0.75f) {
+            // Green to Yellow
+            float t = (normalized - 0.5f) / 0.25f;
+            r = static_cast<unsigned char>(255 * t);
+            g = 255;
+            b = 0;
+        } else {
+            // Yellow to Red
+            float t = (normalized - 0.75f) / 0.25f;
+            r = 255;
+            g = static_cast<unsigned char>(255 * (1.0f - t));
+            b = 0;
+        }
 
-            DrawRectangle(ENV_MARGIN + x * cellW, ENV_MARGIN +  y * cellH, cellW, cellH, color);
+        return Color{r, g, b, 128}; // Semi-transparent for overlay
+    };
+
+    // Draw heatmap cells using normalized values
+    const auto& cellsNormalised = m_pPolyBeeCore->m_heatmap.cellsNormalised();
+    for (int x = 0; x < numCellsX; ++x) {
+        for (int y = 0; y < numCellsY; ++y) {
+            float normalizedValue = cellsNormalised[x][y];
+            float valueToPlot = normalizedValue * (numCells / 3.0); // scale for better visibility
+            Color color = getHeatmapColor(valueToPlot);
+
+            DrawRectangle(ENV_MARGIN + x * cellW, ENV_MARGIN + y * cellH, cellW, cellH, color);
+
+            // Optional: Draw cell borders for better visibility
+            DrawRectangleLines(ENV_MARGIN + x * cellW, ENV_MARGIN + y * cellH, cellW, cellH, DARKGRAY);
         }
     }
+
+    // TEMP CODE TO SHOW EMD VALUE TO UNIFORM TARGET
+    static std::vector<std::vector<int>> targetHeatmap;
+    if (targetHeatmap.empty()) {
+        int cellVal = (m_pPolyBeeCore->m_iIteration * Params::numBees) / numCells;
+        targetHeatmap.resize(numCellsX);
+        for (int x = 0; x < numCellsX; ++x) {
+            targetHeatmap[x].resize(numCellsY, cellVal);
+        }
+    }
+
+    float emdVal = m_pPolyBeeCore->m_heatmap.emd(targetHeatmap);
+    DrawText(std::format("EMD to uniform target: {:.4f}", emdVal).c_str(), 10, 870, 20, RAYWHITE);
+
+    /*
+    // Draw color scale legend
+    int legendX = 20;
+    int legendY = 50;
+    int legendWidth = 200;
+    int legendHeight = 20;
+
+    DrawText("Normalized Heatmap Scale:", legendX, legendY - 25, 16, RAYWHITE);
+
+    // Draw gradient legend
+    for (int i = 0; i < legendWidth; ++i) {
+        float t = static_cast<float>(i) / legendWidth;
+        Color color = getHeatmapColor(t);
+        DrawRectangle(legendX + i, legendY, 1, legendHeight, color);
+    }
+
+    // Legend labels
+    DrawText("0.0", legendX, legendY + legendHeight + 5, 12, RAYWHITE);
+    DrawText("1.0", legendX + legendWidth - 20, legendY + legendHeight + 5, 12, RAYWHITE);
+    */
 }
