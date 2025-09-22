@@ -151,9 +151,7 @@ void PolyBeeCore::writeOutputFiles()
     else {
         Params::print(configFile, true);
         configFile.close();
-        if (!Params::bCommandLineQuiet) {
-            std::cout << std::format("Config output written to file: {}\n", configFilename);
-        }
+        pb::msg_info(std::format("Config output written to file: {}", configFilename));
     }
 
     // write heatmap to file
@@ -172,9 +170,26 @@ void PolyBeeCore::writeOutputFiles()
     else {
         m_heatmap.print(heatmapFile);
         heatmapFile.close();
-        if (!Params::bCommandLineQuiet) {
-            std::cout << std::format("Heatmap output written to file: {}\n", heatmapFilename);
-        }
+        pb::msg_info(std::format("Heatmap output written to file: {}", heatmapFilename));
+    }
+
+    // write normalised heatmap to file
+    std::string normHeatmapFilename = std::format("{0}/{1}heatmap-normalised-{2}.csv",
+        Params::logDir,
+        Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
+        m_timestampStr);
+    std::ofstream normHeatmapFile(normHeatmapFilename);
+    if (!normHeatmapFile) {
+        pb::msg_warning(
+            std::format("Unable to open normalised heatmap output file {} for writing. Heatmap will not be saved to file, printing to stdout instead.",
+                normHeatmapFilename));
+        std::cout << "~~~~~~~~~~ NORMALISED HEATMAP OUTPUT ~~~~~~~~~~\n";
+        m_heatmap.printNormalised(std::cout);
+    }
+    else {
+        m_heatmap.printNormalised(normHeatmapFile);
+        normHeatmapFile.close();
+        pb::msg_info(std::format("Normalised heatmap output written to file: {}", normHeatmapFilename));
     }
 }
 

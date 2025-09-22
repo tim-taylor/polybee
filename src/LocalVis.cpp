@@ -155,15 +155,24 @@ void LocalVis::updateDrawFrame()
         }
     }
 
-    std::string msg = std::format("Iteration {}", m_pPolyBeeCore->m_iIteration);
+    std::string msg;
+    if (m_bWaitingForUserToClose) {
+        msg = std::format("Finished {} iterations. Press ESC to exit", m_pPolyBeeCore->m_iIteration);
+    }
+    else {
+        msg = std::format("Iteration target {}. Current iteration {}", Params::numIterations, m_pPolyBeeCore->m_iIteration);
+    }
     DrawText(msg.c_str(), 10, 10, 20, RAYWHITE);
 
     // end the frame and get ready for the next one  (display frame, poll input, etc...)
     EndDrawing();
 
-    //if (IsKeyPressed(KEY_ENTER)) {
-    //m_pPolyBeeCore->updateCells();
-    //}
+    if (IsKeyPressed(KEY_H)) {
+        m_bDrawHistogram = !m_bDrawHistogram;
+    }
+    if (m_bDrawHistogram) {
+        drawHistogram();
+    }
 
     if (Params::visDelayPerStep > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(Params::visDelayPerStep));
@@ -173,8 +182,36 @@ void LocalVis::updateDrawFrame()
 
 void LocalVis::continueUntilClosed()
 {
+    m_bWaitingForUserToClose = true;
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
         updateDrawFrame();
+    }
+}
+
+
+void LocalVis::drawHistogram()
+{
+    // TO DO
+    DrawText("HISTOGRAM COMING SOON!", 100, 100, 20, RAYWHITE);
+
+    int numCellsX = m_pPolyBeeCore->m_heatmap.size_x();
+    int numCellsY = m_pPolyBeeCore->m_heatmap.size_y();
+    int cellW = (Params::envW * Params::visCellSize) / numCellsX;
+    int cellH = (Params::envH * Params::visCellSize) / numCellsY;
+
+    int cellSize = Params::visCellSize; // for now, just use
+
+    for (int x=0; x < m_pPolyBeeCore->m_heatmap.size_x(); ++x) {
+        for (int y=0; y < m_pPolyBeeCore->m_heatmap.size_y(); ++y) {
+
+            float value = m_pPolyBeeCore->m_heatmap.cells()[x][y];
+            Color color = Color(value, value, value, 128);
+
+            //float value = m_pPolyBeeCore->m_heatmap.cellsNormalised()[x][y];
+            //Color color = ColorAlpha(ColorFromHSV(value * 360, 1.0f, 1.0f), 0.5f);
+
+            DrawRectangle(ENV_MARGIN + x * cellW, ENV_MARGIN +  y * cellH, cellW, cellH, color);
+        }
     }
 }

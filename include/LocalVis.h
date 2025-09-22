@@ -22,7 +22,11 @@ public:
     void continueUntilClosed();
 
 private:
+    void drawHistogram();
+
     PolyBeeCore* m_pPolyBeeCore;
+    bool m_bWaitingForUserToClose{false};
+    bool m_bDrawHistogram{false};
 };
 
 #endif /* _LOCALVIS_H */

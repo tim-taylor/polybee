@@ -25,8 +25,13 @@ void msg_info(std::string msg) {
     }
 }
 
-float earthMoversDistanceLemon(const std::vector<std::vector<float>>& heatmap1,
-    const std::vector<std::vector<float>>& heatmap2)
+// Earth Mover's Distance (EMD) between two 2D heatmaps using the LEMON library
+//  - Exact EMD calculation using thresholded ground distance
+//    Technically, it calculates the EMD Hat variant (as proposed by Pele and Werman)
+//    between two non-normalised histograms/heatmaps.
+//
+float earthMoversDistanceLemon(const std::vector<std::vector<int>>& heatmap1,
+    const std::vector<std::vector<int>>& heatmap2)
 {
     // Flatten the heatmaps to 1D vectors
     std::vector<int> flat1, flat2;
@@ -184,6 +189,11 @@ float earthMoversDistanceLemon(const std::vector<std::vector<float>>& heatmap1,
     %          Defaults: 1 if F is not requested, 2 otherwise
     */
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+/*
 
 // Approximate Earth Mover's Distance (EMD) between two 2D heatmaps
 //  - What it is: Fast approximation using cumulative distribution comparison
@@ -347,5 +357,7 @@ float earthMoversDistanceFull(const std::vector<std::vector<float>>& heatmap1,
 
     return total_cost;
 }
+
+*/
 
 } // namespace Polybee
