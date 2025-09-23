@@ -92,7 +92,15 @@ void Heatmap::calcNormalised() {
     }
 }
 
-float Heatmap::emd(const std::vector<std::vector<int>>& target) const {
+float Heatmap::emd_approx(const std::vector<std::vector<float>>& target) const {
+    return pb::earthMoversDistanceApprox(m_cellsNormalised, target);
+}
+
+float Heatmap::emd_full(const std::vector<std::vector<float>>& target) const {
+    return pb::earthMoversDistanceFull(m_cellsNormalised, target);
+}
+
+float Heatmap::emd_lemon(const std::vector<std::vector<int>>& target) const {
     return pb::earthMoversDistanceLemon(m_cells, target);
 }
 

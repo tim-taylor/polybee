@@ -264,16 +264,24 @@ void LocalVis::drawHistogram()
 
     // TEMP CODE TO SHOW EMD VALUE TO UNIFORM TARGET
     static std::vector<std::vector<int>> targetHeatmap;
+    static std::vector<std::vector<float>> targetHeatmapNormalised;
     if (targetHeatmap.empty()) {
         int cellVal = (m_pPolyBeeCore->m_iIteration * Params::numBees) / numCells;
+        float cellValNormalised = 1.0f / numCells;
         targetHeatmap.resize(numCellsX);
+        targetHeatmapNormalised.resize(numCellsX);
         for (int x = 0; x < numCellsX; ++x) {
             targetHeatmap[x].resize(numCellsY, cellVal);
+            targetHeatmapNormalised[x].resize(numCellsY, cellValNormalised);
         }
     }
 
-    float emdVal = m_pPolyBeeCore->m_heatmap.emd(targetHeatmap);
-    DrawText(std::format("EMD to uniform target: {:.4f}", emdVal).c_str(), 10, 870, 20, RAYWHITE);
+    float emdLemonVal = m_pPolyBeeCore->m_heatmap.emd_lemon(targetHeatmap);
+    float emdFullVal = m_pPolyBeeCore->m_heatmap.emd_full(targetHeatmapNormalised);
+    float emdApproxVal = m_pPolyBeeCore->m_heatmap.emd_approx(targetHeatmapNormalised);
+    DrawText(std::format("EMD (lemon) to uniform target: {:.4f}", emdLemonVal).c_str(), 10, 830, 20, RAYWHITE);
+    DrawText(std::format("EMD (full) to uniform target: {:.4f}", emdFullVal).c_str(), 10, 850, 20, RAYWHITE);
+    DrawText(std::format("EMD (approx) to uniform target: {:.4f}", emdApproxVal).c_str(), 10, 870, 20, RAYWHITE);
 
     /*
     // Draw color scale legend
