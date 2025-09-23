@@ -27,6 +27,7 @@ private:
     PolyBeeCore* m_pPolyBeeCore;
     bool m_bWaitingForUserToClose{false};
     bool m_bDrawHistogram{false};
+    bool m_bPaused{false};
 };
 
 #endif /* _LOCALVIS_H */

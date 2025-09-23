@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "Params.h"
 #include "FastEMD/lemon_thresholded_emd.hpp"
+#include "FastEMD/emd_hat.hpp"
 #include <iostream>
 #include <algorithm>
 #include <cmath>
@@ -190,6 +191,62 @@ float earthMoversDistanceLemon(const std::vector<std::vector<int>>& heatmap1,
     */
 }
 
+///////////////////////////////////////////////////////////////////////////////////////
+
+float earthMoversDistanceHat(const std::vector<std::vector<double>>& heatmap1,
+                            const std::vector<std::vector<double>>& heatmap2) {
+    if ((heatmap1.size() != heatmap2.size()) ||
+        (heatmap1.empty()) ||
+        (heatmap1[0].size() != heatmap2[0].size())) {
+        pb::msg_error_and_exit("Heatmaps must have the same dimensions for EMD calculation");
+    }
+
+    // flatHeatmapten the heatmaps to 1D vectors
+    std::vector<double> flatHeatmap1, flatHeatmap2;
+
+    int numRows = heatmap1.size();
+    int numCols = heatmap1[0].size();
+    int total_cells = numRows * numCols;
+
+    // Flatten heatmap1
+    flatHeatmap1.reserve(total_cells);
+    for (const auto& inner : heatmap1) {
+        flatHeatmap1.insert(flatHeatmap1.end(), inner.begin(), inner.end());
+    }
+
+    // Flatten heatmap2
+    flatHeatmap2.reserve(total_cells);
+    for (const auto& inner : heatmap2) {
+        flatHeatmap2.insert(flatHeatmap2.end(), inner.begin(), inner.end());
+    }
+
+    //-----------------------------------------------
+    // The ground distance - thresholded Euclidean distance.
+
+    std::vector< std::vector<double> > distanceMatrix;
+    std::vector<double> distanceMatrix_row(total_cells);
+    for (size_t i = 0; i < total_cells; ++i) distanceMatrix.push_back(distanceMatrix_row);
+    //int max_distanceMatrix = -1;
+
+    for (int r1 = 0; r1 < numRows; r1++) {
+        for (int c1 = 0; c1 < numCols; c1++) {
+            size_t j = r1 * numCols + c1;  // Current cell index (row-major order)
+
+            for (int r2 = 0; r2 < numRows; r2++) {
+                for (int c2 = 0; c2 < numCols; c2++) {
+                    size_t i = r2 * numCols + c2;  // Target cell index
+                    distanceMatrix[i][j]= static_cast<double>(sqrt((r1-r2)*(r1-r2)+(c1-c2)*(c1-c2)));
+                    //if (distanceMatrix[i][j] > max_distanceMatrix) max_distanceMatrix = distanceMatrix[i][j];
+                }
+            }
+		}
+	}
+
+    float emd_hat_val= emd_hat<double>()(flatHeatmap1, flatHeatmap2, distanceMatrix);
+
+    return emd_hat_val;
+
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////
 

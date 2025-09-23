@@ -1,3 +1,15 @@
+## 23/9/25:
+
+Have now implemented emd_hat and it's working (unlike the LEMON version). Now need to convert all heatmap-related matrices from floats to doubles so we don't have to create double versions every time we want to calculate emd_hat. This will entail converting the other emd functions too.
+
+Would be good at somepoint to profile the speed of emd_hat vs the other implementations, and the investigate the numbers they produce for different target heatmaps
+
+Have also implemented pause in the visualiser
+
+Next up, it would be handy to implement another option (4) for hive config, which means bees can exit in any direction
+
+
+
 ## 17/9/25:
 
 Added a modified version of the LEMON library under the 3rdparty folder. This has been modified to run with C++20 as its original code used some deprecated and removed features of the language. Also added Pele's FastEMD code in the include file lemon_thresholded_emd.hpp, and a new function in utils.cpp earthMoversDistanceLemon that uses it.

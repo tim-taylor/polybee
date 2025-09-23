@@ -170,12 +170,21 @@ void LocalVis::updateDrawFrame()
     if (IsKeyPressed(KEY_H)) {
         m_bDrawHistogram = !m_bDrawHistogram;
     }
+    else if (IsKeyPressed(KEY_P)) {
+        m_bPaused = !m_bPaused;
+        m_pPolyBeeCore->pauseSimulation(m_bPaused);
+    }
+
     if (m_bDrawHistogram) {
         drawHistogram();
     }
 
     if (Params::visDelayPerStep > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(Params::visDelayPerStep));
+    }
+
+    if (m_bPaused) {
+        DrawText("PAUSED", 360, 360, 20, RAYWHITE);
     }
 }
 
@@ -277,9 +286,12 @@ void LocalVis::drawHistogram()
     }
 
     float emdLemonVal = m_pPolyBeeCore->m_heatmap.emd_lemon(targetHeatmap);
+    float emdHat = m_pPolyBeeCore->m_heatmap.emd_hat(targetHeatmapNormalised);
     float emdFullVal = m_pPolyBeeCore->m_heatmap.emd_full(targetHeatmapNormalised);
     float emdApproxVal = m_pPolyBeeCore->m_heatmap.emd_approx(targetHeatmapNormalised);
-    DrawText(std::format("EMD (lemon) to uniform target: {:.4f}", emdLemonVal).c_str(), 10, 830, 20, RAYWHITE);
+
+    DrawText(std::format("EMD (lemon) to uniform target: {:.4f}", emdLemonVal).c_str(), 10, 810, 20, RAYWHITE);
+    DrawText(std::format("EMD (hat) to uniform target: {:.4f}", emdHat).c_str(), 10, 830, 20, RAYWHITE);
     DrawText(std::format("EMD (full) to uniform target: {:.4f}", emdFullVal).c_str(), 10, 850, 20, RAYWHITE);
     DrawText(std::format("EMD (approx) to uniform target: {:.4f}", emdApproxVal).c_str(), 10, 870, 20, RAYWHITE);
 

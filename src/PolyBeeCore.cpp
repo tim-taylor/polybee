@@ -27,7 +27,7 @@ std::uniform_real_distribution<float> PolyBeeCore::m_sUniformProbDistrib(0.0, 1.
 
 
 PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
-    m_iIteration{0}, m_pLocalVis{nullptr}, m_bEarlyExitRequested{false}
+    m_pLocalVis{nullptr}
 {
     Params::initialise(argc, argv);
 
@@ -107,18 +107,20 @@ void PolyBeeCore::run()
 {
     // main simulation loop
     while (!stopCriteriaReached()) {
-        // update bee pos
-        for (Bee& bee : m_bees) {
-            bee.move();
-        }
+        if (!m_bPaused) {
+            ++m_iIteration;
 
-        m_heatmap.update();
+            // update bee pos
+            for (Bee& bee : m_bees) {
+                bee.move();
+            }
+
+            m_heatmap.update();
+        }
 
         if (Params::bVis && m_pLocalVis) {
             m_pLocalVis->updateDrawFrame();
         }
-
-        ++m_iIteration;
     }
 
     writeOutputFiles();

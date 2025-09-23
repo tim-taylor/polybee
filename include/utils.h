@@ -24,6 +24,8 @@ void msg_info(std::string msg);
 float earthMoversDistanceLemon(const std::vector<std::vector<int>>& heatmap1,
                             const std::vector<std::vector<int>>& heatmap2);
 
+float earthMoversDistanceHat(const std::vector<std::vector<double>>& heatmap1,
+                            const std::vector<std::vector<double>>& heatmap2);
 
 //
 float earthMoversDistanceApprox(const std::vector<std::vector<float>>& heatmap1,

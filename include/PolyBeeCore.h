@@ -36,6 +36,7 @@ public:
     // public methods
     void run();
     void earlyExit();
+    void pauseSimulation(bool pause) {m_bPaused = pause;}
 
     //////////////////////////////////////////////////////////////
     // public static methods
@@ -65,11 +66,13 @@ private:
     Environment m_env;
     Heatmap m_heatmap;
 
-    std::string m_timestampStr; // timestamp string for this run, used in output filenames
+    std::string m_timestampStr {}; // timestamp string for this run, used in output filenames
 
-    int m_iIteration;
-    bool m_bEarlyExitRequested;
+    int m_iIteration {-1};
     std::unique_ptr<LocalVis> m_pLocalVis;
+
+    bool m_bEarlyExitRequested {false};
+    bool m_bPaused {false};
 
     //////////////////////////////////////////////////////////////
     // private static members

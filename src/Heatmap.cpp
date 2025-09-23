@@ -10,6 +10,7 @@
 #include "utils.h"
 #include <format>
 #include <cassert>
+#include <algorithm>
 
 Heatmap::Heatmap(bool calcNormalised) : m_bCalcNormalised(calcNormalised),
     m_numCellsX(0), m_numCellsY(0), m_cellSize(0), m_pBees{nullptr} {
@@ -102,6 +103,24 @@ float Heatmap::emd_full(const std::vector<std::vector<float>>& target) const {
 
 float Heatmap::emd_lemon(const std::vector<std::vector<int>>& target) const {
     return pb::earthMoversDistanceLemon(m_cells, target);
+}
+
+float Heatmap::emd_hat(const std::vector<std::vector<float>>& target) const {
+
+    std::vector<std::vector<double>> fCells(m_cellsNormalised.size()); //preconstruct to given size
+    std::vector<std::vector<double>> fTarget(target.size()); //preconstruct output to given size
+
+    std::transform(
+        m_cellsNormalised.begin(), m_cellsNormalised.end(), fCells.begin(),
+        [](const auto& in) {return std::vector<double>(in.begin(), in.end());}  //use vectors range based constructor
+    );
+
+    std::transform(
+        target.begin(), target.end(), fTarget.begin(),
+        [](const auto& in) {return std::vector<double>(in.begin(), in.end());}  //use vectors range based constructor
+    );
+
+    return pb::earthMoversDistanceHat(fCells, fTarget);
 }
 
 void Heatmap::print(std::ostream& os) {
