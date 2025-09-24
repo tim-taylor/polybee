@@ -31,12 +31,37 @@ FetchContent_Declare(
 set(BUILD_EXAMPLES OFF CACHE INTERNAL "")
 FetchContent_MakeAvailable(raylib)
 
-## Boost
+# Problems with oneTBB and CMake FetchContent - try installing oneTBB manually if needed?
+## oneTBB (required by Pagmo)
+#FetchContent_Declare(
+#    oneTBB
+#    GIT_REPOSITORY "https://github.com/oneapi-src/oneTBB.git"
+#    GIT_TAG "v2022.2.0" # stable release as of 2023-09-15
+#    GIT_PROGRESS TRUE
+#)
+
+# Configure oneTBB to build as dynamic library
+#set(TBB_BUILD_SHARED ON CACHE INTERNAL "")
+#set(TBB_BUILD_STATIC OFF CACHE INTERNAL "")
+#FetchContent_MakeAvailable(oneTBB)
+
+
+## Boost (required by Pagmo and also for command line argument parsing)
 if(POLICY CMP0144) # See https://forum.qt.io/topic/158929/install-boost-with-cmake
   cmake_policy(SET CMP0144 NEW)
 endif()
 
 find_package(Boost 1.83 REQUIRED COMPONENTS program_options)
+
+# Pagmo (for optimization)
+#FetchContent_Declare(
+#    pagmo
+#    GIT_REPOSITORY "https://github.com/esa/pagmo2.git"
+#    GIT_TAG "v2.19.1" # stable release as of 2023-09-15
+#    GIT_PROGRESS TRUE
+#)
+#
+#FetchContent_MakeAvailable(pagmo)
 
 ## LEMON library for graph algorithms (for full EMD)
 # Using local modified version with C++20 compatibility fixes
@@ -72,6 +97,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 # link libraries
+#target_link_libraries(${PROJECT_NAME} raylib Boost::program_options lemon pagmo tbb)
 target_link_libraries(${PROJECT_NAME} raylib Boost::program_options lemon)
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)

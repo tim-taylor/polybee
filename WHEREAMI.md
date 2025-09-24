@@ -1,3 +1,28 @@
+## 24/9/25:
+
+In process of trying to build polybee with pagmo library, which requires the oneTBB library (and Boost). I can get the oneTBB lib to compile, but Pagmo does not find it when it tries to compile. Maybe simpler just to build oneTBB separately?? Look more into this...
+
+So **Boost** has an implementation of **Differential Evolution**:
+https://www.boost.org/doc/libs/1_89_0_beta1/libs/math/doc/html/math_toolkit/differential_evolution.html
+
+Examples of usage:
+- basic: https://www.boost.org/doc/libs/1_89_0_beta1/libs/math/example/differential_evolution.cpp
+- more complex: https://www.boost.org/doc/libs/1_89_0_beta1/libs/math/test/differential_evolution_test.cpp
+
+NB how does it handle RNG seeding etc> -> Answer, it's the third param passed into the diff evol fn
+
+As an interesting alternative, see the **PAGMO library**, which has an academic background and has been updated frequently (most recently in 2024), plus support for parallel processing
+https://esa.github.io/pagmo2/index.html
+https://esa.github.io/pagmo2/docs/cpp/algorithms/de.html
+
+Other possibilities:
+* https://www.alglib.net/ (free + commerical versions; free is single-threaded, no commercial use)
+* https://www.amichel.com/de/doc/html/dd/d53/overview.html / https://github.com/adrianmichel/differential-evolution (last updated 5 years ago)
+
+If needed, there is also a C++ optimisation package called **OSTRICH** that implements **Shuffled Complex Evolution**:
+https://www.civil.uwaterloo.ca/envmodelling/Ostrich.html
+
+
 ## 23/9/25:
 
 Have now implemented emd_hat and it's working (unlike the LEMON version). Now need to convert all heatmap-related matrices from floats to doubles so we don't have to create double versions every time we want to calculate emd_hat. This will entail converting the other emd functions too.
