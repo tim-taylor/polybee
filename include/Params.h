@@ -48,7 +48,7 @@ struct ParamInfo
 struct HiveSpec {
     float x;
     float y;
-    int direction; // 0=North, 1=East, 2=South, 3=West
+    int direction; // 0=North, 1=East, 2=South, 3=West, 4=Random
 
     HiveSpec(float x, float y, int direction) : x(x), y(y), direction(direction) {}
 };

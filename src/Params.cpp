@@ -91,7 +91,7 @@ void Params::initRegistry()
 // Helper function to parse hive positions from strings of the form "x,y" (x and y are floats)
 std::vector<HiveSpec> parse_positions(const std::vector<std::string>& pos_strings) {
     std::vector<HiveSpec> hives;
-    std::regex pos_regex(R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):(\d+))");
+    std::regex pos_regex(R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):([0-4]))");
 
     for (const auto& pos_str : pos_strings) {
         std::smatch match;
@@ -163,7 +163,7 @@ void Params::initialise(int argc, char* argv[])
         // Special case for hive positions (multiple allowed)
         config.add_options()
             ("hive", po::value<std::vector<std::string>>()->multitoken(),
-             "Hive specification in format x,y:d where d is the direction of the opening (0=North, 1=East, 2=South, 3=West), e.g., --hive 10,8:0 --hive 4,6:1");
+             "Hive specification in format x,y:d where d is the direction of the opening (0=North, 1=East, 2=South, 3=West, 4=Random), e.g., --hive 10,8:0 --hive 4,6:4");
 
         // Hidden options, will be allowed both on command line and
         // in config file, but will not be shown to the user.

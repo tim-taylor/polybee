@@ -29,7 +29,6 @@
 
 #include "raylib.h"
 #include "raymath.h"
-//#include "resource_dir.h" // utility header for SearchAndSetResourceDir
 #include "Params.h"
 #include "PolyBeeCore.h"
 #include <format>
@@ -99,8 +98,7 @@ LocalVis::~LocalVis()
 void LocalVis::updateDrawFrame()
 {
 
-    if (WindowShouldClose()) //(IsKeyPressed(KEY_ESCAPE))
-    {
+    if (WindowShouldClose()) { // Detect window close button or ESC key{
         m_pPolyBeeCore->earlyExit();
     }
 
@@ -122,6 +120,79 @@ void LocalVis::updateDrawFrame()
     DrawRectangleLines(ENV_MARGIN, ENV_MARGIN,
         Params::envW * Params::visCellSize, Params::envH * Params::visCellSize, WHITE);
 
+    if (showBees()) {
+        drawBees();
+    }
+
+    if (showHeatmap()) {
+        drawHistogram();
+    }
+
+    std::string msg;
+    if (m_bWaitingForUserToClose) {
+        msg = std::format("Finished {} iterations. Press ESC to exit", m_pPolyBeeCore->m_iIteration);
+    }
+    else {
+        msg = std::format("Iteration target {}. Current iteration {}", Params::numIterations, m_pPolyBeeCore->m_iIteration);
+    }
+    DrawText(msg.c_str(), 10, 10, 20, RAYWHITE);
+
+    if (m_bPaused) {
+        DrawText("PAUSED", 10, 40, 40, RAYWHITE);
+    }
+
+    // end the frame and get ready for the next one  (display frame, poll input, etc...)
+    EndDrawing();
+
+    if (IsKeyPressed(KEY_H)) {
+        rotateDrawState();
+    }
+
+    if (IsKeyPressed(KEY_P)) {
+        m_bPaused = !m_bPaused;
+        m_pPolyBeeCore->pauseSimulation(m_bPaused);
+    }
+
+    if (IsKeyPressed(KEY_T)) {
+        m_bShowTrails = !m_bShowTrails;
+    }
+
+    if (Params::visDelayPerStep > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(Params::visDelayPerStep));
+    }
+}
+
+
+void LocalVis::continueUntilClosed()
+{
+    m_bWaitingForUserToClose = true;
+    while (!WindowShouldClose()) // Detect window close button or ESC key
+    {
+        updateDrawFrame();
+    }
+}
+
+
+void LocalVis::rotateDrawState()
+{
+    switch (m_drawState) {
+    case DrawState::BEES:
+        m_drawState = DrawState::BEES_AND_HEATMAP;
+        break;
+    case DrawState::BEES_AND_HEATMAP:
+        m_drawState = DrawState::HEATMAP;
+        break;
+    case DrawState::HEATMAP:
+        m_drawState = DrawState::BEES;
+        break;
+    default:
+        pb::msg_error_and_exit("LocalVis::rotateDrawState(): invalid draw state");
+    }
+}
+
+
+void LocalVis::drawBees()
+{
     // draw hives
     for (const HiveSpec& hiveSpec : Params::hiveSpecs) {
         DrawRectangleLines(ENV_MARGIN + static_cast<int>(hiveSpec.x * Params::visCellSize) - HIVE_SIZE / 2,
@@ -141,60 +212,19 @@ void LocalVis::updateDrawFrame()
         //DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], LIME);
         DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], ColorFromHSV(bee.colorHue, 0.7f, 0.9f));
 
-        // draw path
-        size_t pathIdxMax = bee.path.size()-1;
-        int drawCount = 0;
-        for (size_t i = pathIdxMax; i >= 1 && drawCount < Params::visBeePathDrawLen; --i) {
-            Vector2 p1 = { ENV_MARGIN + bee.path[i - 1].x * Params::visCellSize,
-                           ENV_MARGIN + bee.path[i - 1].y * Params::visCellSize };
-            Vector2 p2 = { ENV_MARGIN + bee.path[i].x * Params::visCellSize,
-                           ENV_MARGIN + bee.path[i].y * Params::visCellSize };
-            float alpha = 1.0f - ((pathIdxMax - static_cast<float>(i)) / Params::visBeePathDrawLen); // fade out older parts of path
-            DrawLineEx(p1, p2, Params::visBeePathThickness, ColorAlpha(ColorFromHSV(bee.colorHue, 0.3f, 0.7f), alpha));
-            ++drawCount;
+        if (m_bShowTrails) {
+            size_t pathIdxMax = bee.path.size()-1;
+            int drawCount = 0;
+            for (size_t i = pathIdxMax; i >= 1 && drawCount < Params::visBeePathDrawLen; --i) {
+                Vector2 p1 = { ENV_MARGIN + bee.path[i - 1].x * Params::visCellSize,
+                            ENV_MARGIN + bee.path[i - 1].y * Params::visCellSize };
+                Vector2 p2 = { ENV_MARGIN + bee.path[i].x * Params::visCellSize,
+                            ENV_MARGIN + bee.path[i].y * Params::visCellSize };
+                float alpha = 1.0f - ((pathIdxMax - static_cast<float>(i)) / Params::visBeePathDrawLen); // fade out older parts of path
+                DrawLineEx(p1, p2, Params::visBeePathThickness, ColorAlpha(ColorFromHSV(bee.colorHue, 0.3f, 0.7f), alpha));
+                ++drawCount;
+            }
         }
-    }
-
-    std::string msg;
-    if (m_bWaitingForUserToClose) {
-        msg = std::format("Finished {} iterations. Press ESC to exit", m_pPolyBeeCore->m_iIteration);
-    }
-    else {
-        msg = std::format("Iteration target {}. Current iteration {}", Params::numIterations, m_pPolyBeeCore->m_iIteration);
-    }
-    DrawText(msg.c_str(), 10, 10, 20, RAYWHITE);
-
-    // end the frame and get ready for the next one  (display frame, poll input, etc...)
-    EndDrawing();
-
-    if (IsKeyPressed(KEY_H)) {
-        m_bDrawHistogram = !m_bDrawHistogram;
-    }
-    else if (IsKeyPressed(KEY_P)) {
-        m_bPaused = !m_bPaused;
-        m_pPolyBeeCore->pauseSimulation(m_bPaused);
-    }
-
-    if (m_bDrawHistogram) {
-        drawHistogram();
-    }
-
-    if (Params::visDelayPerStep > 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(Params::visDelayPerStep));
-    }
-
-    if (m_bPaused) {
-        DrawText("PAUSED", 360, 360, 20, RAYWHITE);
-    }
-}
-
-
-void LocalVis::continueUntilClosed()
-{
-    m_bWaitingForUserToClose = true;
-    while (!WindowShouldClose()) // Detect window close button or ESC key
-    {
-        updateDrawFrame();
     }
 }
 
@@ -285,15 +315,42 @@ void LocalVis::drawHistogram()
         }
     }
 
-    float emdLemonVal = m_pPolyBeeCore->m_heatmap.emd_lemon(targetHeatmap);
-    float emdHat = m_pPolyBeeCore->m_heatmap.emd_hat(targetHeatmapNormalised);
-    float emdFullVal = m_pPolyBeeCore->m_heatmap.emd_full(targetHeatmapNormalised);
-    float emdApproxVal = m_pPolyBeeCore->m_heatmap.emd_approx(targetHeatmapNormalised);
+    static int emdLemonTime = 0;
+    static int64_t emdHatTime = 0;
+    static int64_t emdFullTime = 0;
+    static int64_t emdApproxTime = 0;
 
-    DrawText(std::format("EMD (lemon) to uniform target: {:.4f}", emdLemonVal).c_str(), 10, 810, 20, RAYWHITE);
-    DrawText(std::format("EMD (hat) to uniform target: {:.4f}", emdHat).c_str(), 10, 830, 20, RAYWHITE);
-    DrawText(std::format("EMD (full) to uniform target: {:.4f}", emdFullVal).c_str(), 10, 850, 20, RAYWHITE);
-    DrawText(std::format("EMD (approx) to uniform target: {:.4f}", emdApproxVal).c_str(), 10, 870, 20, RAYWHITE);
+    static float emdLemonVal = 0.0f;
+    static float emdHatVal = 0.0f;
+    static float emdFullVal = 0.0f;
+    static float emdApproxVal = 0.0f;
+
+    if (!m_bPaused && !m_bWaitingForUserToClose) {
+        auto start = std::chrono::high_resolution_clock::now();
+        //emdLemonVal = m_pPolyBeeCore->m_heatmap.emd_lemon(targetHeatmap);
+        auto end = std::chrono::high_resolution_clock::now();
+        emdLemonTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+        start = std::chrono::high_resolution_clock::now();
+        //emdHatVal = m_pPolyBeeCore->m_heatmap.emd_hat(targetHeatmapNormalised);
+        end = std::chrono::high_resolution_clock::now();
+        emdHatTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+        start = std::chrono::high_resolution_clock::now();
+        emdFullVal = m_pPolyBeeCore->m_heatmap.emd_full(targetHeatmapNormalised);
+        end = std::chrono::high_resolution_clock::now();
+        emdFullTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+        start = std::chrono::high_resolution_clock::now();
+        emdApproxVal = m_pPolyBeeCore->m_heatmap.emd_approx(targetHeatmapNormalised);
+        end = std::chrono::high_resolution_clock::now();
+        emdApproxTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    }
+
+    DrawText(std::format("EMD (lemon) to uniform target: {:.4f} ({:.1f} microseconds)", emdLemonVal, static_cast<float>(emdLemonTime)).c_str(), 10, 810, 20, RAYWHITE);
+    DrawText(std::format("EMD (hat) to uniform target: {:.4f} ({:.1f} microseconds)", emdHatVal, static_cast<float>(emdHatTime)).c_str(), 10, 830, 20, RAYWHITE);
+    DrawText(std::format("EMD (full) to uniform target: {:.4f} ({:.1f} microseconds)", emdFullVal, static_cast<float>(emdFullTime)).c_str(), 10, 850, 20, RAYWHITE);
+    DrawText(std::format("EMD (approx) to uniform target: {:.4f} ({:.1f} microseconds)", emdApproxVal, static_cast<float>(emdApproxTime)).c_str(), 10, 870, 20, RAYWHITE);
 
     /*
     // Draw color scale legend

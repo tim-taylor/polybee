@@ -23,7 +23,7 @@ bool PolyBeeCore::m_sbRngInitialised = false;
 std::mt19937 PolyBeeCore::m_sRngEngine;
 // - and define commonly used distributions
 std::uniform_real_distribution<float> PolyBeeCore::m_sUniformProbDistrib(0.0, 1.0);
-
+std::uniform_real_distribution<float> PolyBeeCore::m_sAngle2PiDistrib(0.0f, 2.0f * std::numbers::pi_v<float>);
 
 
 PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
@@ -87,13 +87,19 @@ void PolyBeeCore::initialiseBees()
         case 1: angle = 0.0f; break; // East
         case 2: angle = std::numbers::pi_v<float> / 2.0f; break; // South
         case 3: angle = std::numbers::pi_v<float>; break; // West
+        case 4: angle = 0.0f; break; // Random (will be set per bee below)
         default:
-            pb::msg_error_and_exit(std::format("Invalid hive direction {} specified for hive at ({},{}). Must be 0=North, 1=East, 2=South, or 3=West.",
+            pb::msg_error_and_exit(std::format("Invalid hive direction {} specified for hive at ({},{}). Must be 0=North, 1=East, 2=South, 3=West, or 4=Random.",
                 hive.direction, hive.x, hive.y));
         }
 
         for (int j = 0; j < numBeesPerHive; ++j) {
-            m_bees.emplace_back(fPos(hive.x, hive.y), angle, &m_env);
+            float beeAngle = angle;
+            if (hive.direction == 4) {
+                // Random direction: uniform random angle between 0 and 2π
+                beeAngle = m_sAngle2PiDistrib(m_sRngEngine);
+            }
+            m_bees.emplace_back(fPos(hive.x, hive.y), beeAngle, &m_env);
         }
     }
 

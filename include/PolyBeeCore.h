@@ -50,6 +50,7 @@ public:
     // public static members
     static std::mt19937 m_sRngEngine;
     static std::uniform_real_distribution<float> m_sUniformProbDistrib; ///< Uniform distrib 0.0--1.0
+    static std::uniform_real_distribution<float> m_sAngle2PiDistrib;   ///< Uniform distrib 0.0--2π
 
 private:
     //////////////////////////////////////////////////////////////

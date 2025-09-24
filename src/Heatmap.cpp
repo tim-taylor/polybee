@@ -12,6 +12,8 @@
 #include <cassert>
 #include <algorithm>
 
+#include <chrono>
+
 Heatmap::Heatmap(bool calcNormalised) : m_bCalcNormalised(calcNormalised),
     m_numCellsX(0), m_numCellsY(0), m_cellSize(0), m_pBees{nullptr} {
 }
@@ -120,7 +122,19 @@ float Heatmap::emd_hat(const std::vector<std::vector<float>>& target) const {
         [](const auto& in) {return std::vector<double>(in.begin(), in.end());}  //use vectors range based constructor
     );
 
-    return pb::earthMoversDistanceHat(fCells, fTarget);
+    //return pb::earthMoversDistanceHat(fCells, fTarget);
+
+
+    // TEMP TIMING CODE
+    auto start = std::chrono::high_resolution_clock::now();
+    auto emdHatVal = pb::earthMoversDistanceHat(fCells, fTarget);
+    auto end = std::chrono::high_resolution_clock::now();
+    auto emdHatTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+    pb::msg_info(std::format("EMD Hat time: {} us", emdHatTime));
+
+    return emdHatVal;
+
 }
 
 void Heatmap::print(std::ostream& os) {
