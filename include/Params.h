@@ -84,6 +84,12 @@ public:
     // Hive configuration
     static std::vector<HiveSpec> hiveSpecs;
 
+    // Optimization
+    static bool bEvolve; // determines whether to run optimization to match output heatmap against target
+    static std::string strTargetHeatmapFilename; // CSV file containing target heatmap for optimization
+    static int numTrialsPerGen; // number of trials to run during each generation of optimization
+    static int numGenerations; // number of generations to run the optimization process
+
     // Logging and output
     static int heatmapCellSize; // size of each cell in the heatmap of bee positions
     static std::string logDir; // directory for output files

@@ -35,6 +35,12 @@ int Params::beePathRecordLen;
 // Hive configuration
 std::vector<HiveSpec> Params::hiveSpecs;
 
+// Optimization
+bool Params::bEvolve;
+std::string Params::strTargetHeatmapFilename;
+int Params::numTrialsPerGen;
+int Params::numGenerations;
+
 // Logging and output
 int Params::heatmapCellSize;
 std::string Params::logDir;
@@ -74,6 +80,10 @@ void Params::initRegistry()
     REGISTRY.emplace_back("bee-max-dir-delta", "beeMaxDirDelta", ParamType::FLOAT, &beeMaxDirDelta, 0.4f, "Maximum change in direction (radians) per step");
     REGISTRY.emplace_back("bee-path-record-len", "beePathRecordLen", ParamType::INT, &beePathRecordLen, 250, "Maximum number of positions to record in bee's path");
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
+    REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");
+    REGISTRY.emplace_back("target-heatmap-filename", "strTargetHeatmapFilename", ParamType::STRING, &strTargetHeatmapFilename, "", "CSV file containing target heatmap for optimization");
+    REGISTRY.emplace_back("num-trials-per-gen", "numTrialsPerGen", ParamType::INT, &numTrialsPerGen, 50, "Number of trials to run during each generation of optimization");
+    REGISTRY.emplace_back("num-generations", "numGenerations", ParamType::INT, &numGenerations, 50, "Number of generations to run the optimization process");
     REGISTRY.emplace_back("visualise", "bVis", ParamType::BOOL, &bVis, true, "Determines whether graphical output is displayed");
     REGISTRY.emplace_back("vis-cell-size", "visCellSize", ParamType::INT, &visCellSize, 4, "Size of an individual cell for visualisation");
     REGISTRY.emplace_back("vis-delay-per-step", "visDelayPerStep", ParamType::INT, &visDelayPerStep, 100, "Delay (in milliseconds) per step when visualising");

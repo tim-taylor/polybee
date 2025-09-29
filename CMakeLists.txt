@@ -51,17 +51,17 @@ if(POLICY CMP0144) # See https://forum.qt.io/topic/158929/install-boost-with-cma
   cmake_policy(SET CMP0144 NEW)
 endif()
 
-find_package(Boost 1.83 REQUIRED COMPONENTS program_options)
+find_package(Boost 1.83 REQUIRED COMPONENTS program_options serialization)
 
 # Pagmo (for optimization)
-#FetchContent_Declare(
-#    pagmo
-#    GIT_REPOSITORY "https://github.com/esa/pagmo2.git"
-#    GIT_TAG "v2.19.1" # stable release as of 2023-09-15
-#    GIT_PROGRESS TRUE
-#)
-#
-#FetchContent_MakeAvailable(pagmo)
+FetchContent_Declare(
+    pagmo
+    GIT_REPOSITORY "https://github.com/esa/pagmo2.git"
+    GIT_TAG "v2.19.1" # stable release as of 2023-09-15
+    GIT_PROGRESS TRUE
+)
+
+FetchContent_MakeAvailable(pagmo)
 
 ## LEMON library for graph algorithms (for full EMD)
 # Using local modified version with C++20 compatibility fixes
@@ -78,6 +78,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 set(SOURCE_FILES
 	src/main.cpp
     src/PolyBeeCore.cpp
+    src/PolyBeeEvolve.cpp
     src/Bee.cpp
     src/Environment.cpp
     src/Params.cpp
@@ -98,7 +99,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 # link libraries
 #target_link_libraries(${PROJECT_NAME} raylib Boost::program_options lemon pagmo tbb)
-target_link_libraries(${PROJECT_NAME} raylib Boost::program_options lemon)
+target_link_libraries(${PROJECT_NAME} raylib Boost::program_options lemon pagmo)
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)
 if (APPLE)

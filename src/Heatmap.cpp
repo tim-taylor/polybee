@@ -35,6 +35,11 @@ void Heatmap::initialise(std::vector<Bee>* bees) {
         ++m_numCellsY;
     }
 
+    // ensure we start with empty heatmaps
+    m_cells.clear();
+    m_cellsNormalised.clear();
+
+    // size the heatmap as required and initialise all counts to zero
     m_cells.resize(m_numCellsX);
     for (int x = 0; x < m_numCellsX; ++x) {
         m_cells[x].resize(m_numCellsY, 0);  // initialize all counts to zero
@@ -95,11 +100,11 @@ void Heatmap::calcNormalised() {
     }
 }
 
-float Heatmap::emd_approx(const std::vector<std::vector<float>>& target) const {
+float Heatmap::emd_approx(const std::vector<std::vector<double>>& target) const {
     return pb::earthMoversDistanceApprox(m_cellsNormalised, target);
 }
 
-float Heatmap::emd_full(const std::vector<std::vector<float>>& target) const {
+float Heatmap::emd_full(const std::vector<std::vector<double>>& target) const {
     return pb::earthMoversDistanceFull(m_cellsNormalised, target);
 }
 
@@ -107,8 +112,8 @@ float Heatmap::emd_lemon(const std::vector<std::vector<int>>& target) const {
     return pb::earthMoversDistanceLemon(m_cells, target);
 }
 
-float Heatmap::emd_hat(const std::vector<std::vector<float>>& target) const {
-
+float Heatmap::emd_hat(const std::vector<std::vector<double>>& target) const {
+    /*
     std::vector<std::vector<double>> fCells(m_cellsNormalised.size()); //preconstruct to given size
     std::vector<std::vector<double>> fTarget(target.size()); //preconstruct output to given size
 
@@ -121,13 +126,15 @@ float Heatmap::emd_hat(const std::vector<std::vector<float>>& target) const {
         target.begin(), target.end(), fTarget.begin(),
         [](const auto& in) {return std::vector<double>(in.begin(), in.end());}  //use vectors range based constructor
     );
+    */
 
     //return pb::earthMoversDistanceHat(fCells, fTarget);
+    //return pb::earthMoversDistanceHat(m_cellsNormalised, target);
 
 
     // TEMP TIMING CODE
     auto start = std::chrono::high_resolution_clock::now();
-    auto emdHatVal = pb::earthMoversDistanceHat(fCells, fTarget);
+    auto emdHatVal = pb::earthMoversDistanceHat(m_cellsNormalised, target);
     auto end = std::chrono::high_resolution_clock::now();
     auto emdHatTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 

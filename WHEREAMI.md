@@ -1,3 +1,9 @@
+## 29/9/25:
+
+Have just installed libtbb-dev package and it all compiles now. If we end up not using the Lemon implementation of EMD then we can remove Lemon from the CMakeLists.txt
+
+
+
 ## 24/9/25:
 
 In process of trying to build polybee with pagmo library, which requires the oneTBB library (and Boost). I can get the oneTBB lib to compile, but Pagmo does not find it when it tries to compile. Maybe simpler just to build oneTBB separately?? Look more into this...

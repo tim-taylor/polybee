@@ -28,11 +28,11 @@ float earthMoversDistanceHat(const std::vector<std::vector<double>>& heatmap1,
                             const std::vector<std::vector<double>>& heatmap2);
 
 //
-float earthMoversDistanceApprox(const std::vector<std::vector<float>>& heatmap1,
-                            const std::vector<std::vector<float>>& heatmap2);
+float earthMoversDistanceApprox(const std::vector<std::vector<double>>& heatmap1,
+                            const std::vector<std::vector<double>>& heatmap2);
 
-float earthMoversDistanceFull(const std::vector<std::vector<float>>& heatmap1,
-                            const std::vector<std::vector<float>>& heatmap2);
+float earthMoversDistanceFull(const std::vector<std::vector<double>>& heatmap1,
+                            const std::vector<std::vector<double>>& heatmap2);
 //
 
 

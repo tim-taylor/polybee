@@ -36,28 +36,29 @@ public:
     // public methods
     void run();
     void earlyExit();
+    void resetForNewRun();
+
+    const Heatmap& getHeatmap() const { return m_heatmap; }
+
     void pauseSimulation(bool pause) {m_bPaused = pause;}
 
     //////////////////////////////////////////////////////////////
     // public static methods
 
-    /**
-     * Seed the model's RNG from the seed specified in ModelParams
-     */
-    static void seedRng();
+    static void seedRng(); ///< Seed the model's RNG from the seed specified in ModelParams
 
     //////////////////////////////////////////////////////////////
     // public static members
     static std::mt19937 m_sRngEngine;
     static std::uniform_real_distribution<float> m_sUniformProbDistrib; ///< Uniform distrib 0.0--1.0
     static std::uniform_real_distribution<float> m_sAngle2PiDistrib;   ///< Uniform distrib 0.0--2π
+    static std::uniform_int_distribution<int> m_sUniformIntDistrib; ///< Uniform distrib of unsigned ints
 
 private:
     //////////////////////////////////////////////////////////////
     // private methods
     void generateTimestampString();
     void initialiseBees();
-    void reportState();
     bool stopCriteriaReached();
     void writeOutputFiles();
 

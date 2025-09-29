@@ -303,10 +303,10 @@ void LocalVis::drawHistogram()
 
     // TEMP CODE TO SHOW EMD VALUE TO UNIFORM TARGET
     static std::vector<std::vector<int>> targetHeatmap;
-    static std::vector<std::vector<float>> targetHeatmapNormalised;
+    static std::vector<std::vector<double>> targetHeatmapNormalised;
     if (targetHeatmap.empty()) {
         int cellVal = (m_pPolyBeeCore->m_iIteration * Params::numBees) / numCells;
-        float cellValNormalised = 1.0f / numCells;
+        double cellValNormalised = 1.0 / numCells;
         targetHeatmap.resize(numCellsX);
         targetHeatmapNormalised.resize(numCellsX);
         for (int x = 0; x < numCellsX; ++x) {
@@ -347,10 +347,10 @@ void LocalVis::drawHistogram()
         emdApproxTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     }
 
-    DrawText(std::format("EMD (lemon) to uniform target: {:.4f} ({:.1f} microseconds)", emdLemonVal, static_cast<float>(emdLemonTime)).c_str(), 10, 810, 20, RAYWHITE);
-    DrawText(std::format("EMD (hat) to uniform target: {:.4f} ({:.1f} microseconds)", emdHatVal, static_cast<float>(emdHatTime)).c_str(), 10, 830, 20, RAYWHITE);
-    DrawText(std::format("EMD (full) to uniform target: {:.4f} ({:.1f} microseconds)", emdFullVal, static_cast<float>(emdFullTime)).c_str(), 10, 850, 20, RAYWHITE);
-    DrawText(std::format("EMD (approx) to uniform target: {:.4f} ({:.1f} microseconds)", emdApproxVal, static_cast<float>(emdApproxTime)).c_str(), 10, 870, 20, RAYWHITE);
+    DrawText(std::format("EMD (lemon) to uniform target: {:.4f} :: {} microseconds", emdLemonVal, emdLemonTime).c_str(), 10, 810, 20, RAYWHITE);
+    DrawText(std::format("EMD (hat) to uniform target: {:.4f} :: {} microseconds", emdHatVal, emdHatTime).c_str(), 10, 830, 20, RAYWHITE);
+    DrawText(std::format("EMD (full) to uniform target: {:.4f} :: {} microseconds", emdFullVal, emdFullTime).c_str(), 10, 850, 20, RAYWHITE);
+    DrawText(std::format("EMD (approx) to uniform target: {:.4f} :: {} microseconds", emdApproxVal, emdApproxTime).c_str(), 10, 870, 20, RAYWHITE);
 
     /*
     // Draw color scale legend

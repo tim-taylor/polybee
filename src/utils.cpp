@@ -256,8 +256,8 @@ float earthMoversDistanceHat(const std::vector<std::vector<double>>& heatmap1,
 //  - What it is: Fast approximation using cumulative distribution comparison
 //  - Use case: When you need quick comparisons and approximate results are sufficient
 //  - Computational complexity: O(n×m) where n,m are grid dimensions
-float earthMoversDistanceApprox(const std::vector<std::vector<float>>& heatmap1,
-                               const std::vector<std::vector<float>>& heatmap2) {
+float earthMoversDistanceApprox(const std::vector<std::vector<double>>& heatmap1,
+                               const std::vector<std::vector<double>>& heatmap2) {
     if (heatmap1.size() != heatmap2.size() ||
         (heatmap1.size() > 0 && heatmap1[0].size() != heatmap2[0].size())) {
         msg_error_and_exit("Heatmaps must have the same dimensions for EMD calculation");
@@ -315,8 +315,8 @@ float earthMoversDistanceApprox(const std::vector<std::vector<float>>& heatmap1,
 // Note: This "Full" implementation uses a greedy approximation rather than the optimal Hungarian
 // algorithm for computational efficiency. For truly optimal EMD, you'd need specialized libraries
 // like LEMON or CPLEX.
-float earthMoversDistanceFull(const std::vector<std::vector<float>>& heatmap1,
-                             const std::vector<std::vector<float>>& heatmap2) {
+float earthMoversDistanceFull(const std::vector<std::vector<double>>& heatmap1,
+                             const std::vector<std::vector<double>>& heatmap2) {
     if (heatmap1.size() != heatmap2.size() ||
         (heatmap1.size() > 0 && heatmap1[0].size() != heatmap2[0].size())) {
         msg_error_and_exit("Heatmaps must have the same dimensions for EMD calculation");

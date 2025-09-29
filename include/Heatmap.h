@@ -32,13 +32,13 @@ public:
     int size_y() const { return m_numCellsY; }
 
     // compute and return the "earth mover's distance" between this heatmap and the target heatmap
-    float emd_approx(const std::vector<std::vector<float>>& target) const;
-    float emd_full(const std::vector<std::vector<float>>& target) const;
+    float emd_approx(const std::vector<std::vector<double>>& target) const;
+    float emd_full(const std::vector<std::vector<double>>& target) const;
     float emd_lemon(const std::vector<std::vector<int>>& target) const;
-    float emd_hat(const std::vector<std::vector<float>>& target) const;
+    float emd_hat(const std::vector<std::vector<double>>& target) const;
 
     const std::vector<std::vector<int>>& cells() const { return m_cells; }
-    const std::vector<std::vector<float>>& cellsNormalised() const { return m_cellsNormalised; }
+    const std::vector<std::vector<double>>& cellsNormalised() const { return m_cellsNormalised; }
 
 private:
     void calcNormalised(); // calculate the normalised version of the heatmap
@@ -51,7 +51,7 @@ private:
     bool m_bCalcNormalised; // whether to calculate and store a normalised version of the heatmap
 
     std::vector<std::vector<int>> m_cells; // 2D array of cell counts
-    std::vector<std::vector<float>> m_cellsNormalised; // 2D array of normalised cell counts
+    std::vector<std::vector<double>> m_cellsNormalised; // 2D array of normalised cell counts
 };
 
 #endif /* _HEATMAP_H */
