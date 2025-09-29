@@ -1,7 +1,8 @@
 ## 29/9/25:
 
-Have just installed libtbb-dev package and it all compiles now. If we end up not using the Lemon implementation of EMD then we can remove Lemon from the CMakeLists.txt
+Working on implementation of optimization algorithm. Look at code labelled TODO in PolyBeeEvolve.cpp and PolyBeeCore.cpp for where to continue working.
 
+Have just installed libtbb-dev package and it all compiles now. If we end up not using the Lemon implementation of EMD then we can remove Lemon from the CMakeLists.txt
 
 
 ## 24/9/25:
