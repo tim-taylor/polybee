@@ -12,8 +12,8 @@
 #include <pagmo/problem.hpp>
 #include <pagmo/population.hpp>
 #include <pagmo/algorithm.hpp>
-//#include <pagmo/algorithms/de1220.hpp>
-#include <pagmo/algorithms/sade.hpp>
+#include <pagmo/algorithms/de1220.hpp>
+//#include <pagmo/algorithms/sade.hpp>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -74,8 +74,8 @@ void PolyBeeEvolve::evolve() {
 
     // 2 - Instantiate a pagmo algorithm
     // (here we use the DE 122- differential evolution algorithm with default parameters)
-    //pagmo::algorithm algo{pagmo::de1220(Params::numGenerations-1)}; // -1 because the initial population counts as a generation
-    pagmo::algorithm algo{pagmo::sade(Params::numGenerations-1)}; // -1 because the initial population counts as a generation
+    pagmo::algorithm algo{pagmo::de1220(Params::numGenerations-1)}; // -1 because the initial population counts as a generation
+    //pagmo::algorithm algo{pagmo::sade(Params::numGenerations-1)}; // -1 because the initial population counts as a generation
 
     // ensure that the Pagmo RNG seed is determined by our own RNG, so runs can be reproduced
     // by just ensuring we use the same seed for our own RNG
