@@ -4,6 +4,8 @@ To do: do runs with diff emd, also optimise num bees as well as max delta?
 
 Have checked we get the same results when rerunning evolution with the same seed - we do!
 
+Look at results of evolutionary runs with DE 1220: https://docs.google.com/spreadsheets/d/1Moa9Zsc2-9B20Mie0D0M0mP5gDugH_b7p-nTQsh-mm8/edit?gid=591442890#gid=591442890
+
 Have tried SADE instead of DE 1220 - results were a little worse
 
 ---
