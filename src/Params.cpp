@@ -38,7 +38,8 @@ std::vector<HiveSpec> Params::hiveSpecs;
 // Optimization
 bool Params::bEvolve;
 std::string Params::strTargetHeatmapFilename;
-int Params::numTrialsPerGen;
+int Params::numConfigsPerGen;
+int Params::numTrialsPerConfig;
 int Params::numGenerations;
 
 // Logging and output
@@ -82,7 +83,8 @@ void Params::initRegistry()
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");
     REGISTRY.emplace_back("target-heatmap-filename", "strTargetHeatmapFilename", ParamType::STRING, &strTargetHeatmapFilename, "", "CSV file containing target heatmap for optimization");
-    REGISTRY.emplace_back("num-trials-per-gen", "numTrialsPerGen", ParamType::INT, &numTrialsPerGen, 50, "Number of trials to run during each generation of optimization");
+    REGISTRY.emplace_back("num-trials-per-config", "numTrialsPerConfig", ParamType::INT, &numTrialsPerConfig, 1, "Number of trials to run for each configuration/individual in each generation");
+    REGISTRY.emplace_back("num-configs-per-gen", "numConfigsPerGen", ParamType::INT, &numConfigsPerGen, 50, "Number of configurations/inidividuals to test during each generation");
     REGISTRY.emplace_back("num-generations", "numGenerations", ParamType::INT, &numGenerations, 50, "Number of generations to run the optimization process");
     REGISTRY.emplace_back("visualise", "bVis", ParamType::BOOL, &bVis, true, "Determines whether graphical output is displayed");
     REGISTRY.emplace_back("vis-cell-size", "visCellSize", ParamType::INT, &visCellSize, 4, "Size of an individual cell for visualisation");
@@ -358,8 +360,17 @@ void Params::checkConsistency()
         }
     }
 
-
-
+    if (bEvolve) {
+        if (strTargetHeatmapFilename.empty()) {
+            pb::msg_error_and_exit("Parameter 'target-heatmap-filename' must be specified if 'evolve' is true");
+        }
+        if (numConfigsPerGen < 7) {
+            pb::msg_error_and_exit("Parameter 'num-trials-per-gen' must be greater than or equal to 7 if 'evolve' is true");
+        }
+        if (numGenerations <= 0) {
+            pb::msg_error_and_exit("Parameter 'num-generations' must be greater than zero if 'evolve' is true");
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////

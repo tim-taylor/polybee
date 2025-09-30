@@ -14,11 +14,11 @@
 class PolyBeeEvolve;
 
 // User Defined Problem struct for pagmo (must be copyable)
-struct PolyBeeProblemDefinition {
+struct PolyBeeHeatmapOptimization {
 
-    PolyBeeProblemDefinition() : m_pPolyBeeEvolve{nullptr} {}
-    PolyBeeProblemDefinition(PolyBeeEvolve* ptr) : m_pPolyBeeEvolve(ptr) {}
-    PolyBeeProblemDefinition(const PolyBeeProblemDefinition& other) : m_pPolyBeeEvolve(other.m_pPolyBeeEvolve) {}
+    PolyBeeHeatmapOptimization() : m_pPolyBeeEvolve{nullptr} {}
+    PolyBeeHeatmapOptimization(PolyBeeEvolve* ptr) : m_pPolyBeeEvolve(ptr) {}
+    PolyBeeHeatmapOptimization(const PolyBeeHeatmapOptimization& other) : m_pPolyBeeEvolve(other.m_pPolyBeeEvolve) {}
 
     // Implementation of the objective function.
     pagmo::vector_double fitness(const pagmo::vector_double &dv) const;
@@ -28,6 +28,8 @@ struct PolyBeeProblemDefinition {
 
     // Pointer back to the PolyBeeEvolve instance
     PolyBeeEvolve* m_pPolyBeeEvolve;
+
+    static int eval_counter; // static counter of number of evaluations performed
 };
 
 

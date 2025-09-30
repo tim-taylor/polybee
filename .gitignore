@@ -44,5 +44,6 @@
 /build
 /bin
 /output
+/evolution-output
 old
 *.old

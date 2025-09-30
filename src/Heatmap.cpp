@@ -46,6 +46,21 @@ void Heatmap::initialise(std::vector<Bee>* bees) {
     }
 }
 
+
+void Heatmap::reset() {
+    // reset all counts to zero
+    for (int x = 0; x < m_numCellsX; ++x) {
+        std::fill(m_cells[x].begin(), m_cells[x].end(), 0);
+    }
+
+    if (m_bCalcNormalised && !m_cellsNormalised.empty()) {
+        for (int x = 0; x < m_numCellsX; ++x) {
+            std::fill(m_cellsNormalised[x].begin(), m_cellsNormalised[x].end(), 0.0f);
+        }
+    }
+}
+
+
 void Heatmap::update() {
     assert(m_pBees != nullptr);
 

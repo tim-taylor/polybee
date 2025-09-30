@@ -302,6 +302,8 @@ void LocalVis::drawHistogram()
     }
 
     // TEMP CODE TO SHOW EMD VALUE TO UNIFORM TARGET
+    // TODO - replace this with code to load target heatmap from file if specified in params
+    // (as used in PolyBeeEvolve.cpp - maybe we should move that code to PolyBeeCore?)
     static std::vector<std::vector<int>> targetHeatmap;
     static std::vector<std::vector<double>> targetHeatmapNormalised;
     if (targetHeatmap.empty()) {

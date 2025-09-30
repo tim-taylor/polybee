@@ -23,6 +23,7 @@ public:
     ~Heatmap() {}
 
     void initialise(std::vector<Bee>* bees);
+    void reset();
     void update(); // update counts with current positions of bees
     void print(std::ostream& os); // print heatmap to output stream
     void printNormalised(std::ostream& os); // print normalised heatmap to output stream

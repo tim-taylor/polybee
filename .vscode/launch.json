@@ -6,7 +6,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/bin/debug/polybee",
-            "args": ["--rng-seed", "42"],
+            "args": ["--rng-seed", "42", "--evolve", "true"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

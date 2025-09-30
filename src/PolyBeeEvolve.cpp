@@ -12,18 +12,89 @@
 #include <pagmo/problem.hpp>
 #include <pagmo/population.hpp>
 #include <pagmo/algorithm.hpp>
-#include <pagmo/algorithms/de1220.hpp>
+//#include <pagmo/algorithms/de1220.hpp>
+#include <pagmo/algorithms/sade.hpp>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
 #include <format>
 
+int PolyBeeHeatmapOptimization::eval_counter = 0; // initialise static member
+
+
+// Implementation of the objective function.
+pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_double &dv) const
+{
+    std::vector<double> fitnessValues;
+    PolyBeeCore& pbc = m_pPolyBeeEvolve->polyBeeCore();
+    assert(dv.size() == 1); // we expect 1 decision variable
+    Params::beeMaxDirDelta = static_cast<float>(dv[0]);
+
+    for (int i = 0; i < Params::numTrialsPerConfig; ++i) {
+        ++eval_counter;
+        pbc.resetForNewRun();
+        pbc.run(false); // false = do not log output files during the run
+        const Heatmap& runHeatmap = pbc.getHeatmap();
+        double emd = runHeatmap.emd_approx(m_pPolyBeeEvolve->targetHeatmap());
+        fitnessValues.push_back(emd);
+    }
+
+    double mean_emd = std::accumulate(fitnessValues.begin(), fitnessValues.end(), 0.0) / fitnessValues.size();
+
+    int num_evals_per_gen = Params::numConfigsPerGen * Params::numTrialsPerConfig;
+    int gen = (eval_counter-1) / num_evals_per_gen;
+    int eval_in_gen = (eval_counter-1) % num_evals_per_gen;
+    int config_num = eval_in_gen / Params::numTrialsPerConfig;
+
+    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {} dirdelta {:.4f} meanEMD {:.4f}",
+        gen, eval_counter, config_num, Params::beeMaxDirDelta, mean_emd));
+
+    return {mean_emd};
+}
+
+
+// Implementation of the box bounds.
+std::pair<pagmo::vector_double, pagmo::vector_double> PolyBeeHeatmapOptimization::get_bounds() const
+{
+    return {{0.}, {std::numbers::pi_v<double>}};
+}
+
 
 PolyBeeEvolve::PolyBeeEvolve(PolyBeeCore& core) : m_polyBeeCore(core) {
     // Read in the target heatmap and store it in m_targetHeatmap
     loadTargetHeatmap(Params::strTargetHeatmapFilename);
 };
+
+
+void PolyBeeEvolve::evolve() {
+    // 1 - Instantiate a pagmo problem constructing it from a UDP
+    // (user defined problem).
+    pagmo::problem prob{PolyBeeHeatmapOptimization{this}};
+
+    // 2 - Instantiate a pagmo algorithm
+    // (here we use the DE 122- differential evolution algorithm with default parameters)
+    //pagmo::algorithm algo{pagmo::de1220(Params::numGenerations-1)}; // -1 because the initial population counts as a generation
+    pagmo::algorithm algo{pagmo::sade(Params::numGenerations-1)}; // -1 because the initial population counts as a generation
+
+    // ensure that the Pagmo RNG seed is determined by our own RNG, so runs can be reproduced
+    // by just ensuring we use the same seed for our own RNG
+    unsigned int algo_seed = static_cast<unsigned int>(PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine));
+    algo.set_seed(algo_seed);
+
+    // 3 - Instantiate a population
+    // (again, taking care to seed the population RNG from our own RNG)
+    unsigned int pop_seed = static_cast<unsigned int>(PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine));
+
+    pagmo::population pop{prob, static_cast<unsigned int>(Params::numConfigsPerGen), pop_seed};
+
+    // 4 - Evolve the population
+    pop = algo.evolve(pop);
+
+    // 5 - Output the population
+    std::cout << "The population: \n" << pop;
+
+}
 
 
 void PolyBeeEvolve::loadTargetHeatmap(const std::string& filename) {
@@ -93,60 +164,4 @@ void PolyBeeEvolve::loadTargetHeatmap(const std::string& filename) {
     std::cout << "Successfully loaded target heatmap from " << filename
               << " (dimensions: " << expectedWidth << "x" << expectedHeight << ")" << std::endl;
     */
-}
-
-
-// Implementation of the objective function.
-pagmo::vector_double PolyBeeProblemDefinition::fitness(const pagmo::vector_double &dv) const
-{
-    double emdValue = 0.0;
-
-    // TODO: Need to reset the core for a new simulation run
-    m_pPolyBeeEvolve->polyBeeCore().resetForNewRun();
-
-    assert(dv.size() == 1); // we expect 1 decision variable
-
-    Params::beeMaxDirDelta = static_cast<float>(dv[0]);
-
-    // TODO
-    // Initiate a run
-    // retrieve the final heatmap
-    // compute and return the EMD between the final and target heatmaps
-
-    return {emdValue};
-}
-
-// Implementation of the box bounds.
-std::pair<pagmo::vector_double, pagmo::vector_double> PolyBeeProblemDefinition::get_bounds() const
-{
-    return {{0.}, {std::numbers::pi_v<double>}};
-}
-
-
-void PolyBeeEvolve::evolve() {
-    // 1 - Instantiate a pagmo problem constructing it from a UDP
-    // (user defined problem).
-    pagmo::problem prob{PolyBeeProblemDefinition{this}};
-
-    // 2 - Instantiate a pagmo algorithm
-    // (here we use the DE 122- differential evolution algorithm with default parameters)
-    pagmo::algorithm algo{pagmo::de1220(Params::numGenerations)};
-
-    // ensure that the Pagmo RNG seed is determined by our own RNG, so runs can be reproduced
-    // by just ensuring we use the same seed for our own RNG
-    unsigned int algo_seed = static_cast<unsigned int>(PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine));
-    algo.set_seed(algo_seed);
-
-    // 3 - Instantiate a population
-    // (again, taking care to seed the population RNG from our own RNG)
-    unsigned int pop_seed = static_cast<unsigned int>(PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine));
-
-    pagmo::population pop{prob, static_cast<unsigned int>(Params::numTrialsPerGen), pop_seed};
-
-    // 4 - Evolve the population
-    pop = algo.evolve(pop);
-
-    // 5 - Output the population
-    std::cout << "The population: \n" << pop;
-
 }

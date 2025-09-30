@@ -87,7 +87,8 @@ public:
     // Optimization
     static bool bEvolve; // determines whether to run optimization to match output heatmap against target
     static std::string strTargetHeatmapFilename; // CSV file containing target heatmap for optimization
-    static int numTrialsPerGen; // number of trials to run during each generation of optimization
+    static int numConfigsPerGen; // number of trials to run during each generation of optimization
+    static int numTrialsPerConfig; // number of trials to run for each configuration/individual in each generation
     static int numGenerations; // number of generations to run the optimization process
 
     // Logging and output

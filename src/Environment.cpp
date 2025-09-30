@@ -14,7 +14,10 @@ Environment::Environment() {
 
 void Environment::initialise(std::vector<Bee>* bees) {
     m_pBees = bees;
-    // TODO --- IGNORE ---
-    // do any other initialisation needed here --- IGNORE ---
-    // --- IGNORE ---
+    // TODO - work in progress
+    // is there actually any need for this class?
+}
+
+void Environment::reset() {
+    // TODO - work in progress
 }

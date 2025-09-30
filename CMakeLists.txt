@@ -71,6 +71,11 @@ add_subdirectory(3rdparty/lemon-a278d16bd2d0)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_BINARY_DIR}/bin/debug)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/release)
 
+# Find Threads package (required by Pagmo)
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
+
 # Debug symbols and optimization settings
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
@@ -99,7 +104,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 # link libraries
 #target_link_libraries(${PROJECT_NAME} raylib Boost::program_options lemon pagmo tbb)
-target_link_libraries(${PROJECT_NAME} raylib Boost::program_options lemon pagmo)
+target_link_libraries(${PROJECT_NAME} raylib Boost::program_options Threads::Threads lemon pagmo)
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)
 if (APPLE)

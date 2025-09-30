@@ -20,6 +20,7 @@ public:
     ~Environment() {}
 
     void initialise(std::vector<Bee>* bees);
+    void reset(); // reset environment to initial state
 
 private:
     std::vector<Bee>* m_pBees;

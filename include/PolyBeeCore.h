@@ -34,7 +34,7 @@ public:
 
     //////////////////////////////////////////////////////////////
     // public methods
-    void run();
+    void run(bool logIfRequested = true);
     void earlyExit();
     void resetForNewRun();
 

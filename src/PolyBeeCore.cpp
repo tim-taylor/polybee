@@ -24,7 +24,9 @@ std::mt19937 PolyBeeCore::m_sRngEngine;
 // - and define commonly used distributions
 std::uniform_real_distribution<float> PolyBeeCore::m_sUniformProbDistrib(0.0, 1.0);
 std::uniform_real_distribution<float> PolyBeeCore::m_sAngle2PiDistrib(0.0f, 2.0f * std::numbers::pi_v<float>);
-std::uniform_int_distribution<int> PolyBeeCore::m_sUniformIntDistrib(0, std::numeric_limits<unsigned int>::max());
+//std::uniform_int_distribution<int> PolyBeeCore::m_sUniformIntDistrib(0, std::numeric_limits<unsigned int>::max());
+//TODO - testing
+std::uniform_int_distribution<int> PolyBeeCore::m_sUniformIntDistrib(0, 10);
 
 
 PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
@@ -110,7 +112,8 @@ void PolyBeeCore::initialiseBees()
     }
 }
 
-void PolyBeeCore::run()
+
+void PolyBeeCore::run(bool logIfRequested)
 {
     // main simulation loop
     while (!stopCriteriaReached()) {
@@ -130,7 +133,10 @@ void PolyBeeCore::run()
         }
     }
 
-    writeOutputFiles();
+    // log output files if the user has requested it AND the caller of the method has requested it
+    if (logIfRequested && Params::logging) {
+        writeOutputFiles();
+    }
 
     // if visualisation is enabled, keep the window open until it is closed by the user
     if (m_pLocalVis  && !m_bEarlyExitRequested) {
@@ -151,19 +157,15 @@ void::PolyBeeCore::resetForNewRun()
     initialiseBees();
 
     // reset environment
-    m_env.initialise(&m_bees);
+    m_env.reset();
 
     // reset heatmap
-    m_heatmap.initialise(&m_bees);
+    m_heatmap.reset();
 }
 
 
 void PolyBeeCore::writeOutputFiles()
 {
-    if (!Params::logging) {
-        return;
-    }
-
     // write config to file
     std::string configFilename = std::format("{0}/{1}config-{2}.cfg",
         Params::logDir,

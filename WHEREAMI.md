@@ -1,3 +1,15 @@
+## 30/9/25
+
+To do: do runs with diff emd, also optimise num bees as well as max delta?
+
+Have checked we get the same results when rerunning evolution with the same seed - we do!
+
+Have tried SADE instead of DE 1220 - results were a little worse
+
+---
+
+For evaluating a given config, we need to run the sim a certain number of times, and derive an overall fitness value from the collected results
+
 ## 29/9/25:
 
 Working on implementation of optimization algorithm. Look at code labelled TODO in PolyBeeEvolve.cpp and PolyBeeCore.cpp for where to continue working.
