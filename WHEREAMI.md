@@ -1,3 +1,10 @@
+## 1/10/25
+
+Have done evolutionary runs using EMDhat, and also with also evolving numBees as well as DirDelta. Look at charts on Google Sheet. So optimization looks like it's more or less working, but these runs probably don't give the bees enough time to get a fully uniform distribution, and the scope of changes the system can make (just 1 or 2 params) means that some lucky individuals even in the first 1 or 2 gens perform very well, so don't see a great deal of improvement over time.
+
+So next step is maybe introduce some more complicated scenarios and/or allow evolution to adjust a greater set of parameters (e..g. could also evolve hive positions)
+
+
 ## 30/9/25
 
 To do: do runs with diff emd, also optimise num bees as well as max delta?

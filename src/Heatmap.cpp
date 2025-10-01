@@ -148,12 +148,12 @@ float Heatmap::emd_hat(const std::vector<std::vector<double>>& target) const {
 
 
     // TEMP TIMING CODE
-    auto start = std::chrono::high_resolution_clock::now();
+    //auto start = std::chrono::high_resolution_clock::now();
     auto emdHatVal = pb::earthMoversDistanceHat(m_cellsNormalised, target);
-    auto end = std::chrono::high_resolution_clock::now();
-    auto emdHatTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    //auto end = std::chrono::high_resolution_clock::now();
+    //auto emdHatTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
-    pb::msg_info(std::format("EMD Hat time: {} us", emdHatTime));
+    //pb::msg_info(std::format("EMD Hat time: {} us", emdHatTime));
 
     return emdHatVal;
 

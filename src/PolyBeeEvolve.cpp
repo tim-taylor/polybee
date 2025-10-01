@@ -28,15 +28,22 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
 {
     std::vector<double> fitnessValues;
     PolyBeeCore& pbc = m_pPolyBeeEvolve->polyBeeCore();
-    assert(dv.size() == 1); // we expect 1 decision variable
+
+    assert(dv.size() == 2); // we expect 1 decision variables
     Params::beeMaxDirDelta = static_cast<float>(dv[0]);
+    Params::numBees = static_cast<int>(dv[1]);
+    if (Params::numBees < 1) { // ensure at least one bee after rounding
+        Params::numBees = 1;
+    }
 
     for (int i = 0; i < Params::numTrialsPerConfig; ++i) {
         ++eval_counter;
         pbc.resetForNewRun();
         pbc.run(false); // false = do not log output files during the run
         const Heatmap& runHeatmap = pbc.getHeatmap();
-        double emd = runHeatmap.emd_approx(m_pPolyBeeEvolve->targetHeatmap());
+        //double emd = runHeatmap.emd_approx(m_pPolyBeeEvolve->targetHeatmap());
+        //double emd = runHeatmap.emd_full(m_pPolyBeeEvolve->targetHeatmap());
+        double emd = runHeatmap.emd_hat(m_pPolyBeeEvolve->targetHeatmap());
         fitnessValues.push_back(emd);
     }
 
@@ -47,8 +54,8 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     int eval_in_gen = (eval_counter-1) % num_evals_per_gen;
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
-    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {} dirdelta {:.4f} meanEMD {:.4f}",
-        gen, eval_counter, config_num, Params::beeMaxDirDelta, mean_emd));
+    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: dirdelta {:.4f}, numBees {}, meanEMD {:.4f}",
+        gen, eval_counter, config_num, Params::beeMaxDirDelta, Params::numBees, mean_emd));
 
     return {mean_emd};
 }
@@ -57,7 +64,7 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
 // Implementation of the box bounds.
 std::pair<pagmo::vector_double, pagmo::vector_double> PolyBeeHeatmapOptimization::get_bounds() const
 {
-    return {{0.}, {std::numbers::pi_v<double>}};
+    return {{0., 1.}, {std::numbers::pi_v<double>, 20.}}; // beeMaxDirDelta range, numBees range
 }
 
 
