@@ -37,6 +37,7 @@ public:
     float emd_full(const std::vector<std::vector<double>>& target) const;
     float emd_lemon(const std::vector<std::vector<int>>& target) const;
     float emd_hat(const std::vector<std::vector<double>>& target) const;
+    float emd_opencv(const std::vector<std::vector<double>>& target) const;
 
     const std::vector<std::vector<int>>& cells() const { return m_cells; }
     const std::vector<std::vector<double>>& cellsNormalised() const { return m_cellsNormalised; }

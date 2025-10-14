@@ -27,7 +27,7 @@ int PolyBeeHeatmapOptimization::eval_counter = 0; // initialise static member
 pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_double &dv) const
 {
     std::vector<double> fitnessValues;
-    PolyBeeCore& pbc = m_pPolyBeeEvolve->polyBeeCore();
+    PolyBeeCore& core = m_pPolyBeeEvolve->polyBeeCore();
 
     assert(dv.size() == 2); // we expect 1 decision variables
     Params::beeMaxDirDelta = static_cast<float>(dv[0]);
@@ -38,12 +38,17 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
 
     for (int i = 0; i < Params::numTrialsPerConfig; ++i) {
         ++eval_counter;
-        pbc.resetForNewRun();
-        pbc.run(false); // false = do not log output files during the run
-        const Heatmap& runHeatmap = pbc.getHeatmap();
+        core.resetForNewRun();
+        core.run(false); // false = do not log output files during the run
+        const Heatmap& runHeatmap = core.getHeatmap();
+
+        // TODO - choose which EMD variant to use here
+        // (they all give slightly different results and have different performance characteristics)
         //double emd = runHeatmap.emd_approx(m_pPolyBeeEvolve->targetHeatmap());
         //double emd = runHeatmap.emd_full(m_pPolyBeeEvolve->targetHeatmap());
-        double emd = runHeatmap.emd_hat(m_pPolyBeeEvolve->targetHeatmap());
+        //double emd = runHeatmap.emd_hat(m_pPolyBeeEvolve->targetHeatmap());
+        double emd = runHeatmap.emd_opencv(m_pPolyBeeEvolve->targetHeatmap());
+
         fitnessValues.push_back(emd);
     }
 

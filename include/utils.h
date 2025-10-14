@@ -33,6 +33,9 @@ float earthMoversDistanceApprox(const std::vector<std::vector<double>>& heatmap1
 
 float earthMoversDistanceFull(const std::vector<std::vector<double>>& heatmap1,
                             const std::vector<std::vector<double>>& heatmap2);
+
+float earthMoversDistanceOpenCV(const std::vector<std::vector<double>>& heatmap1,
+                            const std::vector<std::vector<double>>& heatmap2);
 //
 
 

@@ -53,6 +53,9 @@ endif()
 
 find_package(Boost 1.83 REQUIRED COMPONENTS program_options serialization)
 
+## OpenCV (for EMD calculation)
+find_package(OpenCV REQUIRED)
+
 # Pagmo (for optimization)
 FetchContent_Declare(
     pagmo
@@ -100,11 +103,12 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     "${PROJECT_SOURCE_DIR}/include"
     "${PROJECT_SOURCE_DIR}/3rdparty/lemon-a278d16bd2d0"
     "${CMAKE_BINARY_DIR}/3rdparty/lemon-a278d16bd2d0"
+    ${OpenCV_INCLUDE_DIRS}
 )
 
 # link libraries
 #target_link_libraries(${PROJECT_NAME} raylib Boost::program_options lemon pagmo tbb)
-target_link_libraries(${PROJECT_NAME} raylib Boost::program_options Threads::Threads lemon pagmo)
+target_link_libraries(${PROJECT_NAME} raylib Boost::program_options Threads::Threads lemon pagmo ${OpenCV_LIBS})
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)
 if (APPLE)

@@ -12,5 +12,10 @@ Or just the components we actually use:
 * `libboost-program-options-dev`
 * `libboost-serialization-dev`
 
+### OpenCV
+* `libopencv-dev`
+
+## No longer required?
+
 ### oneTBB
 * `libtbb-dev`

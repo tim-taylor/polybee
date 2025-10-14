@@ -159,6 +159,10 @@ float Heatmap::emd_hat(const std::vector<std::vector<double>>& target) const {
 
 }
 
+float Heatmap::emd_opencv(const std::vector<std::vector<double>>& target) const {
+    return pb::earthMoversDistanceOpenCV(m_cellsNormalised, target);
+}
+
 void Heatmap::print(std::ostream& os) {
     for (int y = 0; y < m_numCellsY; ++y) {
         for (int x = 0; x < m_numCellsX; ++x) {
