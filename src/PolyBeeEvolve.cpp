@@ -7,7 +7,7 @@
 #include "PolyBeeEvolve.h"
 #include "PolyBeeCore.h"
 #include "Params.h"
-#include <numbers> // for std::numbers::pi
+#include <numbers>
 #include <pagmo/types.hpp>
 #include <pagmo/problem.hpp>
 #include <pagmo/population.hpp>

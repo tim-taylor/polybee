@@ -24,9 +24,8 @@ std::mt19937 PolyBeeCore::m_sRngEngine;
 // - and define commonly used distributions
 std::uniform_real_distribution<float> PolyBeeCore::m_sUniformProbDistrib(0.0, 1.0);
 std::uniform_real_distribution<float> PolyBeeCore::m_sAngle2PiDistrib(0.0f, 2.0f * std::numbers::pi_v<float>);
-//std::uniform_int_distribution<int> PolyBeeCore::m_sUniformIntDistrib(0, std::numeric_limits<unsigned int>::max());
-//TODO - testing
-std::uniform_int_distribution<int> PolyBeeCore::m_sUniformIntDistrib(0, 10);
+std::uniform_int_distribution<int> PolyBeeCore::m_sUniformIntDistrib(0, std::numeric_limits<int>::max());
+
 
 
 PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
