@@ -13,7 +13,6 @@
 #include <pagmo/population.hpp>
 #include <pagmo/algorithm.hpp>
 #include <pagmo/algorithms/de1220.hpp>
-//#include <pagmo/algorithms/sade.hpp>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -41,15 +40,7 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
         core.resetForNewRun();
         core.run(false); // false = do not log output files during the run
         const Heatmap& runHeatmap = core.getHeatmap();
-
-        // TODO - choose which EMD variant to use here
-        // (they all give slightly different results and have different performance characteristics)
-        //double emd = runHeatmap.emd_approx(m_pPolyBeeEvolve->targetHeatmap());
-        //double emd = runHeatmap.emd_full(m_pPolyBeeEvolve->targetHeatmap());
-        //double emd = runHeatmap.emd_hat(m_pPolyBeeEvolve->targetHeatmap());
-        //double emd = runHeatmap.emd_opencv(m_pPolyBeeEvolve->targetHeatmap());
         double emd = runHeatmap.emd(m_pPolyBeeEvolve->targetHeatmap());
-
         fitnessValues.push_back(emd);
     }
 
@@ -172,9 +163,4 @@ void PolyBeeEvolve::loadTargetHeatmap(const std::string& filename) {
 
     // Store the validated data
     m_targetHeatmap = std::move(targetData);
-
-    /*
-    std::cout << "Successfully loaded target heatmap from " << filename
-              << " (dimensions: " << expectedWidth << "x" << expectedHeight << ")" << std::endl;
-    */
 }

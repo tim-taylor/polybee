@@ -10,15 +10,12 @@
 #include "utils.h"
 #include "FastEMD/emd_hat.hpp" // for emd_hat calculation
 #include <opencv2/opencv.hpp> // for OpenCV EMD calculation
-
 #include <algorithm>
 #include <cassert>
 #include <chrono>
 #include <format>
 #include <limits>
 #include <vector>
-//#include <cmath>
-//#include <numeric>
 
 
 Heatmap::Heatmap(bool calcNormalised) : m_bCalcNormalised(calcNormalised),
