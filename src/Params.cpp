@@ -326,17 +326,9 @@ void Params::setAllDefault()
     }
 }
 
+
 void Params::checkConsistency()
 {
-    //  check the the requested bee path draw length in the visualisation is not longer than the
-    //  length of the path that is actually recorded for each bee
-    if (visBeePathDrawLen > beePathRecordLen) {
-        pb::msg_warning(
-            std::format("vis-bee-path-draw-len ({0}) cannot be larger than bee-path-record-len ({1}). Resetting vis-bee-path-draw-len to {1}.",
-            visBeePathDrawLen, beePathRecordLen));
-        visBeePathDrawLen = beePathRecordLen;
-    }
-
     // check whether logDir ends with a '/' and remove it if so
     if (!logDir.empty() && logDir.back() == '/') {
         logDir.pop_back();
@@ -371,7 +363,30 @@ void Params::checkConsistency()
             pb::msg_error_and_exit("Parameter 'num-generations' must be greater than zero if 'evolve' is true");
         }
     }
+
+    if (bVis) {
+        if (visBeePathDrawLen > beePathRecordLen) {
+            pb::msg_warning(
+                std::format("vis-bee-path-draw-len ({0}) cannot be larger than bee-path-record-len ({1}). Resetting vis-bee-path-draw-len to {1}.",
+                visBeePathDrawLen, beePathRecordLen));
+            visBeePathDrawLen = beePathRecordLen;
+        }
+
+        if (visDelayPerStep < 0) {
+            pb::msg_warning("Parameter 'vis-delay-per-step' is negative, setting it to zero");
+            visDelayPerStep = 0;
+        }
+    }
+    else { // !bVis
+        if (beePathRecordLen > 0) {
+            beePathRecordLen = 0; // no need to record bee paths if not visualising (silently set to zero)
+        }
+        if (visDelayPerStep > 0) {
+            visDelayPerStep = 0; // no need to delay visualisation if not visualising (silently set to zero)
+        }
+    }
 }
+
 
 /////////////////////////////////////////////////////////////////
 // ParamInfo methods

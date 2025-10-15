@@ -9,7 +9,8 @@
                 "${workspaceFolder}/build/_deps/pagmo-build/include",
                 "${workspaceFolder}/build/_deps/pagmo-src/include",
                 "${workspaceFolder}/build/3rdparty/lemon-a278d16bd2d0",
-                "${workspaceFolder}/3rdparty/lemon-a278d16bd2d0"
+                "${workspaceFolder}/3rdparty/lemon-a278d16bd2d0",
+                "/usr/include/opencv4"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",

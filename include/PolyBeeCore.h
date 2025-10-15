@@ -60,7 +60,8 @@ private:
     void generateTimestampString();
     void initialiseBees();
     bool stopCriteriaReached();
-    void writeOutputFiles();
+    void writeOutputFiles() const;
+    void printRunInfo(std::ostream& os, const std::string& filename) const;
 
     //////////////////////////////////////////////////////////////
     // private members

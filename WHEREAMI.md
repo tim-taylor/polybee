@@ -1,3 +1,16 @@
+## 15/10/25
+
+To do:
+* Log config info, pulling info from polybeeConfig.h and opencv/version.hpp
+* Calculate high EMD value using Heatmap antiTargetNormalised and print value in evolution output and on screen
+* Then start adding complexity to optimisation runs (as discussed with Alan and Hazel)
+
+## 14/10/25
+
+Have now implemented OpenCV EMD measure.  Tidy up code by just having one point of entry Heatmap::emd() method, which calls the implementation we want. Move all implementations to the Heatmap class and out of utils.cpp.
+
+Next, have Heatmap class calculate a ceiling for EMD at start of run by measuring distance between having all bees in one square (in corner) vs a uniform spread. Print this in output somewhere.
+
 ## 1/10/25
 
 Have done evolutionary runs using EMDhat, and also with also evolving numBees as well as DirDelta. Look at charts on Google Sheet. So optimization looks like it's more or less working, but these runs probably don't give the bees enough time to get a fully uniform distribution, and the scope of changes the system can make (just 1 or 2 params) means that some lucky individuals even in the first 1 or 2 gens perform very well, so don't see a great deal of improvement over time.

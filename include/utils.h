@@ -17,27 +17,9 @@ using fPos = Position<float>;
 
 namespace Polybee {
 
-void msg_error_and_exit(std::string msg);
-void msg_warning(std::string msg);
-void msg_info(std::string msg);
-
-float earthMoversDistanceLemon(const std::vector<std::vector<int>>& heatmap1,
-                            const std::vector<std::vector<int>>& heatmap2);
-
-float earthMoversDistanceHat(const std::vector<std::vector<double>>& heatmap1,
-                            const std::vector<std::vector<double>>& heatmap2);
-
-//
-float earthMoversDistanceApprox(const std::vector<std::vector<double>>& heatmap1,
-                            const std::vector<std::vector<double>>& heatmap2);
-
-float earthMoversDistanceFull(const std::vector<std::vector<double>>& heatmap1,
-                            const std::vector<std::vector<double>>& heatmap2);
-
-float earthMoversDistanceOpenCV(const std::vector<std::vector<double>>& heatmap1,
-                            const std::vector<std::vector<double>>& heatmap2);
-//
-
+    void msg_error_and_exit(std::string msg);
+    void msg_warning(std::string msg);
+    void msg_info(std::string msg);
 
 } // namespace Polybee
 

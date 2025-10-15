@@ -47,7 +47,8 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
         //double emd = runHeatmap.emd_approx(m_pPolyBeeEvolve->targetHeatmap());
         //double emd = runHeatmap.emd_full(m_pPolyBeeEvolve->targetHeatmap());
         //double emd = runHeatmap.emd_hat(m_pPolyBeeEvolve->targetHeatmap());
-        double emd = runHeatmap.emd_opencv(m_pPolyBeeEvolve->targetHeatmap());
+        //double emd = runHeatmap.emd_opencv(m_pPolyBeeEvolve->targetHeatmap());
+        double emd = runHeatmap.emd(m_pPolyBeeEvolve->targetHeatmap());
 
         fitnessValues.push_back(emd);
     }

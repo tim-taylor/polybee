@@ -9,6 +9,8 @@
 #include "LocalVis.h"
 #include "Bee.h"
 #include "utils.h"
+#include "polybeeConfig.h"
+#include <opencv2/core/version.hpp>
 #include <memory>
 #include <ctime>
 #include <cassert>
@@ -16,6 +18,7 @@
 #include <format>
 #include <chrono>
 #include <fstream>
+
 
 // Initialise static members
 bool PolyBeeCore::m_sbRngInitialised = false;
@@ -55,6 +58,8 @@ PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
 
     // initialise heatmap
     m_heatmap.initialise(&m_bees);
+
+    pb::msg_info(std::format("Initial EMD between uniform target and anti-target heatmaps: {:.6f}\n", m_heatmap.high_emd()));
 
     if (Params::bVis) {
         m_pLocalVis = std::unique_ptr<LocalVis>(new LocalVis(this));
@@ -163,7 +168,7 @@ void::PolyBeeCore::resetForNewRun()
 }
 
 
-void PolyBeeCore::writeOutputFiles()
+void PolyBeeCore::writeOutputFiles() const
 {
     // write config to file
     std::string configFilename = std::format("{0}/{1}config-{2}.cfg",
@@ -221,6 +226,44 @@ void PolyBeeCore::writeOutputFiles()
         normHeatmapFile.close();
         pb::msg_info(std::format("Normalised heatmap output written to file: {}", normHeatmapFilename));
     }
+
+    // write general run info to file
+    std::string infoFilename = std::format("{0}/{1}run-info-{2}.txt",
+        Params::logDir,
+        Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
+        m_timestampStr);
+    std::ofstream infoFile(infoFilename);
+    if (!infoFile) {
+        pb::msg_warning(
+            std::format("Unable to open run info output file {} for writing. Run info will not be saved to file, printing to stdout instead.",
+                infoFilename));
+        std::cout << "~~~~~~~~~~ RUN INFO OUTPUT ~~~~~~~~~~\n";
+        // TODO - add useful run info here
+        printRunInfo(std::cout, infoFilename);
+    }
+    else {
+        printRunInfo(infoFile, infoFilename);
+        infoFile.close();
+        pb::msg_info(std::format("Run info output written to file: {}", infoFilename));
+    }
+}
+
+
+void PolyBeeCore::printRunInfo(std::ostream& os, const std::string& filename) const
+{
+    os << std::format("Run: {}\n", filename);
+    os << std::format("High EMD value: {:.6f}\n", m_heatmap.high_emd());
+    os << std::format("Polybee code version: {}.{}.{}.{}\n",
+        polybee_VERSION_MAJOR,
+        polybee_VERSION_MINOR,
+        polybee_VERSION_PATCH,
+        polybee_VERSION_TWEAK);
+    os << std::format("Git branch: {}\n", polybee_GIT_BRANCH);
+    os << std::format("Git commit hash: {}\n", polybee_GIT_COMMIT_HASH);
+    os << std::format("OpenCV version: {}.{}.{}\n",
+        CV_VERSION_MAJOR,
+        CV_VERSION_MINOR,
+        CV_VERSION_REVISION);
 }
 
 

@@ -304,6 +304,7 @@ void LocalVis::drawHistogram()
     // TEMP CODE TO SHOW EMD VALUE TO UNIFORM TARGET
     // TODO - replace this with code to load target heatmap from file if specified in params
     // (as used in PolyBeeEvolve.cpp - maybe we should move that code to PolyBeeCore?)
+    /*
     static std::vector<std::vector<int>> targetHeatmap;
     static std::vector<std::vector<double>> targetHeatmapNormalised;
     if (targetHeatmap.empty()) {
@@ -316,28 +317,28 @@ void LocalVis::drawHistogram()
             targetHeatmapNormalised[x].resize(numCellsY, cellValNormalised);
         }
     }
+    */
 
-    static int64_t emdLemonTime = 0;
-    static int64_t emdHatTime = 0;
-    static int64_t emdFullTime = 0;
-    static int64_t emdApproxTime = 0;
-    static int64_t emdOpenCVTime = 0;
-
-    static float emdLemonVal = 0.0f;
+    /*
     static float emdHatVal = 0.0f;
     static float emdFullVal = 0.0f;
     static float emdApproxVal = 0.0f;
     static float emdOpenCVVal = 0.0f;
 
-    if (!m_bPaused && !m_bWaitingForUserToClose) {
-        auto start = std::chrono::high_resolution_clock::now();
-        emdLemonVal = m_pPolyBeeCore->m_heatmap.emd_lemon(targetHeatmap);
-        auto end = std::chrono::high_resolution_clock::now();
-        emdLemonTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    static int64_t emdHatTime = 0;
+    static int64_t emdFullTime = 0;
+    static int64_t emdApproxTime = 0;
+    static int64_t emdOpenCVTime = 0;
+    */
 
-        start = std::chrono::high_resolution_clock::now();
-        emdHatVal = m_pPolyBeeCore->m_heatmap.emd_hat(targetHeatmapNormalised);
-        end = std::chrono::high_resolution_clock::now();
+    static float emd = 0.0f;
+    static ino64_t emdTime = 0;
+
+    if (!m_bPaused && !m_bWaitingForUserToClose) {
+        /*
+        auto start = std::chrono::high_resolution_clock::now();
+        emdHatVal = m_pPolyBeeCore->m_heatmap.emd_hat_pele(targetHeatmapNormalised);
+        auto end = std::chrono::high_resolution_clock::now();
         emdHatTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
         start = std::chrono::high_resolution_clock::now();
@@ -349,18 +350,20 @@ void LocalVis::drawHistogram()
         emdApproxVal = m_pPolyBeeCore->m_heatmap.emd_approx(targetHeatmapNormalised);
         end = std::chrono::high_resolution_clock::now();
         emdApproxTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        */
 
-        start = std::chrono::high_resolution_clock::now();
-        emdOpenCVVal = m_pPolyBeeCore->m_heatmap.emd_opencv(targetHeatmapNormalised);
-        end = std::chrono::high_resolution_clock::now();
-        emdOpenCVTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        auto start = std::chrono::high_resolution_clock::now();
+        //emd = m_pPolyBeeCore->m_heatmap.emd(targetHeatmapNormalised);
+        emd = m_pPolyBeeCore->m_heatmap.emd(m_pPolyBeeCore->m_heatmap.uniformTargetNormalised());
+        auto end = std::chrono::high_resolution_clock::now();
+        emdTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     }
 
-    DrawText(std::format("EMD (lemon) to uniform target: {:.4f} :: {} microseconds", emdLemonVal, emdLemonTime).c_str(), 10, 790, 20, RAYWHITE);
-    DrawText(std::format("EMD (hat) to uniform target: {:.4f} :: {} microseconds", emdHatVal, emdHatTime).c_str(), 10, 810, 20, RAYWHITE);
-    DrawText(std::format("EMD (full) to uniform target: {:.4f} :: {} microseconds", emdFullVal, emdFullTime).c_str(), 10, 830, 20, RAYWHITE);
-    DrawText(std::format("EMD (approx) to uniform target: {:.4f} :: {} microseconds", emdApproxVal, emdApproxTime).c_str(), 10, 850, 20, RAYWHITE);
-    DrawText(std::format("EMD (OpenCV) to uniform target: {:.4f} :: {} microseconds", emdOpenCVVal, emdOpenCVTime).c_str(), 10, 870, 20, RAYWHITE);
+    //DrawText(std::format("EMD (hat) to uniform target: {:.4f} :: {} microseconds", emdHatVal, emdHatTime).c_str(), 10, 810, 20, RAYWHITE);
+    //DrawText(std::format("EMD (full) to uniform target: {:.4f} :: {} microseconds", emdFullVal, emdFullTime).c_str(), 10, 830, 20, RAYWHITE);
+    //DrawText(std::format("EMD (approx) to uniform target: {:.4f} :: {} microseconds", emdApproxVal, emdApproxTime).c_str(), 10, 850, 20, RAYWHITE);
+    //DrawText(std::format("EMD (OpenCV) to uniform target: {:.4f} :: {} microseconds", emdOpenCVVal, emdOpenCVTime).c_str(), 10, 870, 20, RAYWHITE);
+    DrawText(std::format("EMD (OpenCV) to uniform target: {:.4f} :: {} microseconds", emd, emdTime).c_str(), 10, 870, 20, RAYWHITE);
 
     /*
     // Draw color scale legend

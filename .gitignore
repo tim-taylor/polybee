@@ -42,6 +42,7 @@
 
 # Project specific ignores
 /build
+/include/polybeeConfig.h
 /bin
 /output
 /evolution-output

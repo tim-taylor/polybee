@@ -1,10 +1,29 @@
 cmake_minimum_required(VERSION 3.24)
-project(polybee)
+project(polybee VERSION 0.1.0.0 LANGUAGES CXX)
 
 # Set the C++ standard (we use C++20 features such as std::format)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED On)
 set(CMAKE_CXX_EXTENSIONS Off)
+
+# The following lines query the current git branch and commit hash.
+# Later in this file we make these available to the C++ code by using configure_file()
+#
+## Get the current working branch
+execute_process(
+    COMMAND git rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_BRANCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+## Get the latest abbreviated commit hash of the working branch
+execute_process(
+    COMMAND git rev-parse --short HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_COMMIT_HASH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 
 # Set a build type if none is specified
 ## Set a default build type. You can override this on the command line as follows:
@@ -68,7 +87,7 @@ FetchContent_MakeAvailable(pagmo)
 
 ## LEMON library for graph algorithms (for full EMD)
 # Using local modified version with C++20 compatibility fixes
-add_subdirectory(3rdparty/lemon-a278d16bd2d0)
+#add_subdirectory(3rdparty/lemon-a278d16bd2d0)
 
 # Our Project
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_BINARY_DIR}/bin/debug)
@@ -94,6 +113,11 @@ set(SOURCE_FILES
     src/LocalVis.cpp
     src/utils.cpp)
 
+# configure a header file to pass some of the CMake settings to the source code
+configure_file(
+    "${PROJECT_SOURCE_DIR}/include/polybeeConfig.h.in"
+    "${PROJECT_SOURCE_DIR}/include/polybeeConfig.h"
+)
 
 # add the executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
@@ -101,14 +125,14 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 # include directories
 target_include_directories(${PROJECT_NAME} PRIVATE
     "${PROJECT_SOURCE_DIR}/include"
-    "${PROJECT_SOURCE_DIR}/3rdparty/lemon-a278d16bd2d0"
-    "${CMAKE_BINARY_DIR}/3rdparty/lemon-a278d16bd2d0"
+    #"${PROJECT_SOURCE_DIR}/3rdparty/lemon-a278d16bd2d0"
+    #"${CMAKE_BINARY_DIR}/3rdparty/lemon-a278d16bd2d0"
     ${OpenCV_INCLUDE_DIRS}
 )
 
 # link libraries
 #target_link_libraries(${PROJECT_NAME} raylib Boost::program_options lemon pagmo tbb)
-target_link_libraries(${PROJECT_NAME} raylib Boost::program_options Threads::Threads lemon pagmo ${OpenCV_LIBS})
+target_link_libraries(${PROJECT_NAME} raylib Boost::program_options Threads::Threads pagmo ${OpenCV_LIBS})
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)
 if (APPLE)
