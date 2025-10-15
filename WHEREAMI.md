@@ -1,8 +1,12 @@
 ## 15/10/25
 
-To do:
+Done:
 * Log config info, pulling info from polybeeConfig.h and opencv/version.hpp
 * Calculate high EMD value using Heatmap antiTargetNormalised and print value in evolution output and on screen
+
+Next steps:
+* add step-length as a parameter
+* try evolving step length with target being a dot in middle -> should evolve towards zero step length
 * Then start adding complexity to optimisation runs (as discussed with Alan and Hazel)
 
 ## 14/10/25
