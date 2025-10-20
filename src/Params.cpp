@@ -30,6 +30,7 @@ int Params::tunnelY;
 // Bee configuration
 int Params::numBees;
 float Params::beeMaxDirDelta;
+float Params::stepLength;
 int Params::beePathRecordLen;
 
 // Hive configuration
@@ -79,6 +80,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("tunnel-y", "tunnelY", ParamType::INT, &tunnelY, 100, "Y position of top edge of tunnel");
     REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
     REGISTRY.emplace_back("bee-max-dir-delta", "beeMaxDirDelta", ParamType::FLOAT, &beeMaxDirDelta, 0.4f, "Maximum change in direction (radians) per step");
+    REGISTRY.emplace_back("step-length", "stepLength", ParamType::FLOAT, &stepLength, 20.0f, "How far a bee moves forward at each time step");
     REGISTRY.emplace_back("bee-path-record-len", "beePathRecordLen", ParamType::INT, &beePathRecordLen, 250, "Maximum number of positions to record in bee's path");
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");

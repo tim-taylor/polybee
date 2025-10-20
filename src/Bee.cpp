@@ -12,7 +12,6 @@
 #include <random>
 #include <cassert>
 
-const float BEE_STEP_SIZE = 20.0f; // how far a bee moves in one step
 
 Bee::Bee(fPos pos, Environment* pEnv) :
     x(pos.x), y(pos.y), angle(0.0), m_pEnv(pEnv)
@@ -43,8 +42,8 @@ void Bee::move() {
     angle += m_distDir(PolyBeeCore::m_sRngEngine);
 
     // move in that direction
-    x += BEE_STEP_SIZE * std::cos(angle);
-    y += BEE_STEP_SIZE * std::sin(angle);
+    x += Params::stepLength * std::cos(angle);
+    y += Params::stepLength * std::sin(angle);
 
     // keep within bounds of environment
     if (x < 0) x = 0;
