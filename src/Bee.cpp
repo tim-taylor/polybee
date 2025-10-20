@@ -42,8 +42,8 @@ void Bee::move() {
     angle += m_distDir(PolyBeeCore::m_sRngEngine);
 
     // move in that direction
-    x += Params::stepLength * std::cos(angle);
-    y += Params::stepLength * std::sin(angle);
+    x += Params::beeStepLength * std::cos(angle);
+    y += Params::beeStepLength * std::sin(angle);
 
     // keep within bounds of environment
     if (x < 0) x = 0;

@@ -28,12 +28,15 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     std::vector<double> fitnessValues;
     PolyBeeCore& core = m_pPolyBeeEvolve->polyBeeCore();
 
-    assert(dv.size() == 2); // we expect 1 decision variables
-    Params::beeMaxDirDelta = static_cast<float>(dv[0]);
-    Params::numBees = static_cast<int>(dv[1]);
-    if (Params::numBees < 1) { // ensure at least one bee after rounding
-        Params::numBees = 1;
-    }
+    //assert(dv.size() == 2); // we expect 1 decision variables
+    //Params::beeMaxDirDelta = static_cast<float>(dv[0]);
+    //Params::numBees = static_cast<int>(dv[1]);
+    assert(dv.size() == 1); // we expect 1 decision variables
+    Params::beeStepLength = static_cast<float>(dv[0]);
+
+    //if (Params::numBees < 1) { // ensure at least one bee after rounding
+    //    Params::numBees = 1;
+    //}
 
     for (int i = 0; i < Params::numTrialsPerConfig; ++i) {
         ++eval_counter;
@@ -51,8 +54,10 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     int eval_in_gen = (eval_counter-1) % num_evals_per_gen;
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
-    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: dirdelta {:.4f}, numBees {}, meanEMD {:.4f}",
-        gen, eval_counter, config_num, Params::beeMaxDirDelta, Params::numBees, mean_emd));
+    //pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: dirdelta {:.4f}, numBees {}, meanEMD {:.4f}",
+    //    gen, eval_counter, config_num, Params::beeMaxDirDelta, Params::numBees, mean_emd));
+    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: beeStepLength {:.4f}, meanEMD {:.4f}",
+        gen, eval_counter, config_num, Params::beeStepLength, mean_emd));
 
     return {mean_emd};
 }
@@ -61,7 +66,9 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
 // Implementation of the box bounds.
 std::pair<pagmo::vector_double, pagmo::vector_double> PolyBeeHeatmapOptimization::get_bounds() const
 {
-    return {{0., 1.}, {std::numbers::pi_v<double>, 20.}}; // beeMaxDirDelta range, numBees range
+    //return {{0., 1.}, {std::numbers::pi_v<double>, 20.}}; // beeMaxDirDelta range, numBees range
+    return {{0.0}, {30.0}}; // beeStepLength range
+
 }
 
 

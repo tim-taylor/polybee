@@ -79,7 +79,7 @@ public:
     // Bee configuration
     static int numBees;
     static float beeMaxDirDelta; // maximum change in direction (radians) per step
-    static float stepLength; // how far a bee moves forward at each time step
+    static float beeStepLength; // how far a bee moves forward at each time step
     static int beePathRecordLen; // maximum number of positions to record in bee's path
 
     // Hive configuration

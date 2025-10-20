@@ -299,7 +299,8 @@ void LocalVis::drawHistogram()
         emdTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     }
 
-    DrawText(std::format("EMD (OpenCV) to uniform target: {:.4f} :: {} microseconds", emd, emdTime).c_str(), 10, 870, 20, RAYWHITE);
+    DrawText(std::format("EMD (OpenCV) to uniform target: {:.4f} :: {} microseconds", emd, emdTime).c_str(),
+        10, GetScreenHeight() - 30, 20, RAYWHITE);
 
     /*
     // Draw color scale legend
