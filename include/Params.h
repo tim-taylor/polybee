@@ -46,12 +46,21 @@ struct ParamInfo
 };
 
 struct HiveSpec {
-    float x;
-    float y;
-    int direction; // 0=North, 1=East, 2=South, 3=West, 4=Random
+    float x;        // position of hive in environment coordinates
+    float y;        // position of hive in environment coordinates
+    int direction;  // 0=North, 1=East, 2=South, 3=West, 4=Random
 
     HiveSpec(float x, float y, int direction) : x(x), y(y), direction(direction) {}
 };
+
+struct TunnelEntranceSpec {
+    float e1; // position of first edge of entrance along the specified side of tunnel, in tunnel coordinates
+    float e2; // position of second edge of entrance along the specified side of tunnel, in tunnel coordinates
+    int side; // 0=North, 1=East, 2=South, 3=West
+
+    TunnelEntranceSpec(float e1, float e2, int side) : e1(e1), e2(e2), side(side) {}
+};
+
 
 /**
  * @brief Class for flexibily dealing with system parameters
@@ -71,10 +80,13 @@ public:
     // Environment configuration
     static int envW;
     static int envH;
+
+    // Tunnel configuration
     static int tunnelW;
     static int tunnelH;
-    static int tunnelX;
-    static int tunnelY;
+    static int tunnelX; // top-left x position of tunnel in environment coordinates
+    static int tunnelY; // top-left y position of tunnel in environment coordinates
+    static std::vector<TunnelEntranceSpec> tunnelEntranceSpecs;
 
     // Bee configuration
     static int numBees;

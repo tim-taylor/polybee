@@ -50,16 +50,8 @@ PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
     // get a timestamp string for this run, used in output filenames
     generateTimestampString();
 
-    // create the required number of bees, evenly distributed among the hives
-    initialiseBees();
-
     // initialise environment
-    m_env.initialise(&m_bees);
-
-    // initialise heatmap
-    m_heatmap.initialise(&m_bees);
-
-    pb::msg_info(std::format("Initial EMD between uniform target and anti-target heatmaps: {:.6f}\n", m_heatmap.high_emd()));
+    m_env.initialise();
 
     if (Params::bVis) {
         m_pLocalVis = std::unique_ptr<LocalVis>(new LocalVis(this));
@@ -81,41 +73,6 @@ void PolyBeeCore::generateTimestampString()
     }
 }
 
-// a private helper method to create the bees at the start of the simulation
-void PolyBeeCore::initialiseBees()
-{
-    auto numHives = Params::hiveSpecs.size();
-    int numBeesPerHive = Params::numBees / numHives;
-    for (int i = 0; i < numHives; ++i) {
-        const HiveSpec& hive = Params::hiveSpecs[i];
-        float angle = 0.0f;
-        switch (hive.direction) {
-        case 0: angle = -std::numbers::pi_v<float> / 2.0f; break; // North
-        case 1: angle = 0.0f; break; // East
-        case 2: angle = std::numbers::pi_v<float> / 2.0f; break; // South
-        case 3: angle = std::numbers::pi_v<float>; break; // West
-        case 4: angle = 0.0f; break; // Random (will be set per bee below)
-        default:
-            pb::msg_error_and_exit(std::format("Invalid hive direction {} specified for hive at ({},{}). Must be 0=North, 1=East, 2=South, 3=West, or 4=Random.",
-                hive.direction, hive.x, hive.y));
-        }
-
-        for (int j = 0; j < numBeesPerHive; ++j) {
-            float beeAngle = angle;
-            if (hive.direction == 4) {
-                // Random direction: uniform random angle between 0 and 2π
-                beeAngle = m_sAngle2PiDistrib(m_sRngEngine);
-            }
-            m_bees.emplace_back(fPos(hive.x, hive.y), beeAngle, &m_env);
-        }
-    }
-
-    if (numBeesPerHive * numHives < Params::numBees) {
-        pb::msg_warning(std::format("Number of bees ({0}) is not a multiple of number of hives ({1}). Created {2} bees instead of the requested {0}.",
-            Params::numBees, numHives, numBeesPerHive * numHives));
-    }
-}
-
 
 void PolyBeeCore::run(bool logIfRequested)
 {
@@ -123,13 +80,7 @@ void PolyBeeCore::run(bool logIfRequested)
     while (!stopCriteriaReached()) {
         if (!m_bPaused) {
             ++m_iIteration;
-
-            // update bee pos
-            for (Bee& bee : m_bees) {
-                bee.move();
-            }
-
-            m_heatmap.update();
+            m_env.update(); // update environment state, including bee positions and heatmap
         }
 
         if (Params::bVis && m_pLocalVis) {
@@ -151,20 +102,12 @@ void PolyBeeCore::run(bool logIfRequested)
 
 void::PolyBeeCore::resetForNewRun()
 {
-    // TODO - work in progress
     m_iIteration = -1;
     m_bEarlyExitRequested = false;
     m_bPaused = false;
 
-    // reset bees
-    m_bees.clear();
-    initialiseBees();
-
-    // reset environment
+    // reset environment (including bees, heatmap etc)
     m_env.reset();
-
-    // reset heatmap
-    m_heatmap.reset();
 }
 
 
@@ -190,6 +133,7 @@ void PolyBeeCore::writeOutputFiles() const
     }
 
     // write heatmap to file
+    const Heatmap& heatmap = m_env.getHeatmap();
     std::string heatmapFilename = std::format("{0}/{1}heatmap-{2}.csv",
         Params::logDir,
         Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
@@ -200,10 +144,10 @@ void PolyBeeCore::writeOutputFiles() const
             std::format("Unable to open heatmap output file {} for writing. Heatmap will not be saved to file, printing to stdout instead.",
                 heatmapFilename));
         std::cout << "~~~~~~~~~~ HEATMAP OUTPUT ~~~~~~~~~~\n";
-        m_heatmap.print(std::cout);
+        heatmap.print(std::cout);
     }
     else {
-        m_heatmap.print(heatmapFile);
+        heatmap.print(heatmapFile);
         heatmapFile.close();
         pb::msg_info(std::format("Heatmap output written to file: {}", heatmapFilename));
     }
@@ -219,10 +163,10 @@ void PolyBeeCore::writeOutputFiles() const
             std::format("Unable to open normalised heatmap output file {} for writing. Heatmap will not be saved to file, printing to stdout instead.",
                 normHeatmapFilename));
         std::cout << "~~~~~~~~~~ NORMALISED HEATMAP OUTPUT ~~~~~~~~~~\n";
-        m_heatmap.printNormalised(std::cout);
+        heatmap.printNormalised(std::cout);
     }
     else {
-        m_heatmap.printNormalised(normHeatmapFile);
+        heatmap.printNormalised(normHeatmapFile);
         normHeatmapFile.close();
         pb::msg_info(std::format("Normalised heatmap output written to file: {}", normHeatmapFilename));
     }
@@ -251,8 +195,9 @@ void PolyBeeCore::writeOutputFiles() const
 
 void PolyBeeCore::printRunInfo(std::ostream& os, const std::string& filename) const
 {
+    const Heatmap& heatmap = m_env.getHeatmap();
     os << std::format("Run: {}\n", filename);
-    os << std::format("High EMD value: {:.6f}\n", m_heatmap.high_emd());
+    os << std::format("High EMD value: {:.6f}\n", heatmap.high_emd());
     os << std::format("Polybee code version: {}.{}.{}.{}\n",
         polybee_VERSION_MAJOR,
         polybee_VERSION_MINOR,

@@ -7,6 +7,8 @@
 #ifndef _LOCALVIS_H
 #define _LOCALVIS_H
 
+#include "raylib.h"
+
 class PolyBeeCore;
 
 enum class DrawState {
@@ -30,9 +32,14 @@ public:
     bool showBees() const { return m_drawState == DrawState::BEES || m_drawState == DrawState::BEES_AND_HEATMAP; }
     bool showHeatmap() const { return m_drawState == DrawState::HEATMAP || m_drawState == DrawState::BEES_AND_HEATMAP; }
 
+    float envToDisplayX(float envX) const;
+    float envToDisplayY(float envY) const;
+    float envToDisplayN(float displayN) const;
+    Rectangle envToDisplayRect(const Rectangle& rect) const;
+
 private:
     void drawBees();
-    void drawHistogram();
+    void drawHeatmap();
     void rotateDrawState();
 
     PolyBeeCore* m_pPolyBeeCore;
@@ -41,6 +48,11 @@ private:
     bool m_bWaitingForUserToClose {false};
     bool m_bPaused {false};
     bool m_bShowTrails {true};
+
+    Camera2D m_camera;
+
+    float m_currentEMD;
+    int64_t m_currentEMDTime;
 };
 
 #endif /* _LOCALVIS_H */

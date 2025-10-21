@@ -34,6 +34,7 @@
 #include <format>
 #include <chrono>
 #include <thread>
+#include <cmath>
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
@@ -41,17 +42,33 @@
 
 #include "LocalVis.h"
 
-const int ENV_MARGIN = 50;
-const int HIVE_SIZE = 15;
+const int DISPLAY_MARGIN_TOP = 50;
+const int DISPLAY_MARGIN_BOTTOM = 50;
+const int DISPLAY_MARGIN_LEFT = 50;
+const int DISPLAY_MARGIN_RIGHT = 50;
+const Color ENV_BACKGROUND_COLOR = { 40, 120, 40, 255 };
+const Color TUNNEL_BACKGROUND_COLOR = { 70, 70, 70, 255 };
+
+const int HIVE_SIZE = 20;
+const float HALF_HIVE_SIZE = static_cast<float>(HIVE_SIZE) / 2.0f;
 const std::vector<Vector2> BEE_SHAPE = { {10, 0}, {-6, -6}, {-6, 6} }; // triangle shape for drawing bees
 
-LocalVis::LocalVis(PolyBeeCore* pPolyBeeCore) : m_pPolyBeeCore(pPolyBeeCore)
+LocalVis::LocalVis(PolyBeeCore* pPolyBeeCore) :
+    m_pPolyBeeCore{pPolyBeeCore}, m_camera{0}, m_currentEMD{0.0f}, m_currentEMDTime{0}
 {
     SetTraceLogLevel(4); // Level 4 suppresses INFO msgs from RayLib
 
     // Create the window and OpenGL context
-    InitWindow(Params::envW * Params::visCellSize + 2 * ENV_MARGIN,
-        Params::envH * Params::visCellSize + 2 * ENV_MARGIN, "polybee");
+    InitWindow(Params::envW * Params::visCellSize + DISPLAY_MARGIN_LEFT + DISPLAY_MARGIN_RIGHT,
+        Params::envH * Params::visCellSize + DISPLAY_MARGIN_TOP + DISPLAY_MARGIN_BOTTOM, "polybee");
+
+    // set up the 2D camera
+    Vector2 center = { (Params::envW * Params::visCellSize) / 2.0f + DISPLAY_MARGIN_LEFT,
+                       (Params::envH * Params::visCellSize) / 2.0f + DISPLAY_MARGIN_TOP };
+    m_camera.target = (Vector2){ center.x, center.y };
+    m_camera.offset = (Vector2){ center.x, center.y };
+    m_camera.rotation = 0.0f;
+    m_camera.zoom = 1.0f;
 
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
@@ -82,6 +99,29 @@ LocalVis::~LocalVis()
 }
 
 
+// Convert environment coordinates to display coordinates
+
+// ... convert an X coordinate
+float LocalVis::envToDisplayX(float envX) const {
+    return envX * Params::visCellSize + DISPLAY_MARGIN_LEFT;
+}
+
+// ... convert a Y coordinate
+float LocalVis::envToDisplayY(float envY) const {
+    return envY * Params::visCellSize + DISPLAY_MARGIN_TOP;
+}
+
+// ... convert a length/size N
+float LocalVis::envToDisplayN(float displayN) const {
+    return displayN * Params::visCellSize;
+}
+
+// ... convert a Rectangle
+Rectangle LocalVis::envToDisplayRect(const Rectangle& rect) const {
+    return { envToDisplayX(rect.x), envToDisplayY(rect.y), envToDisplayN(rect.width), envToDisplayN(rect.height) };
+}
+
+
 void LocalVis::updateDrawFrame()
 {
 
@@ -93,28 +133,54 @@ void LocalVis::updateDrawFrame()
     //----------------------------------------------------------------------------------
     BeginDrawing();
 
-    // Setup the back buffer for drawing (clear color and depth buffers)
-    ClearBackground(BLACK);
+    BeginMode2D(m_camera);
 
-    // consider using the following functions if implementing zoom so we can
-    // figure out which cells need to be drawn:
-    //   Vector2 GetWorldToScreen2D(Vector2 position, Camera2D camera);    // Get the screen space position for a 2d camera world space position
-    //   Vector2 GetScreenToWorld2D(Vector2 position, Camera2D camera);    // Get the world space position for a 2d camera screen space position
-    //   Matrix GetCameraMatrix(Camera camera);                            // Get camera transform matrix (view matrix)
-    //   Matrix GetCameraMatrix2D(Camera2D camera);                        // Get camera 2d transform matrix
+        // Setup the back buffer for drawing (clear color and depth buffers)
+        ClearBackground(BLACK);
 
-    // draw environment boundary
-    DrawRectangleLines(ENV_MARGIN, ENV_MARGIN,
-        Params::envW * Params::visCellSize, Params::envH * Params::visCellSize, WHITE);
+        // consider using the following functions if implementing zoom so we can
+        // figure out which cells need to be drawn:
+        //   Vector2 GetWorldToScreen2D(Vector2 position, Camera2D camera);    // Get the screen space position for a 2d camera world space position
+        //   Vector2 GetScreenToWorld2D(Vector2 position, Camera2D camera);    // Get the world space position for a 2d camera screen space position
+        //   Matrix GetCameraMatrix(Camera camera);                            // Get camera transform matrix (view matrix)
+        //   Matrix GetCameraMatrix2D(Camera2D camera);                        // Get camera 2d transform matrix
 
-    if (showBees()) {
-        drawBees();
-    }
+        // draw environment rectangle and boundary
+        if (!showHeatmap()) {
+            DrawRectangleRec(
+                envToDisplayRect({0, 0, static_cast<float>(Params::envW), static_cast<float>(Params::envH)}),
+                ENV_BACKGROUND_COLOR);
+        }
+        DrawRectangleLinesEx(
+            envToDisplayRect({0, 0, static_cast<float>(Params::envW), static_cast<float>(Params::envH)}),
+            5.0, WHITE);
 
-    if (showHeatmap()) {
-        drawHistogram();
-    }
 
+        // draw tunnel rectangle and boundary
+        if (!showHeatmap()) {
+            DrawRectangleRec(
+                envToDisplayRect({static_cast<float>(Params::tunnelX), static_cast<float>(Params::tunnelY),
+                    static_cast<float>(Params::tunnelW), static_cast<float>(Params::tunnelH)}),
+                TUNNEL_BACKGROUND_COLOR);
+        }
+        DrawRectangleLinesEx(
+            envToDisplayRect({static_cast<float>(Params::tunnelX), static_cast<float>(Params::tunnelY),
+                    static_cast<float>(Params::tunnelW), static_cast<float>(Params::tunnelH)}),
+            5.0, WHITE);
+
+        // draw bees
+        if (showBees()) {
+            drawBees();
+        }
+
+        // draw heatmap
+        if (showHeatmap()) {
+            drawHeatmap();
+        }
+
+    EndMode2D();
+
+    // draw status text
     std::string msg;
     if (m_bWaitingForUserToClose) {
         msg = std::format("Finished {} iterations. Press ESC to exit", m_pPolyBeeCore->m_iIteration);
@@ -128,9 +194,15 @@ void LocalVis::updateDrawFrame()
         DrawText("PAUSED", 10, 40, 40, RAYWHITE);
     }
 
+    if (showHeatmap()) {
+        DrawText(std::format("EMD (OpenCV) to uniform target: {:.4f} :: {} microseconds", m_currentEMD, m_currentEMDTime).c_str(),
+            10, GetScreenHeight() - 30, 20, RAYWHITE);
+    }
+
     // end the frame and get ready for the next one  (display frame, poll input, etc...)
     EndDrawing();
 
+    // handle input
     if (IsKeyPressed(KEY_H)) {
         rotateDrawState();
     }
@@ -144,6 +216,19 @@ void LocalVis::updateDrawFrame()
         m_bShowTrails = !m_bShowTrails;
     }
 
+    // Camera zoom controls
+    // Uses log scaling to provide consistent zoom speed
+    m_camera.zoom = expf(logf(m_camera.zoom) + ((float)GetMouseWheelMove()*0.1f));
+
+    if (m_camera.zoom > 3.0f) m_camera.zoom = 3.0f;
+    else if (m_camera.zoom < 0.1f) m_camera.zoom = 0.1f;
+
+    // Camera reset
+    if (IsKeyPressed(KEY_R)) {
+        m_camera.zoom = 1.0f;
+    }
+
+    // sleep for a short time to control frame rate if requested
     if (Params::visDelayPerStep > 0) {
         std::this_thread::sleep_for(std::chrono::milliseconds(Params::visDelayPerStep));
     }
@@ -180,20 +265,25 @@ void LocalVis::rotateDrawState()
 
 void LocalVis::drawBees()
 {
+    // TODO convert this method to use the envToDisplay...() methods
+
     // draw hives
     for (const HiveSpec& hiveSpec : Params::hiveSpecs) {
-        DrawRectangleLines(ENV_MARGIN + static_cast<int>(hiveSpec.x * Params::visCellSize) - HIVE_SIZE / 2,
-            ENV_MARGIN + static_cast<int>(hiveSpec.y * Params::visCellSize) - HIVE_SIZE / 2,
-            HIVE_SIZE, HIVE_SIZE, GOLD);
+        DrawRectangleLinesEx(
+            { static_cast<float>(DISPLAY_MARGIN_LEFT) + (hiveSpec.x * Params::visCellSize) - HALF_HIVE_SIZE,
+              static_cast<float>(DISPLAY_MARGIN_TOP) + (hiveSpec.y * Params::visCellSize) - HALF_HIVE_SIZE,
+              HIVE_SIZE, HIVE_SIZE },
+            4.0,  // line thickness
+            GOLD);
     }
 
     // draw bees
-    for (const Bee& bee : m_pPolyBeeCore->m_bees) {
+    for (const Bee& bee : m_pPolyBeeCore->getBees()) {
         std::vector<Vector2> BeeShapeAbs = BEE_SHAPE;
         for (Vector2& v : BeeShapeAbs) {
             v = Vector2Rotate(v, bee.angle);
-            v.x += ENV_MARGIN + bee.x * Params::visCellSize;
-            v.y += ENV_MARGIN + bee.y * Params::visCellSize;
+            v.x += DISPLAY_MARGIN_LEFT + bee.x * Params::visCellSize;
+            v.y += DISPLAY_MARGIN_TOP + bee.y * Params::visCellSize;
         }
 
         //DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], LIME);
@@ -203,10 +293,10 @@ void LocalVis::drawBees()
             size_t pathIdxMax = bee.path.size()-1;
             int drawCount = 0;
             for (size_t i = pathIdxMax; i >= 1 && drawCount < Params::visBeePathDrawLen; --i) {
-                Vector2 p1 = { ENV_MARGIN + bee.path[i - 1].x * Params::visCellSize,
-                            ENV_MARGIN + bee.path[i - 1].y * Params::visCellSize };
-                Vector2 p2 = { ENV_MARGIN + bee.path[i].x * Params::visCellSize,
-                            ENV_MARGIN + bee.path[i].y * Params::visCellSize };
+                Vector2 p1 = { DISPLAY_MARGIN_LEFT + bee.path[i - 1].x * Params::visCellSize,
+                            DISPLAY_MARGIN_TOP + bee.path[i - 1].y * Params::visCellSize };
+                Vector2 p2 = { DISPLAY_MARGIN_LEFT + bee.path[i].x * Params::visCellSize,
+                            DISPLAY_MARGIN_TOP + bee.path[i].y * Params::visCellSize };
                 float alpha = 1.0f - ((pathIdxMax - static_cast<float>(i)) / Params::visBeePathDrawLen); // fade out older parts of path
                 DrawLineEx(p1, p2, Params::visBeePathThickness, ColorAlpha(ColorFromHSV(bee.colorHue, 0.3f, 0.7f), alpha));
                 ++drawCount;
@@ -216,15 +306,18 @@ void LocalVis::drawBees()
 }
 
 
-void LocalVis::drawHistogram()
+void LocalVis::drawHeatmap()
 {
-    if (!m_pPolyBeeCore->m_heatmap.isNormalisedCalculated()) {
+    // TODO convert this method to use the envToDisplay...() methods
+
+    const Heatmap& heatmap = m_pPolyBeeCore->getHeatmap();
+    if (!heatmap.isNormalisedCalculated()) {
         DrawText("Normalised heatmap not available!", 100, 100, 20, RAYWHITE);
         return;
     }
 
-    int numCellsX = m_pPolyBeeCore->m_heatmap.size_x();
-    int numCellsY = m_pPolyBeeCore->m_heatmap.size_y();
+    int numCellsX = heatmap.size_x();
+    int numCellsY = heatmap.size_y();
     int numCells = numCellsX * numCellsY;
     int cellW = (Params::envW * Params::visCellSize) / numCellsX;
     int cellH = (Params::envH * Params::visCellSize) / numCellsY;
@@ -274,33 +367,27 @@ void LocalVis::drawHistogram()
     };
 
     // Draw heatmap cells using normalized values
-    const auto& cellsNormalised = m_pPolyBeeCore->m_heatmap.cellsNormalised();
+    const auto& cellsNormalised = heatmap.cellsNormalised();
     for (int x = 0; x < numCellsX; ++x) {
         for (int y = 0; y < numCellsY; ++y) {
             float normalizedValue = cellsNormalised[x][y];
             float valueToPlot = normalizedValue * (numCells / 3.0); // scale for better visibility
             Color color = getHeatmapColor(valueToPlot);
 
-            DrawRectangle(ENV_MARGIN + x * cellW, ENV_MARGIN + y * cellH, cellW, cellH, color);
+            DrawRectangle(DISPLAY_MARGIN_LEFT + x * cellW, DISPLAY_MARGIN_TOP + y * cellH, cellW, cellH, color);
 
             // Draw cell borders for better visibility
-            DrawRectangleLines(ENV_MARGIN + x * cellW, ENV_MARGIN + y * cellH, cellW, cellH, DARKGRAY);
+            DrawRectangleLines(DISPLAY_MARGIN_LEFT + x * cellW, DISPLAY_MARGIN_TOP + y * cellH, cellW, cellH, DARKGRAY);
         }
     }
-
-    static float emd = 0.0f;
-    static ino64_t emdTime = 0;
 
     if (!m_bPaused && !m_bWaitingForUserToClose)
     {
         auto start = std::chrono::high_resolution_clock::now();
-        emd = m_pPolyBeeCore->m_heatmap.emd(m_pPolyBeeCore->m_heatmap.uniformTargetNormalised());
+        m_currentEMD = heatmap.emd(heatmap.uniformTargetNormalised());
         auto end = std::chrono::high_resolution_clock::now();
-        emdTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        m_currentEMDTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     }
-
-    DrawText(std::format("EMD (OpenCV) to uniform target: {:.4f} :: {} microseconds", emd, emdTime).c_str(),
-        10, GetScreenHeight() - 30, 20, RAYWHITE);
 
     /*
     // Draw color scale legend

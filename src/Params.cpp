@@ -22,10 +22,13 @@ int Params::numIterations;
 // Environment configuration
 int Params::envW;
 int Params::envH;
+
+// Tunnel configuration
 int Params::tunnelW;
 int Params::tunnelH;
 int Params::tunnelX;
 int Params::tunnelY;
+std::vector<TunnelEntranceSpec> Params::tunnelEntranceSpecs;
 
 // Bee configuration
 int Params::numBees;
@@ -103,7 +106,7 @@ void Params::initRegistry()
 
 
 // Helper function to parse hive positions from strings of the form "x,y" (x and y are floats)
-std::vector<HiveSpec> parse_positions(const std::vector<std::string>& pos_strings) {
+std::vector<HiveSpec> parse_hive_positions(const std::vector<std::string>& pos_strings) {
     std::vector<HiveSpec> hives;
     std::regex pos_regex(R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):([0-4]))");
 
@@ -116,6 +119,22 @@ std::vector<HiveSpec> parse_positions(const std::vector<std::string>& pos_string
         }
     }
     return hives;
+}
+
+// Helper function to parse hive positions from strings of the form "x,y" (x and y are floats)
+std::vector<TunnelEntranceSpec> parse_tunnel_entrance_positions(const std::vector<std::string>& pos_strings) {
+    std::vector<TunnelEntranceSpec> entrances;
+    std::regex pos_regex(R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):([0-3]))");
+
+    for (const auto& pos_str : pos_strings) {
+        std::smatch match;
+        if (std::regex_match(pos_str, match, pos_regex)) {
+            entrances.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stoi(match[3]));
+        } else {
+            throw std::invalid_argument("Invalid tunnel entrance specification: " + pos_str);
+        }
+    }
+    return entrances;
 }
 
 
@@ -179,6 +198,11 @@ void Params::initialise(int argc, char* argv[])
             ("hive", po::value<std::vector<std::string>>()->multitoken(),
              "Hive specification in format x,y:d where d is the direction of the opening (0=North, 1=East, 2=South, 3=West, 4=Random), e.g., --hive 10,8:0 --hive 4,6:4");
 
+        // Special case for tunnel entrance positions (multiple allowed)
+        config.add_options()
+            ("tunnel-entrance", po::value<std::vector<std::string>>()->multitoken(),
+             "Tunnel entrance specification in format e1,e2:s where e1 and e2 are positions of edges of entrance along the specified side of tunnel, and s is the side (0=North, 1=East, 2=South, 3=West), e.g., --tunnel-entrance 5.5,10.0:0 --tunnel-entrance 3.0,6.0:2");
+
         // Hidden options, will be allowed both on command line and
         // in config file, but will not be shown to the user.
         po::options_description hidden("Hidden options");
@@ -225,7 +249,11 @@ void Params::initialise(int argc, char* argv[])
         }
 
         if (vm.count("hive")) {
-            hiveSpecs = parse_positions(vm["hive"].as<std::vector<std::string>>());
+            hiveSpecs = parse_hive_positions(vm["hive"].as<std::vector<std::string>>());
+        }
+
+        if (vm.count("tunnel-entrance")) {
+            tunnelEntranceSpecs = parse_tunnel_entrance_positions(vm["tunnel-entrance"].as<std::vector<std::string>>());
         }
 
         if (vm.count("help"))
@@ -282,6 +310,7 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
         os << vinfo.uname << valsep << vinfo.valueAsStr() << linesep;
     }
 
+    // print hive info
     if (!bGenerateForConfigFile) {
         os << "Hives:" << linesep;
     }
@@ -293,7 +322,26 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
                 os << (i+1);
             }
             os << valsep << coordOpen << hiveSpecs[i].x << "," << hiveSpecs[i].y << coordClose << ":" << hiveSpecs[i].direction << linesep;
+        }
+    }
+    else {
+        if (!bGenerateForConfigFile) {
+            os << "(none)" << linesep;
+        }
+    }
 
+    // print tunnel entrance info
+    if (!bGenerateForConfigFile) {
+        os << "Tunnel Entrances:" << linesep;
+    }
+
+    if (!tunnelEntranceSpecs.empty()) {
+        for (size_t i = 0; i < tunnelEntranceSpecs.size(); ++i) {
+            os << "tunnel-entrance";
+            if (!bGenerateForConfigFile) {
+                os << (i+1);
+            }
+            os << valsep << coordOpen << tunnelEntranceSpecs[i].e1 << "," << tunnelEntranceSpecs[i].e2 << coordClose << ":" << tunnelEntranceSpecs[i].side << linesep;
         }
     }
     else {

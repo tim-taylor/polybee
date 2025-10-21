@@ -1,3 +1,15 @@
+## 20/10/25
+
+Working on major refactoring of code to properly deal with tunnels and possibility of environment space outside of tunnels. Probably best to move m_bees from PolyBeeCore to Environment class.
+
+Will need a new Tunnel class (and Environment has-a tunnel), and ability to specify entries/exits in the tunnel sides
+
+Heatmap applies to interior of tunnel, not to whole environment?? - ask Alan
+
+Will have to add collision detection code for bees colliding with sides of tunnel inside the environment
+
+Add helper methods in LocalVis to convert between display, environment, and tunnel coordinate frames
+
 ## 15/10/25
 
 Done:

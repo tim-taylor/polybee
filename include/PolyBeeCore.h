@@ -38,7 +38,8 @@ public:
     void earlyExit();
     void resetForNewRun();
 
-    const Heatmap& getHeatmap() const { return m_heatmap; }
+    const Heatmap& getHeatmap() const { return m_env.getHeatmap(); }
+    const std::vector<Bee>& getBees() const { return m_env.getBees(); }
 
     void pauseSimulation(bool pause) {m_bPaused = pause;}
 
@@ -58,16 +59,14 @@ private:
     //////////////////////////////////////////////////////////////
     // private methods
     void generateTimestampString();
-    void initialiseBees();
+    //void initialiseBees();
     bool stopCriteriaReached();
     void writeOutputFiles() const;
     void printRunInfo(std::ostream& os, const std::string& filename) const;
 
     //////////////////////////////////////////////////////////////
     // private members
-    std::vector<Bee> m_bees;
     Environment m_env;
-    Heatmap m_heatmap;
 
     std::string m_timestampStr {}; // timestamp string for this run, used in output filenames
 
