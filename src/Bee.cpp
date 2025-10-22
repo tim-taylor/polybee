@@ -54,17 +54,19 @@ void Bee::move() {
     if (newy > Params::envH) newy = Params::envH;
 
     // check if new position is valid
+    float wallThickness = m_pEnv->getTunnel().thickness();
+
     bool newPosInTunnel = m_pEnv->inTunnel(newx, newy);
     if ((isInTunnel && newPosInTunnel) || (!isInTunnel && !newPosInTunnel)) {
         // valid move: update position
         x = newx;
         y = newy;
+        // TODO - if bee is outside tunnel, check it is not within tunnel wall thickness of the tunnel...
     }
     else {
         // bee has crossed tunnel boundary, so we need to figure out if it can enter/exit the tunnel at this point
         // For now, just prevent the move
         // TODO - implement proper tunnel entrance/exit checking
-        float wallThickness = m_pEnv->getTunnel().thickness();
         if (isInTunnel) {
             // bee is currently in tunnel
             // TODO

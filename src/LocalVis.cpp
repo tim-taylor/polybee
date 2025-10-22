@@ -276,11 +276,11 @@ void LocalVis::processKeyboardInput()
         m_bShowEMD = !m_bShowEMD;
     }
 
-    if (IsKeyPressed(KEY_MINUS) || IsKeyPressed(KEY_KP_SUBTRACT)) {
+    if (IsKeyDown(KEY_MINUS) || IsKeyDown(KEY_KP_SUBTRACT)) {
         Params::visDelayPerStep = std::min(MAX_DELAY_PER_STEP, Params::visDelayPerStep+5);
     }
 
-    if (IsKeyPressed(KEY_EQUAL) || IsKeyPressed(KEY_KP_ADD)) {
+    if (IsKeyDown(KEY_EQUAL) || IsKeyDown(KEY_KP_ADD)) {
         Params::visDelayPerStep = std::max(0, Params::visDelayPerStep-5);
     }
 

@@ -29,7 +29,7 @@ void Environment::initialise() {
 void Environment::initialiseTunnel()
 {
     // initialise tunnel from Params (also adds entrances)
-    m_tunnel.initialise(Params::tunnelX, Params::tunnelY, Params::tunnelW, Params::tunnelH);
+    m_tunnel.initialise(Params::tunnelX, Params::tunnelY, Params::tunnelW, Params::tunnelH, this);
 }
 
 
