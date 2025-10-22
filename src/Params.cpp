@@ -1,5 +1,6 @@
 #include "Params.h"
 #include "utils.h"
+#include "polybeeConfig.h"
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -20,14 +21,14 @@ std::string Params::strRngSeed;
 int Params::numIterations;
 
 // Environment configuration
-int Params::envW;
-int Params::envH;
+float Params::envW;
+float Params::envH;
 
 // Tunnel configuration
-int Params::tunnelW;
-int Params::tunnelH;
-int Params::tunnelX;
-int Params::tunnelY;
+float Params::tunnelW;
+float Params::tunnelH;
+float Params::tunnelX;
+float Params::tunnelY;
 std::vector<TunnelEntranceSpec> Params::tunnelEntranceSpecs;
 
 // Bee configuration
@@ -75,12 +76,12 @@ std::vector<ParamInfo> Params::REGISTRY;
 // Initial registratin of all primary (non-derived) parameters and associated details
 void Params::initRegistry()
 {
-    REGISTRY.emplace_back("env-width", "envW", ParamType::INT, &envW, 450, "Width (number of cells) of environment");
-    REGISTRY.emplace_back("env-height", "envH", ParamType::INT, &envH, 250, "Height (number of cells) of environment");
-    REGISTRY.emplace_back("tunnel-width", "tunnelW", ParamType::INT, &tunnelW, 50, "Width (number of cells) of tunnel");
-    REGISTRY.emplace_back("tunnel-height", "tunnelH", ParamType::INT, &tunnelH, 50, "Height (number of cells) of tunnel");
-    REGISTRY.emplace_back("tunnel-x", "tunnelX", ParamType::INT, &tunnelX, 200, "X position of left edge of tunnel");
-    REGISTRY.emplace_back("tunnel-y", "tunnelY", ParamType::INT, &tunnelY, 100, "Y position of top edge of tunnel");
+    REGISTRY.emplace_back("env-width", "envW", ParamType::FLOAT, &envW, 450.0f, "Width (number of cells) of environment");
+    REGISTRY.emplace_back("env-height", "envH", ParamType::FLOAT, &envH, 250.0f, "Height (number of cells) of environment");
+    REGISTRY.emplace_back("tunnel-width", "tunnelW", ParamType::FLOAT, &tunnelW, 50.0f, "Width (number of cells) of tunnel");
+    REGISTRY.emplace_back("tunnel-height", "tunnelH", ParamType::FLOAT, &tunnelH, 50.0f, "Height (number of cells) of tunnel");
+    REGISTRY.emplace_back("tunnel-x", "tunnelX", ParamType::FLOAT, &tunnelX, 200.0f, "X position of left edge of tunnel");
+    REGISTRY.emplace_back("tunnel-y", "tunnelY", ParamType::FLOAT, &tunnelY, 100.0f, "Y position of top edge of tunnel");
     REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
     REGISTRY.emplace_back("bee-max-dir-delta", "beeMaxDirDelta", ParamType::FLOAT, &beeMaxDirDelta, 0.4f, "Maximum change in direction (radians) per step");
     REGISTRY.emplace_back("bee-step-length", "beeStepLength", ParamType::FLOAT, &beeStepLength, 20.0f, "How far a bee moves forward at each time step");
@@ -264,8 +265,7 @@ void Params::initialise(int argc, char* argv[])
 
         if (vm.count("version"))
         {
-            // TODO get the version number from somewhere reliable!
-            std::cout << "PolyBeeCore server, version 0.1\n";
+            std::cout << std::format("Polybee version {}", polybee_VERSION_STR) << std::endl;
             exit(0);
         }
     }

@@ -40,6 +40,9 @@ public:
 private:
     void drawBees();
     void drawHeatmap();
+    void drawTunnel();
+    void drawStatusText();
+    void processKeyboardInput();
     void rotateDrawState();
 
     PolyBeeCore* m_pPolyBeeCore;
@@ -48,6 +51,7 @@ private:
     bool m_bWaitingForUserToClose {false};
     bool m_bPaused {false};
     bool m_bShowTrails {true};
+    bool m_bShowEMD {true};
 
     Camera2D m_camera;
 

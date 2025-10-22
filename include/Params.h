@@ -78,14 +78,14 @@ public:
     static int numIterations;
 
     // Environment configuration
-    static int envW;
-    static int envH;
+    static float envW;
+    static float envH;
 
     // Tunnel configuration
-    static int tunnelW;
-    static int tunnelH;
-    static int tunnelX; // top-left x position of tunnel in environment coordinates
-    static int tunnelY; // top-left y position of tunnel in environment coordinates
+    static float tunnelW;
+    static float tunnelH;
+    static float tunnelX; // top-left x position of tunnel in environment coordinates
+    static float tunnelY; // top-left y position of tunnel in environment coordinates
     static std::vector<TunnelEntranceSpec> tunnelEntranceSpecs;
 
     // Bee configuration

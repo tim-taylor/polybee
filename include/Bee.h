@@ -25,9 +25,9 @@ public:
 
     void move();
 
-    float x;
-    float y;
-    float angle; // direction of travel in radians
+    float x;        // position of bee in environment coordinates
+    float y;        // position of bee in environment coordinates
+    float angle;    // direction of travel in radians
     float colorHue; // hue value for coloring the bee in visualisation (between 0.0 and 360.0)
 
     std::vector<fPos> path; // record of the path taken by the bee

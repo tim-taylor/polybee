@@ -17,6 +17,8 @@ Environment::Environment() {
 
 
 void Environment::initialise() {
+    m_width = Params::envW;
+    m_height = Params::envH;
     initialiseTunnel();
     initialiseHives();
     initialiseBees();
@@ -102,5 +104,12 @@ void Environment::update() {
     }
 
     m_heatmap.update();
+}
+
+bool Environment::inTunnel(float x, float y) const {
+    return (x >= m_tunnel.x() &&
+            x <= m_tunnel.x() + m_tunnel.width() &&
+            y >= m_tunnel.y() &&
+            y <= m_tunnel.y() + m_tunnel.height());
 }
 

@@ -28,12 +28,12 @@ void Heatmap::initialise(std::vector<Bee>* bees) {
     m_numCellsX = Params::envW / m_cellSize;
     m_numCellsY = Params::envH / m_cellSize;
 
-    if (Params::envW % m_cellSize != 0) {
+    if (static_cast<int>(Params::envW) % m_cellSize != 0) {
         pb::msg_warning(std::format("env-w ({0}) is not a multiple of heatmap-cell-size ({1}). The heatmap will extend beyond the environment width.",
             Params::envW, m_cellSize));
         ++m_numCellsX;
     }
-    if (Params::envH % m_cellSize != 0) {
+    if (static_cast<int>(Params::envH) % m_cellSize != 0) {
         pb::msg_warning(std::format("env-h ({0}) is not a multiple of heatmap-cell-size ({1}). The heatmap will extend beyond the environment height.",
             Params::envH, m_cellSize));
         ++m_numCellsY;

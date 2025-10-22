@@ -9,7 +9,7 @@
 Tunnel::Tunnel() {
 }
 
-void Tunnel::initialise(int x, int y, int width, int height) {
+void Tunnel::initialise(float x, float y, float width, float height) {
     m_x = x;
     m_y = y;
     m_width = width;
@@ -23,5 +23,12 @@ void Tunnel::initialise(int x, int y, int width, int height) {
 }
 
 void Tunnel::addEntrance(const TunnelEntranceSpec& spec) {
-    m_entrances.push_back(spec);
+    TunnelEntranceSpec specCopy = spec;
+    // ensure e1 <= e2
+    if (specCopy.e2 < specCopy.e1) {
+        float tmp = specCopy.e1;
+        specCopy.e1 = specCopy.e2;
+        specCopy.e2 = tmp;
+    }
+    m_entrances.push_back(specCopy);
 }

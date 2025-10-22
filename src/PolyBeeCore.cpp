@@ -182,7 +182,6 @@ void PolyBeeCore::writeOutputFiles() const
             std::format("Unable to open run info output file {} for writing. Run info will not be saved to file, printing to stdout instead.",
                 infoFilename));
         std::cout << "~~~~~~~~~~ RUN INFO OUTPUT ~~~~~~~~~~\n";
-        // TODO - add useful run info here
         printRunInfo(std::cout, infoFilename);
     }
     else {
@@ -198,7 +197,7 @@ void PolyBeeCore::printRunInfo(std::ostream& os, const std::string& filename) co
     const Heatmap& heatmap = m_env.getHeatmap();
     os << std::format("Run: {}\n", filename);
     os << std::format("High EMD value: {:.6f}\n", heatmap.high_emd());
-    os << std::format("Polybee code version: {}.{}.{}.{}\n",
+    os << std::format("Polybee version: {}.{}.{}.{}\n",
         polybee_VERSION_MAJOR,
         polybee_VERSION_MINOR,
         polybee_VERSION_PATCH,

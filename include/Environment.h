@@ -26,6 +26,9 @@ public:
     void update();
     void reset(); // reset environment to initial state
 
+    bool inTunnel(float x, float y) const;
+
+    const Tunnel& getTunnel() const { return m_tunnel; }
     const Heatmap& getHeatmap() const { return m_heatmap; }
     const std::vector<Bee>& getBees() const { return m_bees; }
 
@@ -36,6 +39,8 @@ private:
     void initialiseHeatmap();
     void resetBees();
 
+    float m_width;
+    float m_height;
     std::vector<Bee> m_bees;
     std::vector<Hive> m_hives;
     Tunnel m_tunnel;

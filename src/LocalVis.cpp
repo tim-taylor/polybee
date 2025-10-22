@@ -42,15 +42,18 @@
 
 #include "LocalVis.h"
 
-const int DISPLAY_MARGIN_TOP = 50;
+const int DISPLAY_MARGIN_TOP = 60;
 const int DISPLAY_MARGIN_BOTTOM = 50;
 const int DISPLAY_MARGIN_LEFT = 50;
 const int DISPLAY_MARGIN_RIGHT = 50;
 const Color ENV_BACKGROUND_COLOR = { 40, 120, 40, 255 };
 const Color TUNNEL_BACKGROUND_COLOR = { 70, 70, 70, 255 };
-
-const int HIVE_SIZE = 20;
-const float HALF_HIVE_SIZE = static_cast<float>(HIVE_SIZE) / 2.0f;
+const Color TUNNEL_ENTRANCE_COLOR = { 220, 20, 20, 255 };
+const int FONT_SIZE_REG = 20;
+const int FONT_SIZE_LARGE = 40;
+const int MAX_DELAY_PER_STEP = 100;
+const float HIVE_SIZE = 20.0f;
+const float HALF_HIVE_SIZE = HIVE_SIZE / 2.0f;
 const std::vector<Vector2> BEE_SHAPE = { {10, 0}, {-6, -6}, {-6, 6} }; // triangle shape for drawing bees
 
 LocalVis::LocalVis(PolyBeeCore* pPolyBeeCore) :
@@ -148,25 +151,14 @@ void LocalVis::updateDrawFrame()
         // draw environment rectangle and boundary
         if (!showHeatmap()) {
             DrawRectangleRec(
-                envToDisplayRect({0, 0, static_cast<float>(Params::envW), static_cast<float>(Params::envH)}),
-                ENV_BACKGROUND_COLOR);
+                envToDisplayRect({0.0f, 0.0f, Params::envW, Params::envH}), ENV_BACKGROUND_COLOR);
         }
         DrawRectangleLinesEx(
-            envToDisplayRect({0, 0, static_cast<float>(Params::envW), static_cast<float>(Params::envH)}),
-            5.0, WHITE);
+            envToDisplayRect({0.0f, 0.0f, Params::envW, Params::envH}), 5.0f, WHITE);
 
 
         // draw tunnel rectangle and boundary
-        if (!showHeatmap()) {
-            DrawRectangleRec(
-                envToDisplayRect({static_cast<float>(Params::tunnelX), static_cast<float>(Params::tunnelY),
-                    static_cast<float>(Params::tunnelW), static_cast<float>(Params::tunnelH)}),
-                TUNNEL_BACKGROUND_COLOR);
-        }
-        DrawRectangleLinesEx(
-            envToDisplayRect({static_cast<float>(Params::tunnelX), static_cast<float>(Params::tunnelY),
-                    static_cast<float>(Params::tunnelW), static_cast<float>(Params::tunnelH)}),
-            5.0, WHITE);
+        drawTunnel();
 
         // draw bees
         if (showBees()) {
@@ -181,29 +173,93 @@ void LocalVis::updateDrawFrame()
     EndMode2D();
 
     // draw status text
-    std::string msg;
-    if (m_bWaitingForUserToClose) {
-        msg = std::format("Finished {} iterations. Press ESC to exit", m_pPolyBeeCore->m_iIteration);
-    }
-    else {
-        msg = std::format("Iteration target {}. Current iteration {}", Params::numIterations, m_pPolyBeeCore->m_iIteration);
-    }
-    DrawText(msg.c_str(), 10, 10, 20, RAYWHITE);
-
-    if (m_bPaused) {
-        DrawText("PAUSED", 10, 40, 40, RAYWHITE);
-    }
-
-    if (showHeatmap()) {
-        DrawText(std::format("EMD (OpenCV) to uniform target: {:.4f} :: {} microseconds", m_currentEMD, m_currentEMDTime).c_str(),
-            10, GetScreenHeight() - 30, 20, RAYWHITE);
-    }
+    drawStatusText();
 
     // end the frame and get ready for the next one  (display frame, poll input, etc...)
     EndDrawing();
 
     // handle input
-    if (IsKeyPressed(KEY_H)) {
+    processKeyboardInput();
+
+    // sleep for a short time to control frame rate if requested
+    if (Params::visDelayPerStep > 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(Params::visDelayPerStep));
+    }
+}
+
+
+void LocalVis::drawTunnel()
+{
+    auto& tunnel = m_pPolyBeeCore->m_env.getTunnel();
+    float wallVisualThickness = 10.0f; //tunnel.thickness();
+
+    // draw tunnel rectangle and boundary
+    if (!showHeatmap()) {
+        DrawRectangleRec(
+            envToDisplayRect({tunnel.x(), tunnel.y(), tunnel.width(), tunnel.height()}), TUNNEL_BACKGROUND_COLOR);
+    }
+    DrawRectangleLinesEx(
+        envToDisplayRect({tunnel.x(), tunnel.y(), tunnel.width(), tunnel.height()}), 5.0, WHITE);
+
+    auto& entrances = m_pPolyBeeCore->m_env.getTunnel().getEntrances();
+    for (const TunnelEntranceSpec& entrance : entrances) {
+        Rectangle entranceRect;
+        switch (entrance.side) {
+        case 0: { // North
+            entranceRect = { tunnel.x() + entrance.e1, tunnel.y() - wallVisualThickness,
+                             entrance.e2 - entrance.e1, wallVisualThickness };
+            break;
+        }
+        case 1: { // East
+            entranceRect = { tunnel.x() + tunnel.width(), tunnel.y() + entrance.e1,
+                             wallVisualThickness, entrance.e2 - entrance.e1 };
+            break;
+        }
+        case 2: { // South
+            entranceRect = { tunnel.x() + entrance.e1, tunnel.y() + tunnel.height(),
+                             entrance.e2 - entrance.e1, wallVisualThickness };
+            break;
+        }
+        case 3: { // West
+            entranceRect = { tunnel.x() - wallVisualThickness, tunnel.y() + entrance.e1,
+                             wallVisualThickness, entrance.e2 - entrance.e1 };
+            break;
+        }
+        default:
+            pb::msg_error_and_exit("LocalVis::drawTunnel(): invalid entrance side");
+        }
+
+        DrawRectangleRec(envToDisplayRect(entranceRect), TUNNEL_ENTRANCE_COLOR);
+    }
+}
+
+
+void LocalVis::drawStatusText()
+{
+    std::string msg;
+    if (m_bWaitingForUserToClose) {
+        msg = std::format("Finished {} iterations. Press ESC to exit", m_pPolyBeeCore->m_iIteration);
+    }
+    else {
+        msg = std::format("Iteration target {}. Current iteration {}\nSim speed {}",
+            Params::numIterations, m_pPolyBeeCore->m_iIteration, MAX_DELAY_PER_STEP - Params::visDelayPerStep);
+    }
+    DrawText(msg.c_str(), 10, 10, FONT_SIZE_REG, RAYWHITE);
+
+    if (m_bPaused) {
+        DrawText("PAUSED", 10, 40, FONT_SIZE_LARGE, RAYWHITE);
+    }
+
+    if (showHeatmap() && m_bShowEMD) {
+        DrawText(std::format("EMD (OpenCV) to uniform target: {:.4f} :: {} microseconds", m_currentEMD, m_currentEMDTime).c_str(),
+            10, GetScreenHeight() - 30, FONT_SIZE_REG, RAYWHITE);
+    }
+}
+
+
+void LocalVis::processKeyboardInput()
+{
+   if (IsKeyPressed(KEY_H)) {
         rotateDrawState();
     }
 
@@ -216,6 +272,18 @@ void LocalVis::updateDrawFrame()
         m_bShowTrails = !m_bShowTrails;
     }
 
+    if (IsKeyPressed(KEY_E)) {
+        m_bShowEMD = !m_bShowEMD;
+    }
+
+    if (IsKeyPressed(KEY_MINUS) || IsKeyPressed(KEY_KP_SUBTRACT)) {
+        Params::visDelayPerStep = std::min(MAX_DELAY_PER_STEP, Params::visDelayPerStep+5);
+    }
+
+    if (IsKeyPressed(KEY_EQUAL) || IsKeyPressed(KEY_KP_ADD)) {
+        Params::visDelayPerStep = std::max(0, Params::visDelayPerStep-5);
+    }
+
     // Camera zoom controls
     // Uses log scaling to provide consistent zoom speed
     m_camera.zoom = expf(logf(m_camera.zoom) + ((float)GetMouseWheelMove()*0.1f));
@@ -226,11 +294,6 @@ void LocalVis::updateDrawFrame()
     // Camera reset
     if (IsKeyPressed(KEY_R)) {
         m_camera.zoom = 1.0f;
-    }
-
-    // sleep for a short time to control frame rate if requested
-    if (Params::visDelayPerStep > 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(Params::visDelayPerStep));
     }
 }
 
@@ -265,16 +328,11 @@ void LocalVis::rotateDrawState()
 
 void LocalVis::drawBees()
 {
-    // TODO convert this method to use the envToDisplay...() methods
-
     // draw hives
     for (const HiveSpec& hiveSpec : Params::hiveSpecs) {
         DrawRectangleLinesEx(
-            { static_cast<float>(DISPLAY_MARGIN_LEFT) + (hiveSpec.x * Params::visCellSize) - HALF_HIVE_SIZE,
-              static_cast<float>(DISPLAY_MARGIN_TOP) + (hiveSpec.y * Params::visCellSize) - HALF_HIVE_SIZE,
-              HIVE_SIZE, HIVE_SIZE },
-            4.0,  // line thickness
-            GOLD);
+            envToDisplayRect({ hiveSpec.x-HALF_HIVE_SIZE, hiveSpec.y-HALF_HIVE_SIZE, HIVE_SIZE, HIVE_SIZE }),
+            4.0f, GOLD);
     }
 
     // draw bees
@@ -282,8 +340,8 @@ void LocalVis::drawBees()
         std::vector<Vector2> BeeShapeAbs = BEE_SHAPE;
         for (Vector2& v : BeeShapeAbs) {
             v = Vector2Rotate(v, bee.angle);
-            v.x += DISPLAY_MARGIN_LEFT + bee.x * Params::visCellSize;
-            v.y += DISPLAY_MARGIN_TOP + bee.y * Params::visCellSize;
+            v.x += envToDisplayX(bee.x);
+            v.y += envToDisplayY(bee.y);
         }
 
         //DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], LIME);
@@ -293,10 +351,8 @@ void LocalVis::drawBees()
             size_t pathIdxMax = bee.path.size()-1;
             int drawCount = 0;
             for (size_t i = pathIdxMax; i >= 1 && drawCount < Params::visBeePathDrawLen; --i) {
-                Vector2 p1 = { DISPLAY_MARGIN_LEFT + bee.path[i - 1].x * Params::visCellSize,
-                            DISPLAY_MARGIN_TOP + bee.path[i - 1].y * Params::visCellSize };
-                Vector2 p2 = { DISPLAY_MARGIN_LEFT + bee.path[i].x * Params::visCellSize,
-                            DISPLAY_MARGIN_TOP + bee.path[i].y * Params::visCellSize };
+                Vector2 p1 = { envToDisplayX(bee.path[i-1].x), envToDisplayY(bee.path[i-1].y) };
+                Vector2 p2 = { envToDisplayX(bee.path[i].x), envToDisplayY(bee.path[i].y) };
                 float alpha = 1.0f - ((pathIdxMax - static_cast<float>(i)) / Params::visBeePathDrawLen); // fade out older parts of path
                 DrawLineEx(p1, p2, Params::visBeePathThickness, ColorAlpha(ColorFromHSV(bee.colorHue, 0.3f, 0.7f), alpha));
                 ++drawCount;
@@ -308,8 +364,6 @@ void LocalVis::drawBees()
 
 void LocalVis::drawHeatmap()
 {
-    // TODO convert this method to use the envToDisplay...() methods
-
     const Heatmap& heatmap = m_pPolyBeeCore->getHeatmap();
     if (!heatmap.isNormalisedCalculated()) {
         DrawText("Normalised heatmap not available!", 100, 100, 20, RAYWHITE);
@@ -319,8 +373,8 @@ void LocalVis::drawHeatmap()
     int numCellsX = heatmap.size_x();
     int numCellsY = heatmap.size_y();
     int numCells = numCellsX * numCellsY;
-    int cellW = (Params::envW * Params::visCellSize) / numCellsX;
-    int cellH = (Params::envH * Params::visCellSize) / numCellsY;
+    int cellW = envToDisplayN(Params::envW) / numCellsX;
+    int cellH = envToDisplayN(Params::envH) / numCellsY;
 
     // Helper lambda to convert normalized value [0,1] to blue-red heatmap color
     auto getHeatmapColor = [](float normalized) -> Color {
@@ -381,7 +435,7 @@ void LocalVis::drawHeatmap()
         }
     }
 
-    if (!m_bPaused && !m_bWaitingForUserToClose)
+    if (m_bShowEMD && !m_bPaused && !m_bWaitingForUserToClose)
     {
         auto start = std::chrono::high_resolution_clock::now();
         m_currentEMD = heatmap.emd(heatmap.uniformTargetNormalised());
