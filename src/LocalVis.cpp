@@ -47,8 +47,11 @@ const int DISPLAY_MARGIN_BOTTOM = 50;
 const int DISPLAY_MARGIN_LEFT = 50;
 const int DISPLAY_MARGIN_RIGHT = 50;
 const Color ENV_BACKGROUND_COLOR = { 40, 120, 40, 255 };
+const Color ENV_BORDER_COLOR = WHITE;
 const Color TUNNEL_BACKGROUND_COLOR = { 70, 70, 70, 255 };
-const Color TUNNEL_ENTRANCE_COLOR = { 220, 20, 20, 255 };
+//const Color TUNNEL_ENTRANCE_COLOR = { 220, 20, 20, 255 };
+const Color TUNNEL_ENTRANCE_COLOR = WHITE;
+const Color TUNNEL_BORDER_COLOR = WHITE;
 const int FONT_SIZE_REG = 20;
 const int FONT_SIZE_LARGE = 40;
 const int MAX_DELAY_PER_STEP = 100;
@@ -154,7 +157,7 @@ void LocalVis::updateDrawFrame()
                 envToDisplayRect({0.0f, 0.0f, Params::envW, Params::envH}), ENV_BACKGROUND_COLOR);
         }
         DrawRectangleLinesEx(
-            envToDisplayRect({0.0f, 0.0f, Params::envW, Params::envH}), 5.0f, WHITE);
+            envToDisplayRect({0.0f, 0.0f, Params::envW, Params::envH}), 5.0f, ENV_BORDER_COLOR);
 
 
         // draw tunnel rectangle and boundary
@@ -199,7 +202,7 @@ void LocalVis::drawTunnel()
             envToDisplayRect({tunnel.x(), tunnel.y(), tunnel.width(), tunnel.height()}), TUNNEL_BACKGROUND_COLOR);
     }
     DrawRectangleLinesEx(
-        envToDisplayRect({tunnel.x(), tunnel.y(), tunnel.width(), tunnel.height()}), 5.0, WHITE);
+        envToDisplayRect({tunnel.x(), tunnel.y(), tunnel.width(), tunnel.height()}), 5.0, TUNNEL_BORDER_COLOR);
 
     auto& entrances = m_pPolyBeeCore->m_env.getTunnel().getEntrances();
     for (const TunnelEntranceSpec& entrance : entrances) {
