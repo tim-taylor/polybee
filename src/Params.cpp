@@ -202,7 +202,7 @@ void Params::initialise(int argc, char* argv[])
         // Special case for tunnel entrance positions (multiple allowed)
         config.add_options()
             ("tunnel-entrance", po::value<std::vector<std::string>>()->multitoken(),
-             "Tunnel entrance specification in format e1,e2:s where e1 and e2 are positions of edges of entrance along the specified side of tunnel, and s is the side (0=North, 1=East, 2=South, 3=West), e.g., --tunnel-entrance 5.5,10.0:0 --tunnel-entrance 3.0,6.0:2");
+             "Tunnel entrance specification in format e1,e2:s where e1 and e2 are positions of edges of entrance along the specified side of tunnel (position being the distance measured from one end of that side), and s is the side (0=North, 1=East, 2=South, 3=West), e.g., --tunnel-entrance 5.5,10.0:0 --tunnel-entrance 3.0,6.0:2");
 
         // Hidden options, will be allowed both on command line and
         // in config file, but will not be shown to the user.

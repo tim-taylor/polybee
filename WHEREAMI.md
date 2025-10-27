@@ -1,11 +1,17 @@
-## 21/10/25
+## 27/10/25
 
-In process of implementing proper collision testing of bees with tunnel borders, taking into account entraces to tunnel. This is work in the Environment, Tunnel and Bee classes. Have borrowed a intersectRayRectangle method from the web, and now need to integrate and test this. Also (maybe) need to ensure that bees outside the tunnel do not get within tunnel-thickness of the tunnel when moving.
+Specification of entrances in tunnel, and collision detection with tunnel taking into account the defined entrances, is now complete.
+
+Next up:
 
 When this is all done, next need to do the following:
 * add plants/flowers (have flexible spec of these in config file, inc multiple species, flexible layout, etc)
 * implement FNF/random walk (also add state to bee? foraging, returning to hive, in hive)
 * (also add help screen that lists all key and mouse controls)
+
+## 21/10/25
+
+In process of implementing proper collision testing of bees with tunnel borders, taking into account entraces to tunnel. This is work in the Environment, Tunnel and Bee classes. Have borrowed a intersectRayRectangle method from the web, and now need to integrate and test this. Also (maybe) need to ensure that bees outside the tunnel do not get within tunnel-thickness of the tunnel when moving.
 
 ## 20/10/25
 
