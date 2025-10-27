@@ -205,27 +205,27 @@ void LocalVis::drawTunnel()
         envToDisplayRect({tunnel.x(), tunnel.y(), tunnel.width(), tunnel.height()}), 5.0, TUNNEL_BORDER_COLOR);
 
     auto& entrances = m_pPolyBeeCore->m_env.getTunnel().getEntrances();
-    for (const TunnelEntranceSpec& entrance : entrances) {
+    for (const TunnelEntranceInfo& entrance : entrances) {
         Rectangle entranceRect;
         switch (entrance.side) {
         case 0: { // North
-            entranceRect = { tunnel.x() + entrance.e1, tunnel.y() - wallVisualThickness,
-                             entrance.e2 - entrance.e1, wallVisualThickness };
+            entranceRect = { entrance.x1, entrance.y1 - wallVisualThickness,
+                             entrance.x2 - entrance.x1, wallVisualThickness };
             break;
         }
         case 1: { // East
-            entranceRect = { tunnel.x() + tunnel.width(), tunnel.y() + entrance.e1,
-                             wallVisualThickness, entrance.e2 - entrance.e1 };
+            entranceRect = { entrance.x1, entrance.y1,
+                             wallVisualThickness, entrance.y2 - entrance.y1 };
             break;
         }
         case 2: { // South
-            entranceRect = { tunnel.x() + entrance.e1, tunnel.y() + tunnel.height(),
-                             entrance.e2 - entrance.e1, wallVisualThickness };
+            entranceRect = { entrance.x1, entrance.y1,
+                             entrance.x2 - entrance.x1, wallVisualThickness };
             break;
         }
         case 3: { // West
-            entranceRect = { tunnel.x() - wallVisualThickness, tunnel.y() + entrance.e1,
-                             wallVisualThickness, entrance.e2 - entrance.e1 };
+            entranceRect = { entrance.x1 - wallVisualThickness, entrance.y1,
+                             wallVisualThickness, entrance.y2 - entrance.y1 };
             break;
         }
         default:

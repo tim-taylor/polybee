@@ -21,6 +21,7 @@ namespace Polybee {
     void msg_warning(std::string msg);
     void msg_info(std::string msg);
 
+    /*
     struct Vector2 {
         Vector2() : x(0), y(0) {}
         Vector2(float x, float y) : x(x), y(y) {}
@@ -57,6 +58,19 @@ namespace Polybee {
         float y;        // Rectangle top-left corner position y
         float width;    // Rectangle width
         float height;   // Rectangle height
+    };
+    */
+
+    struct Point2D {
+        float x, y;
+
+        Point2D(float x = 0, float y = 0) : x(x), y(y) {}
+    };
+
+    struct Line2D {
+        Point2D start, end;
+
+        Line2D(Point2D start, Point2D end) : start(start), end(end) {}
     };
 
 } // namespace Polybee

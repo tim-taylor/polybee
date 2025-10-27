@@ -1,6 +1,6 @@
 ## 21/10/25
 
-In process of implementing proper collision testing of bees with tunnel borders, taking into account entraces to tunnel. This is work in the Environment, Tunnel and Bee classes. Have borrowed a intersectRayRectangle method from the web, and now need to integrate and test this. Also need to ensure that bees outside the tunnel do not get within tunnel-tickness of the tunnel when moving.
+In process of implementing proper collision testing of bees with tunnel borders, taking into account entraces to tunnel. This is work in the Environment, Tunnel and Bee classes. Have borrowed a intersectRayRectangle method from the web, and now need to integrate and test this. Also (maybe) need to ensure that bees outside the tunnel do not get within tunnel-thickness of the tunnel when moving.
 
 When this is all done, next need to do the following:
 * add plants/flowers (have flexible spec of these in config file, inc multiple species, flexible layout, etc)

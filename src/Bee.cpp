@@ -29,6 +29,7 @@ void Bee::commonInit() {
     assert(Params::initialised());
     m_distDir.param(std::uniform_real_distribution<float>::param_type(-Params::beeMaxDirDelta, Params::beeMaxDirDelta));
     colorHue = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine) * 360.0f;
+    inTunnel = m_pEnv->inTunnel(x, y);
 }
 
 void Bee::move() {
@@ -38,7 +39,7 @@ void Bee::move() {
         path.erase(path.begin());
     }
 
-    bool isInTunnel = m_pEnv->inTunnel(x, y);
+    //bool isInTunnel = m_pEnv->inTunnel(x, y);
 
     // decide on a direction in which to try to move
     angle += m_distDir(PolyBeeCore::m_sRngEngine);
@@ -54,29 +55,82 @@ void Bee::move() {
     if (newy > Params::envH) newy = Params::envH;
 
     // check if new position is valid
-    float wallThickness = m_pEnv->getTunnel().thickness();
+    //float wallThickness = m_pEnv->getTunnel().thickness();
 
     bool newPosInTunnel = m_pEnv->inTunnel(newx, newy);
-    if ((isInTunnel && newPosInTunnel) || (!isInTunnel && !newPosInTunnel)) {
+    if ((inTunnel && newPosInTunnel) || (!inTunnel && !newPosInTunnel)) {
         // valid move: update position
         x = newx;
         y = newy;
-        // TODO - if bee is outside tunnel, check it is not within tunnel wall thickness of the tunnel...
     }
     else {
         // bee has crossed tunnel boundary, so we need to figure out if it can enter/exit the tunnel at this point
-        // For now, just prevent the move
-        // TODO - implement proper tunnel entrance/exit checking
-        if (isInTunnel) {
-            // bee is currently in tunnel
-            // TODO
+        auto intersectInfo = m_pEnv->getTunnel().intersectsEntrance(x, y, newx, newy);
+
+        if (!intersectInfo.intersects) {
+            assert(intersectInfo.intersects); // should always be true here
+            pb::msg_error_and_exit("Bee::move(): logic error: expected intersection when crossing tunnel boundary.");
+        }
+        else if (intersectInfo.withinLimits) {
+            // the bee passed through an entrance, so it can move to the new position
+            x = newx;
+            y = newy;
+            inTunnel = !inTunnel;
         }
         else {
-            // bee is currently outside tunnel
-            // TODO
+            // the bee collided with the tunnel wall, so it cannot move where it wanted to go.
+            // Instead, set its position to the point where it hit the wall
+            x = intersectInfo.point.x;
+            y = intersectInfo.point.y;
         }
-
     }
 
+    // nudge bee away from tunnel walls if too close, to avoid any numerical issues
+    nudgeAwayFromTunnelWalls();
+}
+
+
+void Bee::nudgeAwayFromTunnelWalls()
+{
+    auto& tunnel = m_pEnv->getTunnel();
+    float wallBuffer = 0.5f; // minimum distance to keep from tunnel walls
+
+    if (inTunnel) {
+        // check left/right walls
+        if (x <= tunnel.x() + wallBuffer) {
+            x = tunnel.x() + wallBuffer;
+        }
+        else if (x >= tunnel.x() + tunnel.width() - wallBuffer) {
+            x = tunnel.x() + tunnel.width() - wallBuffer;
+        }
+        // check top/bottom walls
+        if (y <= tunnel.y() + wallBuffer) {
+            y = tunnel.y() + wallBuffer;
+        }
+        else if (y >= tunnel.y() + tunnel.height() - wallBuffer) {
+            y = tunnel.y() + tunnel.height() - wallBuffer;
+        }
+    }
+    else {
+        if (y >= tunnel.y() - wallBuffer && y <= tunnel.y() + tunnel.height() + wallBuffer) {
+            // bee is outside the tunnel but within the wall buffer zone, so nudge it out further
+            if (x < tunnel.x() + tunnel.width() / 2.0f && x >= tunnel.x() - wallBuffer) {
+                x = tunnel.x() - wallBuffer;
+            }
+            else if (x >= tunnel.x() + tunnel.width() / 2.0f && x <= tunnel.x() + tunnel.width() + wallBuffer) {
+                x = tunnel.x() + tunnel.width() + wallBuffer;
+            }
+        }
+
+        if (x >= tunnel.x() - wallBuffer && x <= tunnel.x() + tunnel.width() + wallBuffer) {
+            // bee is outside the tunnel but within the wall buffer zone, so nudge it out further
+            if (y < tunnel.y() + tunnel.height() / 2.0f && y >= tunnel.y() - wallBuffer) {
+                y = tunnel.y() - wallBuffer;
+            }
+            else if (y >= tunnel.y() + tunnel.height() / 2.0f && y <= tunnel.y() + tunnel.height() + wallBuffer) {
+                y = tunnel.y() + tunnel.height() + wallBuffer;
+            }
+        }
+    }
 }
 
