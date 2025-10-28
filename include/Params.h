@@ -142,7 +142,7 @@ public:
 
     // Visualisation
     static bool bVis;
-    static int visCellSize;
+    static float visCellSize;
     static int visDelayPerStep;
     static int visBeePathDrawLen; // maximum number of path segments to draw for each bee
     static float visBeePathThickness; // thickness of bee path lines

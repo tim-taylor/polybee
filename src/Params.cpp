@@ -59,7 +59,7 @@ bool Params::bCommandLineQuiet;
 
 // Visualisation
 bool Params::bVis;
-int Params::visCellSize;
+float Params::visCellSize;
 int Params::visDelayPerStep;
 int Params::visBeePathDrawLen;
 float Params::visBeePathThickness;
@@ -97,7 +97,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("target-heatmap-filename", "strTargetHeatmapFilename", ParamType::STRING, &strTargetHeatmapFilename, "", "CSV file containing target heatmap for optimization");
     REGISTRY.emplace_back("heatmap-cell-size", "heatmapCellSize", ParamType::INT, &heatmapCellSize, 10, "Size of each cell in the heatmap of bee positions");
     REGISTRY.emplace_back("visualise", "bVis", ParamType::BOOL, &bVis, true, "Determines whether graphical output is displayed");
-    REGISTRY.emplace_back("vis-cell-size", "visCellSize", ParamType::INT, &visCellSize, 4, "Size of an individual cell for visualisation");
+    REGISTRY.emplace_back("vis-cell-size", "visCellSize", ParamType::FLOAT, &visCellSize, 1.0f, "Size of an individual cell for visualisation");
     REGISTRY.emplace_back("vis-delay-per-step", "visDelayPerStep", ParamType::INT, &visDelayPerStep, 100, "Delay (in milliseconds) per step when visualising");
     REGISTRY.emplace_back("vis-bee-path-draw-len", "visBeePathDrawLen", ParamType::INT, &visBeePathDrawLen, 250, "Maximum number of path segments to draw for each bee");
     REGISTRY.emplace_back("vis-bee-path-thickness", "visBeePathThickness", ParamType::FLOAT, &visBeePathThickness, 5.0f, "Thickness of bee path lines");
