@@ -1,3 +1,7 @@
+## 28/10/25
+
+* Working on void Environment::initialisePlants()
+
 ## 27/10/25
 
 Specification of entrances in tunnel, and collision detection with tunnel taking into account the defined entrances, is now complete.

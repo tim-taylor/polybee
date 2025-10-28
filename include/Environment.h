@@ -10,7 +10,9 @@
 #include "Bee.h"
 #include "Hive.h"
 #include "Tunnel.h"
+#include "Plant.h"
 #include "Heatmap.h"
+#include "utils.h"
 #include <vector>
 
 /**
@@ -39,12 +41,14 @@ private:
     void initialiseBees();
     void initialiseHeatmap();
     void resetBees();
+    pb::Point2D envPosToGridIndex(float x, float y) const;
 
     float m_width;
     float m_height;
     std::vector<Bee> m_bees;
     std::vector<Hive> m_hives;
     Tunnel m_tunnel;
+    std::vector<std::vector<std::vector<Plant>>> m_plantGrid;
     Heatmap m_heatmap;
 };
 

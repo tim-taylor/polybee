@@ -41,6 +41,7 @@ private:
     void drawBees();
     void drawHeatmap();
     void drawTunnel();
+    void drawPatches();
     void drawStatusText();
     void processKeyboardInput();
     void rotateDrawState();

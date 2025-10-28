@@ -162,6 +162,9 @@ void LocalVis::updateDrawFrame()
         // draw tunnel rectangle and boundary
         drawTunnel();
 
+        // draw plant patches
+        drawPatches();
+
         // draw bees
         if (showBees()) {
             drawBees();
@@ -232,6 +235,19 @@ void LocalVis::drawTunnel()
         }
 
         DrawRectangleRec(envToDisplayRect(entranceRect), TUNNEL_ENTRANCE_COLOR);
+    }
+}
+
+
+void LocalVis::drawPatches()
+{
+    for (const PatchSpec& patchSpec : Params::patchSpecs) {
+        Rectangle patchRect = { patchSpec.x,  patchSpec.y, patchSpec.w, patchSpec.h };
+        for (int p=0; p<patchSpec.numRepeats; ++p) {
+            DrawRectangleRec(envToDisplayRect(patchRect), GRAY);
+            patchRect.x += patchSpec.dx;
+            patchRect.y += patchSpec.dy;
+        }
     }
 }
 

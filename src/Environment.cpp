@@ -10,6 +10,8 @@
 #include "Params.h"
 #include "utils.h"
 #include <format>
+#include <cassert>
+#include <algorithm>
 
 
 Environment::Environment() {
@@ -36,12 +38,61 @@ void Environment::initialiseTunnel()
 
 void Environment::initialisePlants()
 {
+    // initialise plant grid
+    m_plantGrid.resize(static_cast<size_t>(m_width), std::vector<std::vector<Plant>>(static_cast<size_t>(m_height)));
+
     // initialise plant patches from Params
-    for (const PatchSpec& spec : Params::patchSpecs) {
+    for (const PatchSpec& spec : Params::patchSpecs)
+    {
+        int numRows = static_cast<int>(spec.w / spec.spacing);
+        int numCols = static_cast<int>(spec.h / spec.spacing);
+
+        float first_patch_topleft_plant_x = spec.x + ((spec.w - (numCols * spec.spacing)) / 2.0f);
+        float first_patch_topleft_plant_y = spec.y + ((spec.h - (numRows * spec.spacing)) / 2.0f);
+
+        for (int i = 0; i < spec.numRepeats; ++i) {
+            float this_patch_topleft_plant_x = first_patch_topleft_plant_x + (i * spec.dx);
+            float this_patch_topleft_plant_y = first_patch_topleft_plant_y + (i * spec.dy);
+
+            float y = this_patch_topleft_plant_y;
+            for (int r = 0; r < numRows; ++r) {
+                float x = this_patch_topleft_plant_x;
+                for (int c = 0; c < numCols; ++c) {
+                    // create a plant at x,y
+                    // TODO add jitter if needed
+                    Plant plant{x, y, spec.speciesID};
+                    // add plant to environment's plant grid
+                    auto [i,j] = envPosToGridIndex(x, y);
+                    m_plantGrid[i][j].push_back(plant);
+                    x += spec.spacing;
+                }
+                y += spec.spacing;
+            }
+        }
+
         // TODO - work in progress
+        // We designate that 1 unit of length in environment coordinates
+        // corresponds to 1m in real-world measurement.
+        //
+        // When we generate plants according to the patch spec, we store them in
+        // a 2D array where each element corresponds to an area of ground in the environment.
+        // That way, when bees move around we can efficiently check whether they are over
+        // any plants by checking only the plants in the array element(s) they are currently over,
+        // and its immediate neighbours.
     }
 }
 
+
+// Convert environment position (x,y) to grid index for m_plantGrid
+pb::Point2D Environment::envPosToGridIndex(float x, float y) const {
+    assert(x >= 0.0f && x < m_width);
+    assert(y >= 0.0f && y < m_height);
+
+    int i = std::clamp(static_cast<int>(x), 0, static_cast<int>(m_width)-1);
+    int j = std::clamp(static_cast<int>(y), 0, static_cast<int>(m_height)-1);
+
+    return pb::Point2D(i, j);
+}
 
 
 void Environment::initialiseHives()
