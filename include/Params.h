@@ -61,6 +61,32 @@ struct TunnelEntranceSpec {
     TunnelEntranceSpec(float e1, float e2, int side) : e1(e1), e2(e2), side(side) {}
 };
 
+struct PatchSpec {
+    //  x,y,w,h:r[:j:[s[:n:dx,dy]]]
+    float x;                // x position of top-left-corner of patch in environment coordinates
+    float y;                // y position of top-left-corner of patch in environment coordinates
+    float w;                // width of patch
+    float h;                // height of patch
+    float spacing {0.0f};   // spacing between plants
+    float jitter {0.0f};    // jitter between plants (std dev)
+    int   speciesID {1};    // species
+    int   numRepeats {1};   // number of repeats of the patch
+    float dx {200.0f};      // x offset between repeats of patch
+    float dy {0.0f};        // y offset between repeats of patch
+
+    PatchSpec(float x, float y, float w, float h, float spacing) :
+        x(x), y(y), w(w), h(h), spacing(spacing) {}
+
+    PatchSpec(float x, float y, float w, float h, float spacing, float jitter) :
+        x(x), y(y), w(w), h(h), spacing(spacing), jitter(jitter) {}
+
+    PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID) :
+        x(x), y(y), w(w), h(h), spacing(spacing), jitter(jitter), speciesID(speciesID) {}
+
+    PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID, int numRepeats, float dx, float dy) :
+        x(x), y(y), w(w), h(h), spacing(spacing), jitter(jitter), speciesID(speciesID), numRepeats(numRepeats), dx(dx), dy(dy) {}
+};
+
 
 /**
  * @brief Class for flexibily dealing with system parameters
@@ -87,6 +113,9 @@ public:
     static float tunnelX; // top-left x position of tunnel in environment coordinates
     static float tunnelY; // top-left y position of tunnel in environment coordinates
     static std::vector<TunnelEntranceSpec> tunnelEntranceSpecs;
+
+    // Patch configuration
+    static std::vector<PatchSpec> patchSpecs;
 
     // Bee configuration
     static int numBees;

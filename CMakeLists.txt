@@ -108,8 +108,9 @@ set(SOURCE_FILES
     src/PolyBeeEvolve.cpp
     src/Bee.cpp
     src/Hive.cpp
-    src/Tunnel.cpp
+    src/Plant.cpp
     src/Environment.cpp
+    src/Tunnel.cpp
     src/Params.cpp
     src/Heatmap.cpp
     src/LocalVis.cpp

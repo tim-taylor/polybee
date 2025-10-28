@@ -31,6 +31,9 @@ float Params::tunnelX;
 float Params::tunnelY;
 std::vector<TunnelEntranceSpec> Params::tunnelEntranceSpecs;
 
+// Patch configuration
+std::vector<PatchSpec> Params::patchSpecs;
+
 // Bee configuration
 int Params::numBees;
 float Params::beeMaxDirDelta;
@@ -106,36 +109,72 @@ void Params::initRegistry()
 }
 
 
-// Helper function to parse hive positions from strings of the form "x,y" (x and y are floats)
-std::vector<HiveSpec> parse_hive_positions(const std::vector<std::string>& pos_strings) {
+// Helper function to parse hive positions from strings of the form "x,y:d" (x and y are floats, d in int)
+std::vector<HiveSpec> parse_hive_positions(const std::vector<std::string>& hive_strings) {
     std::vector<HiveSpec> hives;
     std::regex pos_regex(R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):([0-4]))");
 
-    for (const auto& pos_str : pos_strings) {
+    for (const auto& hive_str : hive_strings) {
         std::smatch match;
-        if (std::regex_match(pos_str, match, pos_regex)) {
+        if (std::regex_match(hive_str, match, pos_regex)) {
             hives.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stoi(match[3]));
         } else {
-            throw std::invalid_argument("Invalid hive specification: " + pos_str);
+            throw std::invalid_argument("Invalid hive specification: " + hive_str);
         }
     }
     return hives;
 }
 
-// Helper function to parse hive positions from strings of the form "x,y" (x and y are floats)
-std::vector<TunnelEntranceSpec> parse_tunnel_entrance_positions(const std::vector<std::string>& pos_strings) {
+// Helper function to parse hive positions from strings of the form "x,y:s" (x and y are floats, s in int)
+std::vector<TunnelEntranceSpec> parse_tunnel_entrance_positions(const std::vector<std::string>& tunnel_strings) {
     std::vector<TunnelEntranceSpec> entrances;
     std::regex pos_regex(R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):([0-3]))");
 
-    for (const auto& pos_str : pos_strings) {
+    for (const auto& tunnel_str : tunnel_strings) {
         std::smatch match;
-        if (std::regex_match(pos_str, match, pos_regex)) {
+        if (std::regex_match(tunnel_str, match, pos_regex)) {
             entrances.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stoi(match[3]));
         } else {
-            throw std::invalid_argument("Invalid tunnel entrance specification: " + pos_str);
+            throw std::invalid_argument("Invalid tunnel entrance specification: " + tunnel_str);
         }
     }
     return entrances;
+}
+
+// Helper function to parse patch specifications from strings of the form "x,y,w,h:r[:j[:s[:n:dx,dy]]]"
+// (x,y,w,h,r,j are floats, s,n are ints, dx,dy are floats)
+std::vector<PatchSpec> parse_patch_positions(const std::vector<std::string>& patch_strings) {
+    std::vector<PatchSpec> patches;
+    std::string regex_str_p1 = R"((\d+|\d+\.\d+),(\d+|\d+\.\d+),(\d+|\d+\.\d+),(\d+|\d+\.\d+):(\d*\.?\d+))"; // x,y,w,h:r
+    std::string regex_str_p2 = R"(:(\d*\.?\d+)?)";                       // :j
+    std::string regex_str_p3 = R"(:(\d+)?)";                             // :s
+    std::string regex_str_p4 = R"(:(\d+)?:(\d*\.?\d+)?,(\d*\.?\d+)?)";   // :n:dx,dy
+
+    std::regex patch_regex_1(regex_str_p1);
+    std::regex patch_regex_2(regex_str_p1 + regex_str_p2);
+    std::regex patch_regex_3(regex_str_p1 + regex_str_p2 + regex_str_p3);
+    std::regex patch_regex_4(regex_str_p1 + regex_str_p2 + regex_str_p3 + regex_str_p4);
+
+    for (const auto& patch_str : patch_strings) {
+        std::smatch match;
+        if (std::regex_match(patch_str, match, patch_regex_4)) {
+            patches.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stof(match[3]), std::stof(match[4]),
+                std::stof(match[5]), std::stof(match[6]), std::stoi(match[7]), std::stoi(match[8]), std::stof(match[9]),
+                std::stof(match[10]));
+        } else if (std::regex_match(patch_str, match, patch_regex_3)) {
+            patches.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stof(match[3]), std::stof(match[4]),
+                std::stof(match[5]), std::stof(match[6]), std::stoi(match[7]));
+        } else if (std::regex_match(patch_str, match, patch_regex_2)) {
+            patches.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stof(match[3]), std::stof(match[4]),
+                std::stof(match[5]), std::stof(match[6]));
+        } else if (std::regex_match(patch_str, match, patch_regex_1)) {
+            patches.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stof(match[3]), std::stof(match[4]),
+                std::stof(match[5]));
+        } else {
+            throw std::invalid_argument("Invalid patch specification: " + patch_str);
+        }
+    }
+    return patches;
 }
 
 
@@ -204,6 +243,16 @@ void Params::initialise(int argc, char* argv[])
             ("tunnel-entrance", po::value<std::vector<std::string>>()->multitoken(),
              "Tunnel entrance specification in format e1,e2:s where e1 and e2 are positions of edges of entrance along the specified side of tunnel (position being the distance measured from one end of that side), and s is the side (0=North, 1=East, 2=South, 3=West), e.g., --tunnel-entrance 5.5,10.0:0 --tunnel-entrance 3.0,6.0:2");
 
+        // Special case for plant patch defintions (multiple allowed)
+        config.add_options()
+            ("patch", po::value<std::vector<std::string>>()->multitoken(),
+             "Plant patch specification in format x,y,w,h:r[:j[:s[:n:dx,dy]]] where x,y,w,h define the"
+             "top-left corner of the patch (in environment coordinates)"
+             "r is spacing between plants, j is jitter between plants (std dev, default 0.0), s is species id (default 1)"
+             "n in the number of repeats of the patch (default 1), and dx,dy is the offset between repeats"
+             "e.g. --patch 200,200,50,400:2:0.5:1:3:100,0");
+
+
         // Hidden options, will be allowed both on command line and
         // in config file, but will not be shown to the user.
         po::options_description hidden("Hidden options");
@@ -255,6 +304,10 @@ void Params::initialise(int argc, char* argv[])
 
         if (vm.count("tunnel-entrance")) {
             tunnelEntranceSpecs = parse_tunnel_entrance_positions(vm["tunnel-entrance"].as<std::vector<std::string>>());
+        }
+
+        if (vm.count("patch")) {
+            patchSpecs = parse_patch_positions(vm["patch"].as<std::vector<std::string>>());
         }
 
         if (vm.count("help"))
@@ -342,6 +395,33 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
                 os << (i+1);
             }
             os << valsep << coordOpen << tunnelEntranceSpecs[i].e1 << "," << tunnelEntranceSpecs[i].e2 << coordClose << ":" << tunnelEntranceSpecs[i].side << linesep;
+        }
+    }
+    else {
+        if (!bGenerateForConfigFile) {
+            os << "(none)" << linesep;
+        }
+    }
+
+    // print patch info
+    if (!bGenerateForConfigFile) {
+        os << "Plant Patches:" << linesep;
+    }
+
+    if (!patchSpecs.empty()) {
+        for (size_t i = 0; i < patchSpecs.size(); ++i) {
+            os << "patch";
+            if (!bGenerateForConfigFile) {
+                os << (i+1);
+            }
+            os << valsep << coordOpen
+               << patchSpecs[i].x << "," << patchSpecs[i].y << "," << patchSpecs[i].w << "," << patchSpecs[i].h << coordClose
+               << ":" << patchSpecs[i].spacing
+               << ":" << patchSpecs[i].jitter
+               << ":" << patchSpecs[i].speciesID
+               << ":" << patchSpecs[i].numRepeats
+               << ":" << coordOpen << patchSpecs[i].dx << "," << patchSpecs[i].dy << coordClose
+               << linesep;
         }
     }
     else {

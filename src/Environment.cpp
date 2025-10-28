@@ -20,6 +20,7 @@ void Environment::initialise() {
     m_width = Params::envW;
     m_height = Params::envH;
     initialiseTunnel();
+    initialisePlants();
     initialiseHives();
     initialiseBees();
     initialiseHeatmap();
@@ -31,6 +32,16 @@ void Environment::initialiseTunnel()
     // initialise tunnel from Params (also adds entrances)
     m_tunnel.initialise(Params::tunnelX, Params::tunnelY, Params::tunnelW, Params::tunnelH, this);
 }
+
+
+void Environment::initialisePlants()
+{
+    // initialise plant patches from Params
+    for (const PatchSpec& spec : Params::patchSpecs) {
+        // TODO - work in progress
+    }
+}
+
 
 
 void Environment::initialiseHives()

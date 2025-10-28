@@ -34,6 +34,7 @@ public:
 
 private:
     void initialiseTunnel();
+    void initialisePlants();
     void initialiseHives();
     void initialiseBees();
     void initialiseHeatmap();
