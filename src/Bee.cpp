@@ -55,8 +55,6 @@ void Bee::move() {
     if (newy > Params::envH) newy = Params::envH;
 
     // check if new position is valid
-    //float wallThickness = m_pEnv->getTunnel().thickness();
-
     bool newPosInTunnel = m_pEnv->inTunnel(newx, newy);
     if ((inTunnel && newPosInTunnel) || (!inTunnel && !newPosInTunnel)) {
         // valid move: update position

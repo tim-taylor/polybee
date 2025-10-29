@@ -33,6 +33,7 @@ public:
     const Tunnel& getTunnel() const { return m_tunnel; }
     const Heatmap& getHeatmap() const { return m_heatmap; }
     const std::vector<Bee>& getBees() const { return m_bees; }
+    const std::vector<Plant*>& getPlantPtrs() const { return m_plantPtrs; }
 
 private:
     void initialiseTunnel();
@@ -49,6 +50,7 @@ private:
     std::vector<Hive> m_hives;
     Tunnel m_tunnel;
     std::vector<std::vector<std::vector<Plant>>> m_plantGrid;
+    std::vector<Plant*> m_plantPtrs;
     Heatmap m_heatmap;
 };
 

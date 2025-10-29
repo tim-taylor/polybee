@@ -62,7 +62,6 @@ bool Params::bVis;
 float Params::visCellSize;
 int Params::visDelayPerStep;
 int Params::visBeePathDrawLen;
-float Params::visBeePathThickness;
 
 // Options that can be specified on command line but are not in a config file
 std::string Params::strConfigFilename = "polybee.cfg";
@@ -100,7 +99,6 @@ void Params::initRegistry()
     REGISTRY.emplace_back("vis-cell-size", "visCellSize", ParamType::FLOAT, &visCellSize, 1.0f, "Size of an individual cell for visualisation");
     REGISTRY.emplace_back("vis-delay-per-step", "visDelayPerStep", ParamType::INT, &visDelayPerStep, 100, "Delay (in milliseconds) per step when visualising");
     REGISTRY.emplace_back("vis-bee-path-draw-len", "visBeePathDrawLen", ParamType::INT, &visBeePathDrawLen, 250, "Maximum number of path segments to draw for each bee");
-    REGISTRY.emplace_back("vis-bee-path-thickness", "visBeePathThickness", ParamType::FLOAT, &visBeePathThickness, 5.0f, "Thickness of bee path lines");
     REGISTRY.emplace_back("logging", "logging", ParamType::BOOL, &logging, true, "Determines whether output files are written at the end of a run");
     REGISTRY.emplace_back("log-dir", "logDir", ParamType::STRING, &logDir, ".", "Directory for output files");
     REGISTRY.emplace_back("log-filename-prefix", "logFilenamePrefix", ParamType::STRING, &logFilenamePrefix, "polybee", "Prefix for output file names");

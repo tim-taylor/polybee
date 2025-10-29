@@ -1,6 +1,12 @@
 ## 28/10/25
 
-* Working on void Environment::initialisePlants()
+Next up:
+* implement FNF/random walk (also add state to bee? foraging, returning to hive, in hive)
+* add jitter to plant position in Environment::initialisePlants()
+* (also add help screen that lists all key and mouse controls)
+
+Done:
+* add ability to pan as well as zoom in UI
 
 ## 27/10/25
 
@@ -10,8 +16,6 @@ Next up:
 
 When this is all done, next need to do the following:
 * add plants/flowers (have flexible spec of these in config file, inc multiple species, flexible layout, etc)
-* implement FNF/random walk (also add state to bee? foraging, returning to hive, in hive)
-* (also add help screen that lists all key and mouse controls)
 
 ## 21/10/25
 

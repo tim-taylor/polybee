@@ -42,6 +42,7 @@ private:
     void drawHeatmap();
     void drawTunnel();
     void drawPatches();
+    void drawPlants();
     void drawStatusText();
     void processKeyboardInput();
     void rotateDrawState();
@@ -55,6 +56,7 @@ private:
     bool m_bShowEMD {true};
 
     Camera2D m_camera;
+    Vector2 m_displayOffset {0.0f, 0.0f};
 
     float m_currentEMD;
     int64_t m_currentEMDTime;

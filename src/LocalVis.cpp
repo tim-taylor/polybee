@@ -46,17 +46,26 @@ const int DISPLAY_MARGIN_TOP = 60;
 const int DISPLAY_MARGIN_BOTTOM = 50;
 const int DISPLAY_MARGIN_LEFT = 50;
 const int DISPLAY_MARGIN_RIGHT = 50;
-const Color ENV_BACKGROUND_COLOR = { 40, 120, 40, 255 };
-const Color ENV_BORDER_COLOR = WHITE;
-const Color TUNNEL_BACKGROUND_COLOR = { 70, 70, 70, 255 };
-const Color TUNNEL_ENTRANCE_COLOR = WHITE;
-const Color TUNNEL_BORDER_COLOR = WHITE;
-const int FONT_SIZE_REG = 20;
-const int FONT_SIZE_LARGE = 40;
-const int MAX_DELAY_PER_STEP = 100;
+
 const float HIVE_SIZE = 20.0f;
 const float HALF_HIVE_SIZE = HIVE_SIZE / 2.0f;
+const float PLANT_SIZE = 5.0f;
+const float HALF_PLANT_SIZE = PLANT_SIZE / 2.0f;
 const std::vector<Vector2> BEE_SHAPE = { {10, 0}, {-6, -6}, {-6, 6} }; // triangle shape for drawing bees
+const float BEE_SCALING_FACTOR = 0.75f; // scale down bee shape for drawing
+const float BEE_PATH_THICKNESS = 3.0f;
+const float TUNNEL_WALL_VISUAL_THICKNESS = 10.0f;
+
+const Color ENV_BACKGROUND_COLOR { 203, 189, 147, 255 };
+const Color ENV_BORDER_COLOR = WHITE;
+const Color TUNNEL_BACKGROUND_COLOR = BROWN;
+const Color TUNNEL_ENTRANCE_COLOR = WHITE;
+const Color TUNNEL_BORDER_COLOR = WHITE;
+
+const int FONT_SIZE_REG = 20;
+const int FONT_SIZE_LARGE = 40;
+
+const int MAX_DELAY_PER_STEP = 100;
 
 LocalVis::LocalVis(PolyBeeCore* pPolyBeeCore) :
     m_pPolyBeeCore{pPolyBeeCore}, m_camera{0}, m_currentEMD{0.0f}, m_currentEMDTime{0}
@@ -108,12 +117,12 @@ LocalVis::~LocalVis()
 
 // ... convert an X coordinate
 float LocalVis::envToDisplayX(float envX) const {
-    return envX * Params::visCellSize + DISPLAY_MARGIN_LEFT;
+    return ((envX + m_displayOffset.x) * Params::visCellSize) + DISPLAY_MARGIN_LEFT;
 }
 
 // ... convert a Y coordinate
 float LocalVis::envToDisplayY(float envY) const {
-    return envY * Params::visCellSize + DISPLAY_MARGIN_TOP;
+    return ((envY + m_displayOffset.y) * Params::visCellSize) + DISPLAY_MARGIN_TOP;
 }
 
 // ... convert a length/size N
@@ -165,6 +174,9 @@ void LocalVis::updateDrawFrame()
         // draw plant patches
         drawPatches();
 
+        // draw plants
+        drawPlants();
+
         // draw bees
         if (showBees()) {
             drawBees();
@@ -196,7 +208,6 @@ void LocalVis::updateDrawFrame()
 void LocalVis::drawTunnel()
 {
     auto& tunnel = m_pPolyBeeCore->m_env.getTunnel();
-    float wallVisualThickness = 10.0f; //tunnel.thickness();
 
     // draw tunnel rectangle and boundary
     if (!showHeatmap()) {
@@ -211,23 +222,23 @@ void LocalVis::drawTunnel()
         Rectangle entranceRect;
         switch (entrance.side) {
         case 0: { // North
-            entranceRect = { entrance.x1, entrance.y1 - wallVisualThickness,
-                             entrance.x2 - entrance.x1, wallVisualThickness };
+            entranceRect = { entrance.x1, entrance.y1 - TUNNEL_WALL_VISUAL_THICKNESS,
+                             entrance.x2 - entrance.x1, TUNNEL_WALL_VISUAL_THICKNESS };
             break;
         }
         case 1: { // East
             entranceRect = { entrance.x1, entrance.y1,
-                             wallVisualThickness, entrance.y2 - entrance.y1 };
+                             TUNNEL_WALL_VISUAL_THICKNESS, entrance.y2 - entrance.y1 };
             break;
         }
         case 2: { // South
             entranceRect = { entrance.x1, entrance.y1,
-                             entrance.x2 - entrance.x1, wallVisualThickness };
+                             entrance.x2 - entrance.x1, TUNNEL_WALL_VISUAL_THICKNESS };
             break;
         }
         case 3: { // West
-            entranceRect = { entrance.x1 - wallVisualThickness, entrance.y1,
-                             wallVisualThickness, entrance.y2 - entrance.y1 };
+            entranceRect = { entrance.x1 - TUNNEL_WALL_VISUAL_THICKNESS, entrance.y1,
+                             TUNNEL_WALL_VISUAL_THICKNESS, entrance.y2 - entrance.y1 };
             break;
         }
         default:
@@ -248,6 +259,17 @@ void LocalVis::drawPatches()
             patchRect.x += patchSpec.dx;
             patchRect.y += patchSpec.dy;
         }
+    }
+}
+
+
+void LocalVis::drawPlants()
+{
+    for (const Plant* pPlant : m_pPolyBeeCore->m_env.getPlantPtrs()) {
+        float displayX = envToDisplayX(pPlant->x());
+        float displayY = envToDisplayY(pPlant->y());
+        float displaySize = envToDisplayN(HALF_PLANT_SIZE);
+        DrawCircleV({ displayX, displayY }, displaySize, GREEN);
     }
 }
 
@@ -312,6 +334,20 @@ void LocalVis::processKeyboardInput()
     // Camera reset
     if (IsKeyPressed(KEY_R)) {
         m_camera.zoom = 1.0f;
+        m_displayOffset = {0.0f, 0.0f};
+    }
+
+    if (IsKeyDown(KEY_UP)) {
+        m_displayOffset.y += 10.0f / m_camera.zoom;
+    }
+    if (IsKeyDown(KEY_DOWN)) {
+        m_displayOffset.y -= 10.0f / m_camera.zoom;
+    }
+    if (IsKeyDown(KEY_LEFT)) {
+        m_displayOffset.x -= 10.0f / m_camera.zoom;
+    }
+    if (IsKeyDown(KEY_RIGHT)) {
+        m_displayOffset.x += 10.0f / m_camera.zoom;
     }
 }
 
@@ -357,7 +393,7 @@ void LocalVis::drawBees()
     for (const Bee& bee : m_pPolyBeeCore->getBees()) {
         std::vector<Vector2> BeeShapeAbs = BEE_SHAPE;
         for (Vector2& v : BeeShapeAbs) {
-            v = Vector2Rotate(v, bee.angle);
+            v = Vector2Scale(Vector2Rotate(v, bee.angle), BEE_SCALING_FACTOR);
             v.x += envToDisplayX(bee.x);
             v.y += envToDisplayY(bee.y);
         }
@@ -368,11 +404,18 @@ void LocalVis::drawBees()
         if (m_bShowTrails) {
             size_t pathIdxMax = bee.path.size()-1;
             int drawCount = 0;
-            for (size_t i = pathIdxMax; i >= 1 && drawCount < Params::visBeePathDrawLen; --i) {
+
+            size_t i = pathIdxMax;
+            Vector2 p1 = { envToDisplayX(bee.path[i].x), envToDisplayY(bee.path[i].y) };
+            Vector2 p2 = { envToDisplayX(bee.x), envToDisplayY(bee.y) };
+            DrawLineEx(p1, p2, BEE_PATH_THICKNESS, ColorAlpha(ColorFromHSV(bee.colorHue, 0.3f, 0.7f), 1.0f));
+            ++drawCount;
+
+            for (; i >= 1 && drawCount < Params::visBeePathDrawLen; --i) {
                 Vector2 p1 = { envToDisplayX(bee.path[i-1].x), envToDisplayY(bee.path[i-1].y) };
                 Vector2 p2 = { envToDisplayX(bee.path[i].x), envToDisplayY(bee.path[i].y) };
                 float alpha = 1.0f - ((pathIdxMax - static_cast<float>(i)) / Params::visBeePathDrawLen); // fade out older parts of path
-                DrawLineEx(p1, p2, Params::visBeePathThickness, ColorAlpha(ColorFromHSV(bee.colorHue, 0.3f, 0.7f), alpha));
+                DrawLineEx(p1, p2, BEE_PATH_THICKNESS, ColorAlpha(ColorFromHSV(bee.colorHue, 0.3f, 0.7f), alpha));
                 ++drawCount;
             }
         }

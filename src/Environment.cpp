@@ -44,29 +44,30 @@ void Environment::initialisePlants()
     // initialise plant patches from Params
     for (const PatchSpec& spec : Params::patchSpecs)
     {
-        int numRows = static_cast<int>(spec.w / spec.spacing);
-        int numCols = static_cast<int>(spec.h / spec.spacing);
+        int numX = std::max(1, static_cast<int>(spec.w / spec.spacing)); // number of plants along x axis of patch
+        int numY = std::max(1, static_cast<int>(spec.h / spec.spacing)); // number of plants along y axis of patch
 
-        float first_patch_topleft_plant_x = spec.x + ((spec.w - (numCols * spec.spacing)) / 2.0f);
-        float first_patch_topleft_plant_y = spec.y + ((spec.h - (numRows * spec.spacing)) / 2.0f);
+        float first_patch_topleft_plant_x = spec.x + ((spec.w - ((numX - 1) * spec.spacing)) / 2.0f);
+        float first_patch_topleft_plant_y = spec.y + ((spec.h - ((numY - 1) * spec.spacing)) / 2.0f);
 
         for (int i = 0; i < spec.numRepeats; ++i) {
             float this_patch_topleft_plant_x = first_patch_topleft_plant_x + (i * spec.dx);
             float this_patch_topleft_plant_y = first_patch_topleft_plant_y + (i * spec.dy);
 
-            float y = this_patch_topleft_plant_y;
-            for (int r = 0; r < numRows; ++r) {
-                float x = this_patch_topleft_plant_x;
-                for (int c = 0; c < numCols; ++c) {
-                    // create a plant at x,y
+            float x = this_patch_topleft_plant_x;
+            for (int a = 0; a < numX; ++a) {
+                float y = this_patch_topleft_plant_y;
+                for (int b = 0; b < numY; ++b) {
                     // TODO add jitter if needed
-                    Plant plant{x, y, spec.speciesID};
+                    // create a plant at x,y
+                    Plant plant {x, y, spec.speciesID};
                     // add plant to environment's plant grid
                     auto [i,j] = envPosToGridIndex(x, y);
                     m_plantGrid[i][j].push_back(plant);
-                    x += spec.spacing;
+                    m_plantPtrs.push_back(&m_plantGrid[i][j].back());
+                    y += spec.spacing;
                 }
-                y += spec.spacing;
+                x += spec.spacing;
             }
         }
 

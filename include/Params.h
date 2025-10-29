@@ -145,7 +145,6 @@ public:
     static float visCellSize;
     static int visDelayPerStep;
     static int visBeePathDrawLen; // maximum number of path segments to draw for each bee
-    static float visBeePathThickness; // thickness of bee path lines
 
     // Options that can be specified on command line but are not in a config file
     static std::string strConfigFilename;
