@@ -11,7 +11,13 @@
 #include <numbers>
 #include <random>
 #include <cassert>
+#include <format>
 
+// initialise static members
+const float Bee::m_sTunnelWallBuffer {0.1f};
+
+
+// Bee methods
 
 Bee::Bee(fPos pos, Environment* pEnv) :
     x(pos.x), y(pos.y), angle(0.0), m_pEnv(pEnv)
@@ -33,13 +39,17 @@ void Bee::commonInit() {
 }
 
 void Bee::move() {
+    // Temp code just for sanity check of final position, tested at end of method
+    /*
+    float oldx = x;
+    float oldy = y;
+    */
+
     // record current position
     path.emplace_back(x, y);
     if (path.size() > Params::beePathRecordLen) {
         path.erase(path.begin());
     }
-
-    //bool isInTunnel = m_pEnv->inTunnel(x, y);
 
     // decide on a direction in which to try to move
     angle += m_distDir(PolyBeeCore::m_sRngEngine);
@@ -66,8 +76,9 @@ void Bee::move() {
         auto intersectInfo = m_pEnv->getTunnel().intersectsEntrance(x, y, newx, newy);
 
         if (!intersectInfo.intersects) {
-            assert(intersectInfo.intersects); // should always be true here
-            pb::msg_error_and_exit("Bee::move(): logic error: expected intersection when crossing tunnel boundary.");
+            pb::msg_error_and_exit(
+                std::format("Bee::move(): logic error: expected intersection when crossing tunnel boundary, from ({}, {}) to ({}, {})",
+                    x, y, newx, newy));
         }
         else if (intersectInfo.withinLimits) {
             // the bee passed through an entrance, so it can move to the new position
@@ -83,50 +94,78 @@ void Bee::move() {
         }
     }
 
+    // Temp code for sanity check of final position, tested at end of method
+    /*
+    float newx_prenudge = x;
+    float newy_prenudge = y;
+    */
+
     // nudge bee away from tunnel walls if too close, to avoid any numerical issues
     nudgeAwayFromTunnelWalls();
+
+    // Temp code - sanity check
+    /*
+    float distanceMovedSq = (x - oldx) * (x - oldx) + (y - oldy) * (y - oldy);
+    static bool maxStepLengthCalculated = false;
+    static float maxStepLengthSq = 0.0f;
+    if (!maxStepLengthCalculated) {
+        maxStepLengthSq = (Params::beeStepLength * 1.2f) * (Params::beeStepLength * 1.2f);
+        maxStepLengthCalculated = true;
+    }
+    if (distanceMovedSq > maxStepLengthSq) {
+        pb::msg_error_and_exit(
+            std::format("Bee::move(): logic error: bee moved further than allowed step length, from "
+                "({}, {}) to ({}, {}) nudged to ({}, {})",
+                oldx, oldy, newx_prenudge, newy_prenudge, x, y));
+    }
+    */
 }
 
 
 void Bee::nudgeAwayFromTunnelWalls()
 {
     auto& tunnel = m_pEnv->getTunnel();
-    float wallBuffer = 0.5f; // minimum distance to keep from tunnel walls
 
     if (inTunnel) {
+        // bee is inside the tunnel: ensure it stays a minimum distance away from the walls
+
         // check left/right walls
-        if (x <= tunnel.x() + wallBuffer) {
-            x = tunnel.x() + wallBuffer;
+        if (x <= tunnel.x() + m_sTunnelWallBuffer) {
+            x = tunnel.x() + m_sTunnelWallBuffer;
         }
-        else if (x >= tunnel.x() + tunnel.width() - wallBuffer) {
-            x = tunnel.x() + tunnel.width() - wallBuffer;
+        else if (x >= tunnel.x() + tunnel.width() - m_sTunnelWallBuffer) {
+            x = tunnel.x() + tunnel.width() - m_sTunnelWallBuffer;
         }
         // check top/bottom walls
-        if (y <= tunnel.y() + wallBuffer) {
-            y = tunnel.y() + wallBuffer;
+        if (y <= tunnel.y() + m_sTunnelWallBuffer) {
+            y = tunnel.y() + m_sTunnelWallBuffer;
         }
-        else if (y >= tunnel.y() + tunnel.height() - wallBuffer) {
-            y = tunnel.y() + tunnel.height() - wallBuffer;
+        else if (y >= tunnel.y() + tunnel.height() - m_sTunnelWallBuffer) {
+            y = tunnel.y() + tunnel.height() - m_sTunnelWallBuffer;
         }
     }
     else {
-        if (y >= tunnel.y() - wallBuffer && y <= tunnel.y() + tunnel.height() + wallBuffer) {
-            // bee is outside the tunnel but within the wall buffer zone, so nudge it out further
-            if (x < tunnel.x() + tunnel.width() / 2.0f && x >= tunnel.x() - wallBuffer) {
-                x = tunnel.x() - wallBuffer;
+        // bee is outside the tunnel: check if it's within the wall buffer zone, and nudge it out further if so
+
+        // check left/right walls
+        if ((y >= tunnel.y()) && (y <= tunnel.y() + tunnel.height())) {
+            // bee is within the vertical range of the tunnel, so check horizontal distance
+            if ((x < tunnel.x() + tunnel.width() / 2.0f) && (x >= tunnel.x() - m_sTunnelWallBuffer)) {
+                x = tunnel.x() - m_sTunnelWallBuffer;
             }
-            else if (x >= tunnel.x() + tunnel.width() / 2.0f && x <= tunnel.x() + tunnel.width() + wallBuffer) {
-                x = tunnel.x() + tunnel.width() + wallBuffer;
+            else if ((x >= tunnel.x() + tunnel.width() / 2.0f) && (x <= tunnel.x() + tunnel.width() + m_sTunnelWallBuffer)) {
+                x = tunnel.x() + tunnel.width() + m_sTunnelWallBuffer;
             }
         }
 
-        if (x >= tunnel.x() - wallBuffer && x <= tunnel.x() + tunnel.width() + wallBuffer) {
-            // bee is outside the tunnel but within the wall buffer zone, so nudge it out further
-            if (y < tunnel.y() + tunnel.height() / 2.0f && y >= tunnel.y() - wallBuffer) {
-                y = tunnel.y() - wallBuffer;
+        // check top/bottom walls
+        if ((x >= tunnel.x()) && (x <= tunnel.x() + tunnel.width())) {
+            // bee is within the horizontal range of the tunnel, so check vertical distance
+            if ((y < tunnel.y() + tunnel.height() / 2.0f) && (y >= tunnel.y() - m_sTunnelWallBuffer)) {
+                y = tunnel.y() - m_sTunnelWallBuffer;
             }
-            else if (y >= tunnel.y() + tunnel.height() / 2.0f && y <= tunnel.y() + tunnel.height() + wallBuffer) {
-                y = tunnel.y() + tunnel.height() + wallBuffer;
+            else if ((y >= tunnel.y() + tunnel.height() / 2.0f) && (y <= tunnel.y() + tunnel.height() + m_sTunnelWallBuffer)) {
+                y = tunnel.y() + tunnel.height() + m_sTunnelWallBuffer;
             }
         }
     }

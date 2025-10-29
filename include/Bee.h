@@ -39,6 +39,8 @@ private:
 
     Environment* m_pEnv;
     std::uniform_real_distribution<float> m_distDir;
+
+    static const float m_sTunnelWallBuffer; // minimum distance to keep from tunnel walls
 };
 
 #endif /* _BEE_H */
