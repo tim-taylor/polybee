@@ -265,9 +265,9 @@ void LocalVis::drawPatches()
 
 void LocalVis::drawPlants()
 {
-    for (const Plant* pPlant : m_pPolyBeeCore->m_env.getPlantPtrs()) {
-        float displayX = envToDisplayX(pPlant->x());
-        float displayY = envToDisplayY(pPlant->y());
+    for (const Plant& plant : m_pPolyBeeCore->m_env.getAllPlants()) {
+        float displayX = envToDisplayX(plant.x());
+        float displayY = envToDisplayY(plant.y());
         float displaySize = envToDisplayN(HALF_PLANT_SIZE);
         DrawCircleV({ displayX, displayY }, displaySize, GREEN);
     }
@@ -489,10 +489,12 @@ void LocalVis::drawHeatmap()
             float valueToPlot = normalizedValue * (numCells / 3.0); // scale for better visibility
             Color color = getHeatmapColor(valueToPlot);
 
-            DrawRectangle(DISPLAY_MARGIN_LEFT + x * cellW, DISPLAY_MARGIN_TOP + y * cellH, cellW, cellH, color);
+            DrawRectangle(DISPLAY_MARGIN_LEFT + m_displayOffset.x + x * cellW,
+                DISPLAY_MARGIN_TOP + m_displayOffset.y + y * cellH, cellW, cellH, color);
 
             // Draw cell borders for better visibility
-            DrawRectangleLines(DISPLAY_MARGIN_LEFT + x * cellW, DISPLAY_MARGIN_TOP + y * cellH, cellW, cellH, DARKGRAY);
+            DrawRectangleLines(DISPLAY_MARGIN_LEFT + m_displayOffset.x + x * cellW,
+                DISPLAY_MARGIN_TOP + m_displayOffset.y + y * cellH, cellW, cellH, DARKGRAY);
         }
     }
 

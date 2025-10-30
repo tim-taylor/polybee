@@ -3,6 +3,7 @@
 Next up:
 * implement FNF/random walk (also add state to bee? foraging, returning to hive, in hive)
 * add jitter to plant position in Environment::initialisePlants()
+* when displaying heatmap, maybe just show outlines of patches (don't show filled in rect or individual plants)
 * (also add help screen that lists all key and mouse controls)
 
 Done:

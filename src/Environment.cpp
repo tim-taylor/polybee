@@ -38,33 +38,40 @@ void Environment::initialiseTunnel()
 
 void Environment::initialisePlants()
 {
-    // initialise plant grid
-    m_plantGrid.resize(static_cast<size_t>(m_width), std::vector<std::vector<Plant>>(static_cast<size_t>(m_height)));
+    // Calculate total number of plants across all patches
+    int totalPlants = 0;
+    for (const PatchSpec& spec : Params::patchSpecs) {
+        totalPlants += spec.numX * spec.numY * spec.numRepeats;
+    }
+
+    // Reserve space for all plants to prevent reallocation and pointer invalidation
+    m_allPlants.reserve(totalPlants);
+
+    // initialise plant grid (now stores pointers instead of Plant objects)
+    m_plantGrid.resize(static_cast<size_t>(m_width), std::vector<std::vector<Plant*>>(static_cast<size_t>(m_height)));
 
     // initialise plant patches from Params
     for (const PatchSpec& spec : Params::patchSpecs)
     {
-        int numX = std::max(1, static_cast<int>(spec.w / spec.spacing)); // number of plants along x axis of patch
-        int numY = std::max(1, static_cast<int>(spec.h / spec.spacing)); // number of plants along y axis of patch
-
-        float first_patch_topleft_plant_x = spec.x + ((spec.w - ((numX - 1) * spec.spacing)) / 2.0f);
-        float first_patch_topleft_plant_y = spec.y + ((spec.h - ((numY - 1) * spec.spacing)) / 2.0f);
+        float first_patch_topleft_plant_x = spec.x + ((spec.w - ((spec.numX - 1) * spec.spacing)) / 2.0f);
+        float first_patch_topleft_plant_y = spec.y + ((spec.h - ((spec.numY - 1) * spec.spacing)) / 2.0f);
 
         for (int i = 0; i < spec.numRepeats; ++i) {
             float this_patch_topleft_plant_x = first_patch_topleft_plant_x + (i * spec.dx);
             float this_patch_topleft_plant_y = first_patch_topleft_plant_y + (i * spec.dy);
 
             float x = this_patch_topleft_plant_x;
-            for (int a = 0; a < numX; ++a) {
+            for (int a = 0; a < spec.numX; ++a) {
                 float y = this_patch_topleft_plant_y;
-                for (int b = 0; b < numY; ++b) {
+                for (int b = 0; b < spec.numY; ++b) {
                     // TODO add jitter if needed
-                    // create a plant at x,y
-                    Plant plant {x, y, spec.speciesID};
-                    // add plant to environment's plant grid
+                    // create a plant at x,y and add to m_allPlants
+                    m_allPlants.emplace_back(x, y, spec.speciesID);
+
+                    // add pointer to this plant in the spatial grid
                     auto [i,j] = envPosToGridIndex(x, y);
-                    m_plantGrid[i][j].push_back(plant);
-                    m_plantPtrs.push_back(&m_plantGrid[i][j].back());
+                    m_plantGrid[i][j].push_back(&m_allPlants.back());
+
                     y += spec.spacing;
                 }
                 x += spec.spacing;

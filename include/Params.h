@@ -24,6 +24,7 @@ enum ParamType
     STRING
 };
 
+
 struct ParamInfo
 {
     // variables
@@ -45,6 +46,7 @@ struct ParamInfo
     std::string valueAsStr();
 };
 
+
 struct HiveSpec {
     float x;        // position of hive in environment coordinates
     float y;        // position of hive in environment coordinates
@@ -53,6 +55,7 @@ struct HiveSpec {
     HiveSpec(float x, float y, int direction) : x(x), y(y), direction(direction) {}
 };
 
+
 struct TunnelEntranceSpec {
     float e1; // position of first edge of entrance along the specified side of tunnel, in tunnel coordinates
     float e2; // position of second edge of entrance along the specified side of tunnel, in tunnel coordinates
@@ -60,6 +63,7 @@ struct TunnelEntranceSpec {
 
     TunnelEntranceSpec(float e1, float e2, int side) : e1(e1), e2(e2), side(side) {}
 };
+
 
 struct PatchSpec {
     //  x,y,w,h:r[:j:[s[:n:dx,dy]]]
@@ -73,18 +77,16 @@ struct PatchSpec {
     int   numRepeats {1};   // number of repeats of the patch
     float dx {200.0f};      // x offset between repeats of patch
     float dy {0.0f};        // y offset between repeats of patch
+    int   numX {1};         // number of plants along x axis of patch
+    int   numY {1};         // number of plants along y axis of patch
 
-    PatchSpec(float x, float y, float w, float h, float spacing) :
-        x(x), y(y), w(w), h(h), spacing(spacing) {}
+    PatchSpec(float x, float y, float w, float h, float spacing);
+    PatchSpec(float x, float y, float w, float h, float spacing, float jitter);
+    PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID);
+    PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID, int numRepeats, float dx, float dy);
 
-    PatchSpec(float x, float y, float w, float h, float spacing, float jitter) :
-        x(x), y(y), w(w), h(h), spacing(spacing), jitter(jitter) {}
-
-    PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID) :
-        x(x), y(y), w(w), h(h), spacing(spacing), jitter(jitter), speciesID(speciesID) {}
-
-    PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID, int numRepeats, float dx, float dy) :
-        x(x), y(y), w(w), h(h), spacing(spacing), jitter(jitter), speciesID(speciesID), numRepeats(numRepeats), dx(dx), dy(dy) {}
+private:
+    void commonInit();
 };
 
 

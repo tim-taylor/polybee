@@ -72,6 +72,43 @@ bool Params::bInitialised = false;
 // private variables (not set by user, used internally)
 std::vector<ParamInfo> Params::REGISTRY;
 
+
+/////////////////////////////////////////////////////////////////
+// PatchSpec methods
+
+PatchSpec::PatchSpec(float x, float y, float w, float h, float spacing) :
+    x(x), y(y), w(w), h(h), spacing(spacing)
+{
+    commonInit();
+}
+
+PatchSpec::PatchSpec(float x, float y, float w, float h, float spacing, float jitter) :
+    x(x), y(y), w(w), h(h), spacing(spacing), jitter(jitter)
+{
+    commonInit();
+}
+
+PatchSpec::PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID) :
+    x(x), y(y), w(w), h(h), spacing(spacing), jitter(jitter), speciesID(speciesID)
+{
+    commonInit();
+}
+
+PatchSpec::PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID, int numRepeats, float dx, float dy) :
+    x(x), y(y), w(w), h(h), spacing(spacing), jitter(jitter), speciesID(speciesID), numRepeats(numRepeats), dx(dx), dy(dy)
+{
+    commonInit();
+}
+
+void PatchSpec::commonInit()
+{
+    // Calculate numX and numY based on w, h, and spacing
+    numX = std::max(1, static_cast<int>(w / spacing));
+    numY = std::max(1, static_cast<int>(h / spacing));
+}
+
+
+
 /////////////////////////////////////////////////////////////////
 // Params methods
 
