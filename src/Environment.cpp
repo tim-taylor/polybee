@@ -92,14 +92,20 @@ void Environment::initialisePlants()
 
 
 // Convert environment position (x,y) to grid index for m_plantGrid
-pb::Point2D Environment::envPosToGridIndex(float x, float y) const {
-    assert(x >= 0.0f && x < m_width);
-    assert(y >= 0.0f && y < m_height);
+pb::Pos2D Environment::envPosToGridIndex(float x, float y) const {
+    // for debugging purposes, check for out-of-bounds access
+    if (x < 0.0f || x > m_width + FLOAT_COMPARISON_EPSILON || y < 0.0f || y > m_height + FLOAT_COMPARISON_EPSILON) {
+        pb::msg_error_and_exit(std::format("Environment::envPosToGridIndex: position ({},{}) is out of bounds (env size {}x{})",
+            x, y, m_width, m_height));
+    }
+
+    //assert(x >= 0.0f && x < m_width + FLOAT_COMPARISON_EPSILON);
+    //assert(y >= 0.0f && y < m_height + FLOAT_COMPARISON_EPSILON);
 
     int i = std::clamp(static_cast<int>(x), 0, static_cast<int>(m_width)-1);
     int j = std::clamp(static_cast<int>(y), 0, static_cast<int>(m_height)-1);
 
-    return pb::Point2D(i, j);
+    return pb::Pos2D(i, j);
 }
 
 
@@ -138,7 +144,7 @@ void Environment::initialiseBees()
                 // Random direction: uniform random angle between 0 and 2π
                 beeAngle = PolyBeeCore::m_sAngle2PiDistrib(PolyBeeCore::m_sRngEngine);
             }
-            m_bees.emplace_back(fPos(hive.x, hive.y), beeAngle, this);
+            m_bees.emplace_back(pb::Pos2D(hive.x, hive.y), beeAngle, this);
         }
     }
 
@@ -176,10 +182,64 @@ void Environment::update() {
     m_heatmap.update();
 }
 
+
 bool Environment::inTunnel(float x, float y) const {
     return (x >= m_tunnel.x() &&
             x <= m_tunnel.x() + m_tunnel.width() &&
             y >= m_tunnel.y() &&
             y <= m_tunnel.y() + m_tunnel.height());
 }
+
+
+std::optional<Plant*> Environment::getNearestUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const
+{
+    // TODO - should also check whether the tunnel wall is between the bee and the plant
+
+    Plant* pNearestPlant = nullptr;
+    float nearestDistSq = std::numeric_limits<float>::max();
+    float rangeSq = Bee::visualRange() * Bee::visualRange();
+
+    auto nearbyPlants = getNearbyPlants(x, y);
+
+    for (Plant* pPlant : nearbyPlants) {
+        if (std::find(visited.begin(), visited.end(), pPlant) != visited.end()) {
+            continue;  // Skip already visited plants
+        }
+
+        float distSq = pb::distanceSq(x, y, pPlant->x(), pPlant->y());
+        if (distSq < nearestDistSq && distSq <= rangeSq && distSq > 0.001f) {
+            nearestDistSq = distSq;
+            pNearestPlant = pPlant;
+        }
+    }
+
+    if (pNearestPlant == nullptr) {
+        return std::nullopt;
+    }
+    else {
+        return pNearestPlant;
+    }
+}
+
+
+std::vector<Plant*> Environment::getNearbyPlants(float x, float y) const
+{
+    // TODO - work in progress
+    std::vector<Plant*> nearbyPlants;
+
+    auto [i, j] = envPosToGridIndex(x, y);
+
+    for (int di = -1; di <= 1; ++di) {
+        for (int dj = -1; dj <= 1; ++dj) {
+            if (i + di >= 0 && i + di < m_plantGrid.size() &&
+                j + dj >= 0 && j + dj < m_plantGrid[i + di].size()) {
+                const auto& cell = m_plantGrid[i + di][j + dj];
+                nearbyPlants.insert(nearbyPlants.end(), cell.begin(), cell.end());
+            }
+        }
+    }
+
+    return nearbyPlants;
+}
+
 

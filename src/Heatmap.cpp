@@ -89,8 +89,8 @@ void Heatmap::update() {
     // update counts based on current bee positions
     for (const Bee& bee : *m_pBees) {
         // Handle bees exactly on upper boundaries by placing them in the last valid cell
-        int cellX = static_cast<int>(bee.x) / m_cellSize;
-        int cellY = static_cast<int>(bee.y) / m_cellSize;
+        int cellX = static_cast<int>(bee.x()) / m_cellSize;
+        int cellY = static_cast<int>(bee.y()) / m_cellSize;
 
         // Clamp to valid cell indices (handles bees exactly at envW or envH)
         if (cellX >= m_numCellsX) cellX = m_numCellsX - 1;
@@ -101,7 +101,7 @@ void Heatmap::update() {
         }
         else {
             // This should not happen if bees are correctly constrained within the environment
-            pb::msg_error_and_exit(std::format("Bee at position ({}, {}) is out of bounds for the heatmap.", bee.x, bee.y));
+            pb::msg_error_and_exit(std::format("Bee at position ({}, {}) is out of bounds for the heatmap.", bee.x(), bee.y()));
         }
     }
 

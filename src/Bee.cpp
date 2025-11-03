@@ -19,14 +19,14 @@ const float Bee::m_sTunnelWallBuffer {0.1f};
 
 // Bee methods
 
-Bee::Bee(fPos pos, Environment* pEnv) :
-    x(pos.x), y(pos.y), angle(0.0), m_pEnv(pEnv)
+Bee::Bee(pb::Pos2D pos, Environment* pEnv) :
+    m_x(pos.x), m_y(pos.y), m_angle(0.0), m_pEnv(pEnv)
 {
     commonInit();
 }
 
-Bee::Bee(fPos pos, float angle, Environment* pEnv) :
-    x(pos.x), y(pos.y), angle(angle), m_pEnv(pEnv)
+Bee::Bee(pb::Pos2D pos, float angle, Environment* pEnv) :
+    m_x(pos.x), m_y(pos.y), m_angle(angle), m_pEnv(pEnv)
 {
     commonInit();
 }
@@ -34,8 +34,8 @@ Bee::Bee(fPos pos, float angle, Environment* pEnv) :
 void Bee::commonInit() {
     assert(Params::initialised());
     m_distDir.param(std::uniform_real_distribution<float>::param_type(-Params::beeMaxDirDelta, Params::beeMaxDirDelta));
-    colorHue = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine) * 360.0f;
-    inTunnel = m_pEnv->inTunnel(x, y);
+    m_colorHue = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine) * 360.0f;
+    m_inTunnel = m_pEnv->inTunnel(m_x, m_y);
 }
 
 void Bee::move() {
@@ -46,51 +46,64 @@ void Bee::move() {
     */
 
     // record current position
-    path.emplace_back(x, y);
-    if (path.size() > Params::beePathRecordLen) {
-        path.erase(path.begin());
+    m_path.emplace_back(m_x, m_y);
+    if (m_path.size() > Params::beePathRecordLen) {
+        m_path.erase(m_path.begin());
     }
 
-    // decide on a direction in which to try to move
-    angle += m_distDir(PolyBeeCore::m_sRngEngine);
+    // work out where bee would like to go next, following forage for the nearest flower strategy
+    // or step in random direction if no nearby flowers found
+    // TODO - remove the if..else scaffold and old code when flower foraging properly implemented
+    pb::PosAndDir2D desiredMove;
+    if (true) {
+        desiredMove = forageNearestFlower();
+    }
+    else {
+        // decide on a direction in which to try to move
+        //m_angle += m_distDir(PolyBeeCore::m_sRngEngine);
+        desiredMove.angle = m_angle + m_distDir(PolyBeeCore::m_sRngEngine);
 
-    // work out where that would take us
-    float newx = x + Params::beeStepLength * std::cos(angle);
-    float newy = y + Params::beeStepLength * std::sin(angle);
+        // work out where that would take us
+        desiredMove.x = m_x + Params::beeStepLength * std::cos(desiredMove.angle);
+        desiredMove.y = m_y + Params::beeStepLength * std::sin(desiredMove.angle);
+    }
 
-    // keep within bounds of environment
-    if (newx < 0.0f) newx = 0.0f;
-    if (newy < 0.0f) newy = 0.0f;
-    if (newx > Params::envW) newx = Params::envW;
-    if (newy > Params::envH) newy = Params::envH;
+     // keep within bounds of environment
+    if (desiredMove.x < 0.0f) desiredMove.x = 0.0f;
+    if (desiredMove.y < 0.0f) desiredMove.y = 0.0f;
+    if (desiredMove.x > Params::envW) desiredMove.x = Params::envW;
+    if (desiredMove.y > Params::envH) desiredMove.y = Params::envH;
 
     // check if new position is valid
-    bool newPosInTunnel = m_pEnv->inTunnel(newx, newy);
-    if ((inTunnel && newPosInTunnel) || (!inTunnel && !newPosInTunnel)) {
+    bool newPosInTunnel = m_pEnv->inTunnel(desiredMove.x, desiredMove.y);
+    if ((m_inTunnel && newPosInTunnel) || (!m_inTunnel && !newPosInTunnel)) {
         // valid move: update position
-        x = newx;
-        y = newy;
+        m_angle = desiredMove.angle;
+        m_x = desiredMove.x;
+        m_y = desiredMove.y;
     }
     else {
         // bee has crossed tunnel boundary, so we need to figure out if it can enter/exit the tunnel at this point
-        auto intersectInfo = m_pEnv->getTunnel().intersectsEntrance(x, y, newx, newy);
+        auto intersectInfo = m_pEnv->getTunnel().intersectsEntrance(m_x, m_y, desiredMove.x, desiredMove.y);
 
         if (!intersectInfo.intersects) {
             pb::msg_error_and_exit(
                 std::format("Bee::move(): logic error: expected intersection when crossing tunnel boundary, from ({}, {}) to ({}, {})",
-                    x, y, newx, newy));
+                    m_x, m_y, desiredMove.x, desiredMove.y));
         }
         else if (intersectInfo.withinLimits) {
             // the bee passed through an entrance, so it can move to the new position
-            x = newx;
-            y = newy;
-            inTunnel = !inTunnel;
+            m_angle = desiredMove.angle;
+            m_x = desiredMove.x;
+            m_y = desiredMove.y;
+            m_inTunnel = !m_inTunnel;
         }
         else {
             // the bee collided with the tunnel wall, so it cannot move where it wanted to go.
             // Instead, set its position to the point where it hit the wall
-            x = intersectInfo.point.x;
-            y = intersectInfo.point.y;
+            m_angle = desiredMove.angle; // TODO should maybe recalculate actual angle here?
+            m_x = intersectInfo.point.x;
+            m_y = intersectInfo.point.y;
         }
     }
 
@@ -126,48 +139,97 @@ void Bee::nudgeAwayFromTunnelWalls()
 {
     auto& tunnel = m_pEnv->getTunnel();
 
-    if (inTunnel) {
+    if (m_inTunnel) {
         // bee is inside the tunnel: ensure it stays a minimum distance away from the walls
 
         // check left/right walls
-        if (x <= tunnel.x() + m_sTunnelWallBuffer) {
-            x = tunnel.x() + m_sTunnelWallBuffer;
+        if (m_x <= tunnel.x() + m_sTunnelWallBuffer) {
+            m_x = tunnel.x() + m_sTunnelWallBuffer;
         }
-        else if (x >= tunnel.x() + tunnel.width() - m_sTunnelWallBuffer) {
-            x = tunnel.x() + tunnel.width() - m_sTunnelWallBuffer;
+        else if (m_x >= tunnel.x() + tunnel.width() - m_sTunnelWallBuffer) {
+            m_x = tunnel.x() + tunnel.width() - m_sTunnelWallBuffer;
         }
         // check top/bottom walls
-        if (y <= tunnel.y() + m_sTunnelWallBuffer) {
-            y = tunnel.y() + m_sTunnelWallBuffer;
+        if (m_y <= tunnel.y() + m_sTunnelWallBuffer) {
+            m_y = tunnel.y() + m_sTunnelWallBuffer;
         }
-        else if (y >= tunnel.y() + tunnel.height() - m_sTunnelWallBuffer) {
-            y = tunnel.y() + tunnel.height() - m_sTunnelWallBuffer;
+        else if (m_y >= tunnel.y() + tunnel.height() - m_sTunnelWallBuffer) {
+            m_y = tunnel.y() + tunnel.height() - m_sTunnelWallBuffer;
         }
     }
     else {
         // bee is outside the tunnel: check if it's within the wall buffer zone, and nudge it out further if so
 
         // check left/right walls
-        if ((y >= tunnel.y()) && (y <= tunnel.y() + tunnel.height())) {
+        if ((m_y >= tunnel.y()) && (m_y <= tunnel.y() + tunnel.height())) {
             // bee is within the vertical range of the tunnel, so check horizontal distance
-            if ((x < tunnel.x() + tunnel.width() / 2.0f) && (x >= tunnel.x() - m_sTunnelWallBuffer)) {
-                x = tunnel.x() - m_sTunnelWallBuffer;
+            if ((m_x < tunnel.x() + tunnel.width() / 2.0f) && (m_x >= tunnel.x() - m_sTunnelWallBuffer)) {
+                m_x = tunnel.x() - m_sTunnelWallBuffer;
             }
-            else if ((x >= tunnel.x() + tunnel.width() / 2.0f) && (x <= tunnel.x() + tunnel.width() + m_sTunnelWallBuffer)) {
-                x = tunnel.x() + tunnel.width() + m_sTunnelWallBuffer;
+            else if ((m_x >= tunnel.x() + tunnel.width() / 2.0f) && (m_x <= tunnel.x() + tunnel.width() + m_sTunnelWallBuffer)) {
+                m_x = tunnel.x() + tunnel.width() + m_sTunnelWallBuffer;
             }
         }
 
         // check top/bottom walls
-        if ((x >= tunnel.x()) && (x <= tunnel.x() + tunnel.width())) {
+        if ((m_x >= tunnel.x()) && (m_x <= tunnel.x() + tunnel.width())) {
             // bee is within the horizontal range of the tunnel, so check vertical distance
-            if ((y < tunnel.y() + tunnel.height() / 2.0f) && (y >= tunnel.y() - m_sTunnelWallBuffer)) {
-                y = tunnel.y() - m_sTunnelWallBuffer;
+            if ((m_y < tunnel.y() + tunnel.height() / 2.0f) && (m_y >= tunnel.y() - m_sTunnelWallBuffer)) {
+                m_y = tunnel.y() - m_sTunnelWallBuffer;
             }
-            else if ((y >= tunnel.y() + tunnel.height() / 2.0f) && (y <= tunnel.y() + tunnel.height() + m_sTunnelWallBuffer)) {
-                y = tunnel.y() + tunnel.height() + m_sTunnelWallBuffer;
+            else if ((m_y >= tunnel.y() + tunnel.height() / 2.0f) && (m_y <= tunnel.y() + tunnel.height() + m_sTunnelWallBuffer)) {
+                m_y = tunnel.y() + tunnel.height() + m_sTunnelWallBuffer;
             }
         }
     }
 }
 
+
+// Calculate where the bee would like to go next, following forage for nearest flower strategy
+// or step in random direction if no nearby flowers found.
+// Returns the new (x,y) position as a Pos2D struct, but does not actually update the bee's position.
+// The calling method is responsible for checking if the new position is valid (e.g. that it is
+// within the bounds of the environment and that it doesn't cross a tunnel wall except at defined
+// entrance/exit points), and updating the bee's position if appropriate.
+//
+// Note, this method is not const because it uses m_distDir which updates its internal state
+// each time it is called.
+//
+pb::PosAndDir2D Bee::forageNearestFlower()
+{
+    pb::PosAndDir2D result;
+
+    // TODO - need to keep track of which flowers have already been visited by this bee,
+    // and pass that info in here to avoid going back to the same flower repeatedly.
+    // Also need to implement code to keep the visited list up to date
+    // For now, just pass an empty list in the call below.
+
+    auto plantInfo = m_pEnv->getNearestUnvisitedPlant(m_x, m_y, m_recentlyVisitedPlants);
+    if (plantInfo.has_value()) {
+        Plant* pPlant = plantInfo.value();
+        // found a nearby plant to forage from
+        float dx = pPlant->x() - m_x;
+        float dy = pPlant->y() - m_y;
+        float angleToPlant = std::atan2(dy, dx);
+
+        result.angle = angleToPlant;
+        result.x = m_x + Params::beeStepLength * std::cos(angleToPlant);
+        result.y = m_y + Params::beeStepLength * std::sin(angleToPlant);
+
+        // record that we've visited this plant (and remove oldest visited plant if necessary
+        // to keep memory length within limit)
+        pPlant->setVisited();
+        m_recentlyVisitedPlants.push_back(pPlant);
+        if (m_recentlyVisitedPlants.size() > Params::beeVisitMemoryLength) {
+            m_recentlyVisitedPlants.erase(m_recentlyVisitedPlants.begin());
+        }
+    }
+    else {
+        // no nearby plants found, so just move in random direction
+        result.angle = m_angle + m_distDir(PolyBeeCore::m_sRngEngine);
+        result.x = m_x + Params::beeStepLength * std::cos(result.angle);
+        result.y = m_y + Params::beeStepLength * std::sin(result.angle);
+    }
+
+    return result;
+}

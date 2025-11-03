@@ -124,6 +124,8 @@ public:
     static float beeMaxDirDelta; // maximum change in direction (radians) per step
     static float beeStepLength; // how far a bee moves forward at each time step
     static int beePathRecordLen; // maximum number of positions to record in bee's path
+    static float beeVisualRange; // maximum distance over which a bee can detect a flower
+    static int beeVisitMemoryLength; // how many recently visited plants a bee remembers
 
     // Hive configuration
     static std::vector<HiveSpec> hiveSpecs;

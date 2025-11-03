@@ -36,9 +36,9 @@ struct TunnelEntranceInfo {
 struct IntersectInfo {
     bool intersects;            // do the lines intersect at all
     bool withinLimits;  // is the intersection point within the entrance limits (if applicable)
-    pb::Point2D point;          // intersection point (if intersects is true)
+    pb::Pos2D point;          // intersection point (if intersects is true)
 
-    IntersectInfo(bool intersects, bool withinLimits, const pb::Point2D& point)
+    IntersectInfo(bool intersects, bool withinLimits, const pb::Pos2D& point)
         : intersects(intersects), withinLimits(withinLimits), point(point) {}
 
     IntersectInfo(bool intersects, bool withinLimits)

@@ -14,6 +14,8 @@
 #include "Heatmap.h"
 #include "utils.h"
 #include <vector>
+#include <optional>
+
 
 /**
  * The Environment class ...
@@ -34,6 +36,8 @@ public:
     const Heatmap& getHeatmap() const { return m_heatmap; }
     const std::vector<Bee>& getBees() const { return m_bees; }
     const std::vector<Plant>& getAllPlants() const { return m_allPlants; }
+    std::vector<Plant*> getNearbyPlants(float x, float y) const;
+    std::optional<Plant*> getNearestUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const; // get nearest plant to a given position within maxDistance
 
 private:
     void initialiseTunnel();
@@ -42,7 +46,7 @@ private:
     void initialiseBees();
     void initialiseHeatmap();
     void resetBees();
-    pb::Point2D envPosToGridIndex(float x, float y) const;
+    pb::Pos2D envPosToGridIndex(float x, float y) const;
 
     float m_width;
     float m_height;

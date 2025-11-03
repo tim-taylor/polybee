@@ -4,16 +4,7 @@
 #include <string>
 #include <vector>
 
-constexpr float FLOAT_COMPARISON_EPSILON = 0.00000001f; // small value to use when comparing floats for equality
-
-template <typename T>
-struct Position {
-    T x, y;
-    Position(T x, T y) : x(x), y(y) {}
-};
-
-using iPos = Position<int>;
-using fPos = Position<float>;
+constexpr float FLOAT_COMPARISON_EPSILON = 0.000001f; // small value to use when comparing floats for equality
 
 namespace Polybee {
 
@@ -21,56 +12,25 @@ namespace Polybee {
     void msg_warning(std::string msg);
     void msg_info(std::string msg);
 
-    /*
-    struct Vector2 {
-        Vector2() : x(0), y(0) {}
-        Vector2(float x, float y) : x(x), y(y) {}
-        Vector2(const Vector2& other) : x(other.x), y(other.y) {}
-        Vector2& operator=(const Vector2& other) {
-            if (this != &other) {
-                x = other.x;
-                y = other.y;
-            }
-            return *this;
-        }
+    float distanceSq(float x1, float y1, float x2, float y2);
 
-        float x;
-        float y;
-    };
-
-    struct Rectangle {
-        Rectangle() : x(0), y(0), width(0), height(0) {}
-        Rectangle(float x, float y, float width, float height)
-            : x(x), y(y), width(width), height(height) {}
-        Rectangle(const Rectangle& other)
-            : x(other.x), y(other.y), width(other.width), height(other.height) {}
-        Rectangle& operator=(const Rectangle& other) {
-            if (this != &other) {
-                x = other.x;
-                y = other.y;
-                width = other.width;
-                height = other.height;
-            }
-            return *this;
-        }
-
-        float x;        // Rectangle top-left corner position x
-        float y;        // Rectangle top-left corner position y
-        float width;    // Rectangle width
-        float height;   // Rectangle height
-    };
-    */
-
-    struct Point2D {
+    struct Pos2D {
         float x, y;
 
-        Point2D(float x = 0, float y = 0) : x(x), y(y) {}
+        Pos2D(float x = 0, float y = 0) : x(x), y(y) {}
+    };
+
+    struct PosAndDir2D {
+        float x, y;
+        float angle; // direction in radians
+
+        PosAndDir2D(float x = 0, float y = 0, float angle = 0) : x(x), y(y), angle(angle) {}
     };
 
     struct Line2D {
-        Point2D start, end;
+        Pos2D start, end;
 
-        Line2D(Point2D start, Point2D end) : start(start), end(end) {}
+        Line2D(Pos2D start, Pos2D end) : start(start), end(end) {}
     };
 
 } // namespace Polybee

@@ -269,7 +269,7 @@ void LocalVis::drawPlants()
         float displayX = envToDisplayX(plant.x());
         float displayY = envToDisplayY(plant.y());
         float displaySize = envToDisplayN(HALF_PLANT_SIZE);
-        DrawCircleV({ displayX, displayY }, displaySize, GREEN);
+        DrawCircleV({ displayX, displayY }, displaySize, plant.visited() ? DARKGREEN : GREEN);
     }
 }
 
@@ -393,29 +393,29 @@ void LocalVis::drawBees()
     for (const Bee& bee : m_pPolyBeeCore->getBees()) {
         std::vector<Vector2> BeeShapeAbs = BEE_SHAPE;
         for (Vector2& v : BeeShapeAbs) {
-            v = Vector2Scale(Vector2Rotate(v, bee.angle), BEE_SCALING_FACTOR);
-            v.x += envToDisplayX(bee.x);
-            v.y += envToDisplayY(bee.y);
+            v = Vector2Scale(Vector2Rotate(v, bee.angle()), BEE_SCALING_FACTOR);
+            v.x += envToDisplayX(bee.x());
+            v.y += envToDisplayY(bee.y());
         }
 
         //DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], LIME);
-        DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], ColorFromHSV(bee.colorHue, 0.7f, 0.9f));
+        DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], ColorFromHSV(bee.colorHue(), 0.7f, 0.9f));
 
         if (m_bShowTrails) {
-            size_t pathIdxMax = bee.path.size()-1;
+            size_t pathIdxMax = bee.path().size()-1;
             int drawCount = 0;
 
             size_t i = pathIdxMax;
-            Vector2 p1 = { envToDisplayX(bee.path[i].x), envToDisplayY(bee.path[i].y) };
-            Vector2 p2 = { envToDisplayX(bee.x), envToDisplayY(bee.y) };
-            DrawLineEx(p1, p2, BEE_PATH_THICKNESS, ColorAlpha(ColorFromHSV(bee.colorHue, 0.3f, 0.7f), 1.0f));
+            Vector2 p1 = { envToDisplayX(bee.path()[i].x), envToDisplayY(bee.path()[i].y) };
+            Vector2 p2 = { envToDisplayX(bee.x()), envToDisplayY(bee.y()) };
+            DrawLineEx(p1, p2, BEE_PATH_THICKNESS, ColorAlpha(ColorFromHSV(bee.colorHue(), 0.3f, 0.7f), 1.0f));
             ++drawCount;
 
             for (; i >= 1 && drawCount < Params::visBeePathDrawLen; --i) {
-                Vector2 p1 = { envToDisplayX(bee.path[i-1].x), envToDisplayY(bee.path[i-1].y) };
-                Vector2 p2 = { envToDisplayX(bee.path[i].x), envToDisplayY(bee.path[i].y) };
+                Vector2 p1 = { envToDisplayX(bee.path()[i-1].x), envToDisplayY(bee.path()[i-1].y) };
+                Vector2 p2 = { envToDisplayX(bee.path()[i].x), envToDisplayY(bee.path()[i].y) };
                 float alpha = 1.0f - ((pathIdxMax - static_cast<float>(i)) / Params::visBeePathDrawLen); // fade out older parts of path
-                DrawLineEx(p1, p2, BEE_PATH_THICKNESS, ColorAlpha(ColorFromHSV(bee.colorHue, 0.3f, 0.7f), alpha));
+                DrawLineEx(p1, p2, BEE_PATH_THICKNESS, ColorAlpha(ColorFromHSV(bee.colorHue(), 0.3f, 0.7f), alpha));
                 ++drawCount;
             }
         }

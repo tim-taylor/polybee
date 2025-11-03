@@ -68,10 +68,10 @@ void Tunnel::initialise(float x, float y, float width, float height, Environment
 
     // initialize tunnel boundaries
     m_boundaries.clear();
-    m_boundaries.push_back(pb::Line2D(pb::Point2D(m_x, m_y), pb::Point2D(m_x + m_width, m_y))); // top wall
-    m_boundaries.push_back(pb::Line2D(pb::Point2D(m_x + m_width, m_y), pb::Point2D(m_x + m_width, m_y + m_height))); // right wall
-    m_boundaries.push_back(pb::Line2D(pb::Point2D(m_x + m_width, m_y + m_height), pb::Point2D(m_x, m_y + m_height))); // bottom wall
-    m_boundaries.push_back(pb::Line2D(pb::Point2D(m_x, m_y + m_height), pb::Point2D(m_x, m_y))); // left wall
+    m_boundaries.push_back(pb::Line2D(pb::Pos2D(m_x, m_y), pb::Pos2D(m_x + m_width, m_y))); // top wall
+    m_boundaries.push_back(pb::Line2D(pb::Pos2D(m_x + m_width, m_y), pb::Pos2D(m_x + m_width, m_y + m_height))); // right wall
+    m_boundaries.push_back(pb::Line2D(pb::Pos2D(m_x + m_width, m_y + m_height), pb::Pos2D(m_x, m_y + m_height))); // bottom wall
+    m_boundaries.push_back(pb::Line2D(pb::Pos2D(m_x, m_y + m_height), pb::Pos2D(m_x, m_y))); // left wall
 
     // add entrances from Params
     auto numEntrances = Params::tunnelEntranceSpecs.size();
@@ -109,10 +109,10 @@ IntersectInfo Tunnel::intersectsEntrance(float x1, float y1, float x2, float y2)
 
     // if we reach this point, the line segment crosses the tunnel boundary somewhere, so
     // we need to check if it crosses at any of the entrances
-    pb::Line2D line1(pb::Point2D(x1, y1), pb::Point2D(x2, y2));
+    pb::Line2D line1(pb::Pos2D(x1, y1), pb::Pos2D(x2, y2));
     for (const TunnelEntranceInfo& entrance : m_entrances)
     {
-        pb::Line2D line2(pb::Point2D{entrance.x1, entrance.y1}, pb::Point2D{entrance.x2, entrance.y2});
+        pb::Line2D line2(pb::Pos2D{entrance.x1, entrance.y1}, pb::Pos2D{entrance.x2, entrance.y2});
 
         auto intersectInfo = getLineIntersection(line1, line2);
 
@@ -162,7 +162,7 @@ IntersectInfo Tunnel::getLineIntersection(const pb::Line2D& line1, const pb::Lin
     float u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / denominator;
 
     // Calculate intersection point
-    pb::Point2D intersection;
+    pb::Pos2D intersection;
     intersection.x = x1 + t * (x2 - x1);
     intersection.y = y1 + t * (y2 - y1);
 
