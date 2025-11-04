@@ -46,6 +46,7 @@ private:
     void initialiseBees();
     void initialiseHeatmap();
     void resetBees();
+    void resetPlants();
     pb::Pos2D envPosToGridIndex(float x, float y) const;
 
     float m_width;

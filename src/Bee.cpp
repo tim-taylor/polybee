@@ -40,7 +40,7 @@ void Bee::commonInit() {
 }
 
 void Bee::move() {
-    // Temp code just for sanity check of final position, tested at end of method
+    // TODO - remove - Temp code just for sanity check of final position, tested at end of method
     /*
     float oldx = x;
     float oldy = y;
@@ -52,24 +52,11 @@ void Bee::move() {
         m_path.erase(m_path.begin());
     }
 
-    // work out where bee would like to go next, following forage for the nearest flower strategy
+    // work out where bee would like to go next, following "forage nearest flower" strategy
     // or step in random direction if no nearby flowers found
-    // TODO - remove the if..else scaffold and old code when flower foraging properly implemented
-    pb::PosAndDir2D desiredMove;
-    if (true) {
-        desiredMove = forageNearestFlower();
-    }
-    else {
-        // decide on a direction in which to try to move
-        //m_angle += m_distDir(PolyBeeCore::m_sRngEngine);
-        desiredMove.angle = m_angle + m_distDir(PolyBeeCore::m_sRngEngine);
+    pb::PosAndDir2D desiredMove = forageNearestFlower();
 
-        // work out where that would take us
-        desiredMove.x = m_x + Params::beeStepLength * std::cos(desiredMove.angle);
-        desiredMove.y = m_y + Params::beeStepLength * std::sin(desiredMove.angle);
-    }
-
-     // keep within bounds of environment
+    // keep within bounds of environment
     if (desiredMove.x < 0.0f) desiredMove.x = 0.0f;
     if (desiredMove.y < 0.0f) desiredMove.y = 0.0f;
     if (desiredMove.x > Params::envW) desiredMove.x = Params::envW;

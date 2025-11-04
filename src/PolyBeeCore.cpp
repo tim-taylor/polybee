@@ -58,6 +58,7 @@ PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
     }
 }
 
+
 void PolyBeeCore::generateTimestampString()
 {
     // create a timestamp string for this run, used in output filenames

@@ -36,6 +36,8 @@ void Environment::initialiseTunnel()
 }
 
 
+// Initialise plants from Params::patchSpecs. Also builds spatial index grid for plant locations
+// used for efficient lookup of nearby plants.
 void Environment::initialisePlants()
 {
     // Calculate total number of plants across all patches
@@ -85,16 +87,6 @@ void Environment::initialisePlants()
                 x += spec.spacing;
             }
         }
-
-        // TODO - work in progress
-        // We designate that 1 unit of length in environment coordinates
-        // corresponds to 1m in real-world measurement.
-        //
-        // When we generate plants according to the patch spec, we store them in
-        // a 2D array where each element corresponds to an area of ground in the environment.
-        // That way, when bees move around we can efficiently check whether they are over
-        // any plants by checking only the plants in the array element(s) they are currently over,
-        // and its immediate neighbours.
     }
 }
 
@@ -102,16 +94,8 @@ void Environment::initialisePlants()
 // Convert environment position (x,y) to grid index for m_plantGrid
 pb::Pos2D Environment::envPosToGridIndex(float x, float y) const
 {
-    /*
-    // for debugging purposes, check for out-of-bounds access
-    if (x < 0.0f || x > m_width + FLOAT_COMPARISON_EPSILON || y < 0.0f || y > m_height + FLOAT_COMPARISON_EPSILON) {
-        pb::msg_error_and_exit(std::format("Environment::envPosToGridIndex: position ({},{}) is out of bounds (env size {}x{})",
-            x, y, m_width, m_height));
-    }
-
     //assert(x >= 0.0f && x < m_width + FLOAT_COMPARISON_EPSILON);
     //assert(y >= 0.0f && y < m_height + FLOAT_COMPARISON_EPSILON);
-    */
 
     float gridx = x / m_plantGridCellSize;
     float gridy = y / m_plantGridCellSize;
@@ -175,10 +159,19 @@ void Environment::initialiseHeatmap() {
 }
 
 
+// Reset the environment to its initial state suitable for a new simulation run
 void Environment::reset() {
-    // TODO - work in progress
+    // TODO - as the class is developed, ensure all relevant state is reset here
     resetBees();
+    resetPlants();
     m_heatmap.reset();
+}
+
+
+void Environment::resetPlants() {
+    m_plantGrid.clear();
+    m_allPlants.clear();
+    initialisePlants();
 }
 
 
@@ -205,6 +198,11 @@ bool Environment::inTunnel(float x, float y) const {
 }
 
 
+// Find the nearest unvisited plant to the given position (x,y).
+// Returns std::nullopt if no unvisited plant is found within visual range.
+// The 'visited' parameter is a list of plants that have recently been visited by the bee.
+// This method considers only plants within visual range, and selects either
+// the nearest plant or a random other visible plant based on Params::beeProbVisitNearestFlower.
 std::optional<Plant*> Environment::getNearestUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const
 {
     // TODO - should also check whether the tunnel wall is between the bee and the plant
@@ -224,7 +222,7 @@ std::optional<Plant*> Environment::getNearestUnvisitedPlant(float x, float y, co
 
         float distSq = pb::distanceSq(x, y, pPlant->x(), pPlant->y()); // squared distance to plant
 
-        if (distSq < rangeSq) {
+        if (distSq <= rangeSq) {
             // Plant is within visual range
             visiblePlants.push_back(pPlant);
             if (distSq < nearestDistSq) {
@@ -272,9 +270,9 @@ std::optional<Plant*> Environment::getNearestUnvisitedPlant(float x, float y, co
 }
 
 
+// Return a flat vector of all plants in the local 3x3 grid cells around the given position
 std::vector<Plant*> Environment::getNearbyPlants(float x, float y) const
 {
-    // TODO - work in progress
     std::vector<Plant*> nearbyPlants;
 
     auto [i, j] = envPosToGridIndex(x, y);
