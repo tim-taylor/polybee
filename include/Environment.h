@@ -55,6 +55,9 @@ private:
     Tunnel m_tunnel;
     std::vector<Plant> m_allPlants;  // Owns all Plant objects
     std::vector<std::vector<std::vector<Plant*>>> m_plantGrid;  // Spatial index with pointers into m_allPlants
+    float m_plantGridCellSize {1.0f};
+    size_t m_plantGridW {1};
+    size_t m_plantGridH {1};
     Heatmap m_heatmap;
 };
 

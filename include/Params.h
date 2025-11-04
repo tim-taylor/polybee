@@ -126,6 +126,7 @@ public:
     static int beePathRecordLen; // maximum number of positions to record in bee's path
     static float beeVisualRange; // maximum distance over which a bee can detect a flower
     static int beeVisitMemoryLength; // how many recently visited plants a bee remembers
+    static float beeProbVisitNearestFlower; // probability that a bee visits the nearest flower rather than a random visible flower
 
     // Hive configuration
     static std::vector<HiveSpec> hiveSpecs;

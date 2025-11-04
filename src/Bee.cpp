@@ -12,6 +12,7 @@
 #include <random>
 #include <cassert>
 #include <format>
+#include <algorithm>
 
 // initialise static members
 const float Bee::m_sTunnelWallBuffer {0.1f};
@@ -199,29 +200,31 @@ pb::PosAndDir2D Bee::forageNearestFlower()
 {
     pb::PosAndDir2D result;
 
-    // TODO - need to keep track of which flowers have already been visited by this bee,
-    // and pass that info in here to avoid going back to the same flower repeatedly.
-    // Also need to implement code to keep the visited list up to date
-    // For now, just pass an empty list in the call below.
-
     auto plantInfo = m_pEnv->getNearestUnvisitedPlant(m_x, m_y, m_recentlyVisitedPlants);
     if (plantInfo.has_value()) {
         Plant* pPlant = plantInfo.value();
         // found a nearby plant to forage from
         float dx = pPlant->x() - m_x;
         float dy = pPlant->y() - m_y;
-        float angleToPlant = std::atan2(dy, dx);
+        float angleToPlant = std::atan2(dy, dx); // angle from bee to plant
 
         result.angle = angleToPlant;
-        result.x = m_x + Params::beeStepLength * std::cos(angleToPlant);
-        result.y = m_y + Params::beeStepLength * std::sin(angleToPlant);
 
-        // record that we've visited this plant (and remove oldest visited plant if necessary
-        // to keep memory length within limit)
-        pPlant->setVisited();
-        m_recentlyVisitedPlants.push_back(pPlant);
-        if (m_recentlyVisitedPlants.size() > Params::beeVisitMemoryLength) {
-            m_recentlyVisitedPlants.erase(m_recentlyVisitedPlants.begin());
+        float distToPlantSq = (dx * dx + dy * dy);
+        if (distToPlantSq <= (Params::beeStepLength * Params::beeStepLength)) {
+            // plant is within one step length, so just go directly to it
+            result.x = pPlant->x();
+            result.y = pPlant->y();
+
+            // record that we've visited this plant (and remove oldest visited plant if necessary
+            // to keep memory length within limit)
+            pPlant->setVisited();
+            addToRecentlyVisitedPlants(pPlant);
+        }
+        else {
+            // plant is further away than one step length, so just head in its direction
+            result.x = m_x + Params::beeStepLength * std::cos(angleToPlant);
+            result.y = m_y + Params::beeStepLength * std::sin(angleToPlant);
         }
     }
     else {
@@ -232,4 +235,28 @@ pb::PosAndDir2D Bee::forageNearestFlower()
     }
 
     return result;
+}
+
+
+void Bee::addToRecentlyVisitedPlants(Plant* pPlant)
+{
+    // check if plant is already in recently visited list
+    auto it = std::find(m_recentlyVisitedPlants.begin(), m_recentlyVisitedPlants.end(), pPlant);
+    if (it != m_recentlyVisitedPlants.end()) {
+        // TODO - this situation should not happen! - we should be able to remove this
+        // test and just have the else clause below
+        pb::msg_error_and_exit(
+            std::format("Bee::addToRecentlyVisitedPlants(): logic error: plant at ({}, {}) already in recently visited list",
+                pPlant->x(), pPlant->y()));
+        // plant already in list, so move it to the back (most recently visited)
+        m_recentlyVisitedPlants.erase(it);
+        m_recentlyVisitedPlants.push_back(pPlant);
+    }
+    else {
+        // plant not in list, so just add it to the back
+        m_recentlyVisitedPlants.push_back(pPlant);
+        if (m_recentlyVisitedPlants.size() > Params::beeVisitMemoryLength) {
+            m_recentlyVisitedPlants.erase(m_recentlyVisitedPlants.begin());
+        }
+    }
 }

@@ -40,6 +40,7 @@ private:
     void commonInit();
     void nudgeAwayFromTunnelWalls();
     pb::PosAndDir2D forageNearestFlower();
+    void addToRecentlyVisitedPlants(Plant* pPlant);
 
     float m_x;        // position of bee in environment coordinates
     float m_y;        // position of bee in environment coordinates

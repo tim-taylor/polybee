@@ -48,7 +48,10 @@ void Environment::initialisePlants()
     m_allPlants.reserve(totalPlants);
 
     // initialise plant grid (now stores pointers instead of Plant objects)
-    m_plantGrid.resize(static_cast<size_t>(m_width), std::vector<std::vector<Plant*>>(static_cast<size_t>(m_height)));
+    m_plantGridCellSize = Params::beeVisualRange; // size of each cell in spatial index grid
+    m_plantGridW = static_cast<size_t>(std::ceil(m_width / m_plantGridCellSize));
+    m_plantGridH = static_cast<size_t>(std::ceil(m_height / m_plantGridCellSize));
+    m_plantGrid.resize(m_plantGridW, std::vector<std::vector<Plant*>>(m_plantGridH));
 
     // initialise plant patches from Params
     for (const PatchSpec& spec : Params::patchSpecs)
@@ -97,7 +100,9 @@ void Environment::initialisePlants()
 
 
 // Convert environment position (x,y) to grid index for m_plantGrid
-pb::Pos2D Environment::envPosToGridIndex(float x, float y) const {
+pb::Pos2D Environment::envPosToGridIndex(float x, float y) const
+{
+    /*
     // for debugging purposes, check for out-of-bounds access
     if (x < 0.0f || x > m_width + FLOAT_COMPARISON_EPSILON || y < 0.0f || y > m_height + FLOAT_COMPARISON_EPSILON) {
         pb::msg_error_and_exit(std::format("Environment::envPosToGridIndex: position ({},{}) is out of bounds (env size {}x{})",
@@ -106,9 +111,13 @@ pb::Pos2D Environment::envPosToGridIndex(float x, float y) const {
 
     //assert(x >= 0.0f && x < m_width + FLOAT_COMPARISON_EPSILON);
     //assert(y >= 0.0f && y < m_height + FLOAT_COMPARISON_EPSILON);
+    */
 
-    int i = std::clamp(static_cast<int>(x), 0, static_cast<int>(m_width)-1);
-    int j = std::clamp(static_cast<int>(y), 0, static_cast<int>(m_height)-1);
+    float gridx = x / m_plantGridCellSize;
+    float gridy = y / m_plantGridCellSize;
+
+    int i = std::clamp(static_cast<int>(gridx), 0, static_cast<int>(m_plantGridW)-1);
+    int j = std::clamp(static_cast<int>(gridy), 0, static_cast<int>(m_plantGridH)-1);
 
     return pb::Pos2D(i, j);
 }
@@ -201,28 +210,64 @@ std::optional<Plant*> Environment::getNearestUnvisitedPlant(float x, float y, co
     // TODO - should also check whether the tunnel wall is between the bee and the plant
 
     Plant* pNearestPlant = nullptr;
+
+    std::vector<Plant*> visiblePlants;
+
     float nearestDistSq = std::numeric_limits<float>::max();
     float rangeSq = Bee::visualRange() * Bee::visualRange();
 
     auto nearbyPlants = getNearbyPlants(x, y);
-
     for (Plant* pPlant : nearbyPlants) {
         if (std::find(visited.begin(), visited.end(), pPlant) != visited.end()) {
             continue;  // Skip already visited plants
         }
 
-        float distSq = pb::distanceSq(x, y, pPlant->x(), pPlant->y());
-        if (distSq < nearestDistSq && distSq <= rangeSq && distSq > 0.001f) {
-            nearestDistSq = distSq;
-            pNearestPlant = pPlant;
+        float distSq = pb::distanceSq(x, y, pPlant->x(), pPlant->y()); // squared distance to plant
+
+        if (distSq < rangeSq) {
+            // Plant is within visual range
+            visiblePlants.push_back(pPlant);
+            if (distSq < nearestDistSq) {
+                nearestDistSq = distSq;
+                pNearestPlant = pPlant;
+            }
         }
     }
 
     if (pNearestPlant == nullptr) {
+        // No unvisited plants found in local area
         return std::nullopt;
     }
     else {
-        return pNearestPlant;
+        assert(!visiblePlants.empty());
+        if (visiblePlants.size() == 1) {
+            // only one visible plant found, so no further considerations required
+            return pNearestPlant;
+        }
+        else {
+            // more than one visible plant - decide whether to return the nearest plant
+            // or a random other plant based on probability
+            float p = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine);
+            if (p < Params::beeProbVisitNearestFlower) {
+                // return the nearest plant
+                return pNearestPlant;
+            }
+            else {
+                // return a random other plant for the list of visible plants
+
+                // first find the nearest plant in the visiblePlants list and remove it
+                for (auto it = visiblePlants.begin(); it != visiblePlants.end(); ++it) {
+                    if (*it == pNearestPlant) {
+                        it = visiblePlants.erase(it);
+                        break;
+                    }
+                }
+
+                // now pick a random plant for the remaining visible plants
+                return visiblePlants[
+                    PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine) % visiblePlants.size()];
+            }
+        }
     }
 }
 

@@ -1,3 +1,19 @@
+## 4/11/2025
+
+Debugging forage nearest flower
+
+TODO
+* Bee forageNearestPlant - should draw up list of all flowers more or less the shortest distance away, then
+  pick one of these at random
+
+DONE
+* Environment m_plantGrid is currently same dimension as env, so each cell is 1x1 and bee searches 3x3 cells,
+  so won't see any neighbouring plants if they are spaced at 10cm intervals - need to fix this!! - this should
+  be set according to the bee-visual-range and/or bee-step-length params
+
+* In Bee::forageNearestPlant - was moving beeStepLength distance even if flower was closer than that -
+  have now fixed so if plant is closer, we just move directly to it and do not overshoot
+
 ## 28/10/25
 
 Next up:
