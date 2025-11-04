@@ -53,6 +53,8 @@ void Environment::initialisePlants()
     // initialise plant patches from Params
     for (const PatchSpec& spec : Params::patchSpecs)
     {
+        std::normal_distribution<float> distJitter(0.0f, spec.jitter);
+
         float first_patch_topleft_plant_x = spec.x + ((spec.w - ((spec.numX - 1) * spec.spacing)) / 2.0f);
         float first_patch_topleft_plant_y = spec.y + ((spec.h - ((spec.numY - 1) * spec.spacing)) / 2.0f);
 
@@ -64,12 +66,15 @@ void Environment::initialisePlants()
             for (int a = 0; a < spec.numX; ++a) {
                 float y = this_patch_topleft_plant_y;
                 for (int b = 0; b < spec.numY; ++b) {
-                    // TODO add jitter if needed
+                    // add jitter to the individual plant position
+                    float plantX = x + distJitter(PolyBeeCore::m_sRngEngine);
+                    float plantY = y + distJitter(PolyBeeCore::m_sRngEngine);
+
                     // create a plant at x,y and add to m_allPlants
-                    m_allPlants.emplace_back(x, y, spec.speciesID);
+                    m_allPlants.emplace_back(plantX, plantY, spec.speciesID);
 
                     // add pointer to this plant in the spatial grid
-                    auto [i,j] = envPosToGridIndex(x, y);
+                    auto [i,j] = envPosToGridIndex(plantX, plantY);
                     m_plantGrid[i][j].push_back(&m_allPlants.back());
 
                     y += spec.spacing;
