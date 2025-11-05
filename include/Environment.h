@@ -17,6 +17,15 @@
 #include <optional>
 
 
+// struct to hold information about a plant near a bee
+struct NearbyPlantInfo {
+    Plant* pPlant;
+    float dist; // distance of plant from bee
+
+    NearbyPlantInfo(Plant* plant, float distance) : pPlant(plant), dist(distance) {}
+};
+
+
 /**
  * The Environment class ...
  */
@@ -48,6 +57,7 @@ private:
     void resetBees();
     void resetPlants();
     pb::Pos2D envPosToGridIndex(float x, float y) const;
+    Plant* pickRandomPlantWeightedByDistance(const std::vector<NearbyPlantInfo>& plants) const;
 
     float m_width;
     float m_height;

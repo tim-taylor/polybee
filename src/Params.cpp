@@ -42,6 +42,8 @@ int Params::beePathRecordLen;
 float Params::beeVisualRange;
 int Params::beeVisitMemoryLength;
 float Params::beeProbVisitNearestFlower;
+int Params::beeForageDuration;
+int Params::beeInHiveDuration;
 
 // Hive configuration
 std::vector<HiveSpec> Params::hiveSpecs;
@@ -131,6 +133,8 @@ void Params::initRegistry()
     REGISTRY.emplace_back("bee-visual-range", "beeVisualRange", ParamType::FLOAT, &beeVisualRange, 1.0f, "Maximum distance over which a bee can detect a flower");
     REGISTRY.emplace_back("bee-visit-memory-length", "beeVisitMemoryLength", ParamType::INT, &beeVisitMemoryLength, 5, "How many recently visited plants a bee remembers");
     REGISTRY.emplace_back("bee-prob-visit-nearest-flower", "beeProbVisitNearestFlower", ParamType::FLOAT, &beeProbVisitNearestFlower, 0.8f, "Probability that a bee visits the nearest flower rather than a random visible flower");
+    REGISTRY.emplace_back("bee-forage-duration", "beeForageDuration", ParamType::INT, &beeForageDuration, 1000, "Duration (number of iterations) of a bee's foraging bout");
+    REGISTRY.emplace_back("bee-in-hive-duration", "beeInHiveDuration", ParamType::INT, &beeInHiveDuration, 200, "Duration (number of iterations) of a bee's stay in the hive between foraging bouts");
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");
     REGISTRY.emplace_back("num-trials-per-config", "numTrialsPerConfig", ParamType::INT, &numTrialsPerConfig, 1, "Number of trials to run for each configuration/individual in each generation");

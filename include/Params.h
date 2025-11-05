@@ -127,6 +127,8 @@ public:
     static float beeVisualRange; // maximum distance over which a bee can detect a flower
     static int beeVisitMemoryLength; // how many recently visited plants a bee remembers
     static float beeProbVisitNearestFlower; // probability that a bee visits the nearest flower rather than a random visible flower
+    static int beeForageDuration; // duration (number of iterations) of a bee's foraging bout
+    static int beeInHiveDuration; // duration (number of iterations) of a bee's stay in the hive between foraging bouts
 
     // Hive configuration
     static std::vector<HiveSpec> hiveSpecs;

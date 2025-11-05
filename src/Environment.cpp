@@ -120,12 +120,16 @@ void Environment::initialiseHives()
 // a private helper method to create the bees at the start of the simulation
 void Environment::initialiseBees()
 {
-    auto numHives = Params::hiveSpecs.size();
+    if (m_hives.empty()) {
+        pb::msg_error_and_exit("No hives have been defined in the environment, but bees are to be initialised. Cannot create bees without hives.");
+    }
+
+    int numHives = static_cast<int>(m_hives.size());
     int numBeesPerHive = Params::numBees / numHives;
-    for (int i = 0; i < numHives; ++i) {
-        const HiveSpec& hive = Params::hiveSpecs[i];
+
+    for (Hive& hive : m_hives) {
         float angle = 0.0f;
-        switch (hive.direction) {
+        switch (hive.direction()) {
         case 0: angle = -std::numbers::pi_v<float> / 2.0f; break; // North
         case 1: angle = 0.0f; break; // East
         case 2: angle = std::numbers::pi_v<float> / 2.0f; break; // South
@@ -133,16 +137,16 @@ void Environment::initialiseBees()
         case 4: angle = 0.0f; break; // Random (will be set per bee below)
         default:
             pb::msg_error_and_exit(std::format("Invalid hive direction {} specified for hive at ({},{}). Must be 0=North, 1=East, 2=South, 3=West, or 4=Random.",
-                hive.direction, hive.x, hive.y));
+                hive.direction(), hive.x(), hive.y()));
         }
 
         for (int j = 0; j < numBeesPerHive; ++j) {
             float beeAngle = angle;
-            if (hive.direction == 4) {
+            if (hive.direction() == 4) {
                 // Random direction: uniform random angle between 0 and 2π
                 beeAngle = PolyBeeCore::m_sAngle2PiDistrib(PolyBeeCore::m_sRngEngine);
             }
-            m_bees.emplace_back(pb::Pos2D(hive.x, hive.y), beeAngle, this);
+            m_bees.emplace_back(pb::Pos2D(hive.x(), hive.y()), beeAngle, &hive, this);
         }
     }
 
@@ -183,7 +187,7 @@ void Environment::resetBees() {
 void Environment::update() {
     // update bee positions
     for (Bee& bee : m_bees) {
-        bee.move();
+        bee.update();
     }
 
     m_heatmap.update();
@@ -207,11 +211,11 @@ std::optional<Plant*> Environment::getNearestUnvisitedPlant(float x, float y, co
 {
     // TODO - should also check whether the tunnel wall is between the bee and the plant
 
-    Plant* pNearestPlant = nullptr;
+    //Plant* pNearestPlant = nullptr;
 
-    std::vector<Plant*> visiblePlants;
+    std::vector<NearbyPlantInfo> visiblePlants;
 
-    float nearestDistSq = std::numeric_limits<float>::max();
+    //float nearestDistSq = std::numeric_limits<float>::max();
     float rangeSq = Bee::visualRange() * Bee::visualRange();
 
     auto nearbyPlants = getNearbyPlants(x, y);
@@ -224,47 +228,31 @@ std::optional<Plant*> Environment::getNearestUnvisitedPlant(float x, float y, co
 
         if (distSq <= rangeSq) {
             // Plant is within visual range
-            visiblePlants.push_back(pPlant);
+            visiblePlants.emplace_back(pPlant, std::sqrt(distSq));
+
+            /*
             if (distSq < nearestDistSq) {
                 nearestDistSq = distSq;
                 pNearestPlant = pPlant;
             }
+            */
         }
     }
 
-    if (pNearestPlant == nullptr) {
+    //if (pNearestPlant == nullptr) {
+    if (visiblePlants.empty()) {
         // No unvisited plants found in local area
         return std::nullopt;
     }
     else {
-        assert(!visiblePlants.empty());
+        //assert(!visiblePlants.empty());
         if (visiblePlants.size() == 1) {
             // only one visible plant found, so no further considerations required
-            return pNearestPlant;
+            //return pNearestPlant;
+            return visiblePlants[0].pPlant;
         }
         else {
-            // more than one visible plant - decide whether to return the nearest plant
-            // or a random other plant based on probability
-            float p = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine);
-            if (p < Params::beeProbVisitNearestFlower) {
-                // return the nearest plant
-                return pNearestPlant;
-            }
-            else {
-                // return a random other plant for the list of visible plants
-
-                // first find the nearest plant in the visiblePlants list and remove it
-                for (auto it = visiblePlants.begin(); it != visiblePlants.end(); ++it) {
-                    if (*it == pNearestPlant) {
-                        it = visiblePlants.erase(it);
-                        break;
-                    }
-                }
-
-                // now pick a random plant for the remaining visible plants
-                return visiblePlants[
-                    PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine) % visiblePlants.size()];
-            }
+            return pickRandomPlantWeightedByDistance(visiblePlants);
         }
     }
 }
@@ -288,6 +276,42 @@ std::vector<Plant*> Environment::getNearbyPlants(float x, float y) const
     }
 
     return nearbyPlants;
+}
+
+
+// Select a plant randomly from the given list, with probability weighted by distance
+// (closer plants have higher probability of being selected)
+// Assumes that the plants vector is non-empty and that all plants in the vector are within visual range.
+Plant* Environment::pickRandomPlantWeightedByDistance(const std::vector<NearbyPlantInfo>& plants) const
+{
+    assert(!plants.empty());
+
+    // Calculate total weight
+    // We assume that the maximum possible distance for a plant will be Params::beeVisualRange,
+    // because the plants vector should only contain plants within visual range.
+    // The weight assigned to a plant is then (maxPossibleDistance - distanceToPlant),
+    // so that closer plants have higher weight.
+    float maxPossibleDistance = Params::beeVisualRange * 1.1f; // slight buffer to avoid zero weight
+    float totalWeight = 0.0f;
+    for (const NearbyPlantInfo& info : plants) {
+        totalWeight += std::max(0.0f, (maxPossibleDistance - info.dist));
+    }
+
+    // Generate a random value between 0 and totalWeight
+    float randValue = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine) * totalWeight;
+
+    // Select a plant based on the random value
+    float cumulativeWeight = 0.0f;
+    for (const NearbyPlantInfo& info : plants) {
+        cumulativeWeight += std::max(0.0f, (maxPossibleDistance - info.dist));
+        if (randValue <= cumulativeWeight) {
+            return info.pPlant;
+        }
+    }
+
+    // Fallback to keep compiler happy (should not reach here)
+    assert(false);
+    return plants.back().pPlant;
 }
 
 

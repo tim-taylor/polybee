@@ -20,26 +20,42 @@ const float Bee::m_sTunnelWallBuffer {0.1f};
 
 // Bee methods
 
-Bee::Bee(pb::Pos2D pos, Environment* pEnv) :
-    m_x(pos.x), m_y(pos.y), m_angle(0.0), m_pEnv(pEnv)
+Bee::Bee(pb::Pos2D pos, float angle, Hive* pHive, Environment* pEnv) :
+    m_x(pos.x), m_y(pos.y), m_angle(angle), m_pHive(pHive), m_pEnv(pEnv)
 {
     commonInit();
 }
 
-Bee::Bee(pb::Pos2D pos, float angle, Environment* pEnv) :
-    m_x(pos.x), m_y(pos.y), m_angle(angle), m_pEnv(pEnv)
-{
-    commonInit();
-}
 
 void Bee::commonInit() {
     assert(Params::initialised());
     m_distDir.param(std::uniform_real_distribution<float>::param_type(-Params::beeMaxDirDelta, Params::beeMaxDirDelta));
     m_colorHue = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine) * 360.0f;
     m_inTunnel = m_pEnv->inTunnel(m_x, m_y);
+    m_currentBoutDuration = 0;
+    m_currentHiveDuration = 0;
 }
 
-void Bee::move() {
+
+void Bee::update() {
+    switch (m_state)
+    {
+    case BeeState::FORAGING:
+        forage();
+        break;
+    case BeeState::RETURN_TO_HIVE:
+        returnToHive();
+        break;
+    case BeeState::IN_HIVE:
+        stayInHive();
+        break;
+    default:
+        break;
+    }
+}
+
+
+void Bee::forage() {
     // TODO - remove - Temp code just for sanity check of final position, tested at end of method
     /*
     float oldx = x;
@@ -120,6 +136,13 @@ void Bee::move() {
                 oldx, oldy, newx_prenudge, newy_prenudge, x, y));
     }
     */
+
+    m_currentBoutDuration++;
+    if (m_currentBoutDuration >= Params::beeForageDuration) {
+        // maximum foraging bout duration reached, so return to hive
+        m_state = BeeState::RETURN_TO_HIVE;
+        m_currentBoutDuration = 0;
+    }
 }
 
 
@@ -227,6 +250,7 @@ pb::PosAndDir2D Bee::forageNearestFlower()
 
 void Bee::addToRecentlyVisitedPlants(Plant* pPlant)
 {
+    /*
     // check if plant is already in recently visited list
     auto it = std::find(m_recentlyVisitedPlants.begin(), m_recentlyVisitedPlants.end(), pPlant);
     if (it != m_recentlyVisitedPlants.end()) {
@@ -241,9 +265,28 @@ void Bee::addToRecentlyVisitedPlants(Plant* pPlant)
     }
     else {
         // plant not in list, so just add it to the back
-        m_recentlyVisitedPlants.push_back(pPlant);
-        if (m_recentlyVisitedPlants.size() > Params::beeVisitMemoryLength) {
-            m_recentlyVisitedPlants.erase(m_recentlyVisitedPlants.begin());
-        }
+    */
+
+    m_recentlyVisitedPlants.push_back(pPlant);
+    if (m_recentlyVisitedPlants.size() > Params::beeVisitMemoryLength) {
+        m_recentlyVisitedPlants.erase(m_recentlyVisitedPlants.begin());
+    }
+
+    //}
+}
+
+
+void Bee::returnToHive() {
+    // TODO - implement
+}
+
+
+void Bee::stayInHive() {
+    m_currentHiveDuration++;
+    if (m_currentHiveDuration >= Params::beeInHiveDuration) {
+        // finished resting in hive, so start a new foraging bout
+        m_state = BeeState::FORAGING;
+        m_currentHiveDuration = 0;
+        m_currentBoutDuration = 0;
     }
 }

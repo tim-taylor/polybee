@@ -1,7 +1,13 @@
 ## 5/11/2025
 
-TODO
-* In LocalVis add toggle to show/hide plants and patches
+TO DO
+* implement Bee:returnToHive()
+* Show bees in different colour (or in outline only?) when returning to hive
+
+DONE
+* Implemented Bee::stayInHive()
+* Changed Bee::move() to Bee::forage() and added new master iteration method Bee::update() that gets called by the environment at each iteration.
+* In LocalVis add toggle to show/hide plants and patches - actually just changed code so shows outline of patches only, and no plants, if the heatmap is being dispayed
 
 ## 4/11/2025
 
