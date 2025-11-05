@@ -1,12 +1,17 @@
+## 5/11/2025
+
+TODO
+* In LocalVis add toggle to show/hide plants and patches
+
 ## 4/11/2025
 
 Debugging forage nearest flower
 
-TODO
-* Bee forageNearestPlant - should draw up list of all flowers more or less the shortest distance away, then
-  pick one of these at random
-
 DONE
+* Bee forageNearestPlant - should draw up list of all flowers more or less the shortest distance away, then
+  pick one of these at random -> now implemented as a prob that defines whether nearest plant will be returned.
+  If not, a plant is picked at random of list of all visible plants
+
 * Environment m_plantGrid is currently same dimension as env, so each cell is 1x1 and bee searches 3x3 cells,
   so won't see any neighbouring plants if they are spaced at 10cm intervals - need to fix this!! - this should
   be set according to the bee-visual-range and/or bee-step-length params

@@ -61,6 +61,8 @@ const Color ENV_BORDER_COLOR = WHITE;
 const Color TUNNEL_BACKGROUND_COLOR = BROWN;
 const Color TUNNEL_ENTRANCE_COLOR = WHITE;
 const Color TUNNEL_BORDER_COLOR = WHITE;
+const Color PATCH_BACKGROUND_COLOR = GRAY;
+const Color PATCH_BORDER_COLOR = WHITE;
 
 const int FONT_SIZE_REG = 20;
 const int FONT_SIZE_LARGE = 40;
@@ -255,7 +257,14 @@ void LocalVis::drawPatches()
     for (const PatchSpec& patchSpec : Params::patchSpecs) {
         Rectangle patchRect = { patchSpec.x,  patchSpec.y, patchSpec.w, patchSpec.h };
         for (int p=0; p<patchSpec.numRepeats; ++p) {
-            DrawRectangleRec(envToDisplayRect(patchRect), GRAY);
+            if (showHeatmap()) {
+                // when showing heatmap, just show borders of patches
+                DrawRectangleLinesEx(envToDisplayRect(patchRect), 2.0f, PATCH_BORDER_COLOR);
+            }
+            else {
+                // when not showing heatmap, draw patches with filled background
+                DrawRectangleRec(envToDisplayRect(patchRect), PATCH_BACKGROUND_COLOR);
+            }
             patchRect.x += patchSpec.dx;
             patchRect.y += patchSpec.dy;
         }
@@ -265,6 +274,10 @@ void LocalVis::drawPatches()
 
 void LocalVis::drawPlants()
 {
+    if (showHeatmap()) {
+        return; // don't draw plants when showing heatmap
+    }
+
     for (const Plant& plant : m_pPolyBeeCore->m_env.getAllPlants()) {
         float displayX = envToDisplayX(plant.x());
         float displayY = envToDisplayY(plant.y());
