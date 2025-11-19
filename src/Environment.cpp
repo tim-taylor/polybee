@@ -112,7 +112,7 @@ void Environment::initialiseHives()
     auto numHives = Params::hiveSpecs.size();
     for (int i = 0; i < numHives; ++i) {
         const HiveSpec& spec = Params::hiveSpecs[i];
-        m_hives.emplace_back(spec.x, spec.y, spec.direction);
+        m_hives.emplace_back(spec.x, spec.y, spec.direction, this);
     }
 }
 

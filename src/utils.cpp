@@ -1,6 +1,7 @@
 #include "utils.h"
 #include "Params.h"
 #include <iostream>
+#include <cmath>
 
 
 namespace Polybee {
@@ -24,6 +25,17 @@ namespace Polybee {
         float dx = x2 - x1;
         float dy = y2 - y1;
         return dx * dx + dy * dy;
+    }
+
+    void Pos2D::resize(float newLength) {
+        float currentLength = std::sqrt(x * x + y * y);
+        if (currentLength < FLOAT_COMPARISON_EPSILON) {
+            // zero-length vector, cannot resize
+            return;
+        }
+        float scale = newLength / currentLength;
+        x *= scale;
+        y *= scale;
     }
 
 } // namespace Polybee

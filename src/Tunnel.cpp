@@ -117,6 +117,7 @@ IntersectInfo Tunnel::intersectsEntrance(float x1, float y1, float x2, float y2)
         auto intersectInfo = getLineIntersection(line1, line2);
 
         if (intersectInfo.intersects && intersectInfo.withinLimits) {
+            intersectInfo.pEntranceUsed = &entrance; // set pointer to the entrance that was used
             return intersectInfo;
         }
     }

@@ -29,14 +29,18 @@ struct TunnelEntranceInfo {
 
     TunnelEntranceInfo() : x1(0), y1(0), x2(0), y2(0), side(0) {}
 
+    TunnelEntranceInfo(const TunnelEntranceInfo& other)
+        : x1(other.x1), y1(other.y1), x2(other.x2), y2(other.y2), side(other.side) {}
+
     TunnelEntranceInfo(const TunnelEntranceSpec& spec, const Tunnel* pTunnel);
 };
 
 
 struct IntersectInfo {
-    bool intersects;            // do the lines intersect at all
-    bool withinLimits;  // is the intersection point within the entrance limits (if applicable)
-    pb::Pos2D point;          // intersection point (if intersects is true)
+    bool intersects;                                    // do the lines intersect at all
+    bool withinLimits;                                  // is the intersection point within the entrance limits (if applicable)
+    pb::Pos2D point;                                    // intersection point (if intersects is true)
+    const TunnelEntranceInfo* pEntranceUsed {nullptr};  // pointer to the entrance that was used (if applicable)
 
     IntersectInfo(bool intersects, bool withinLimits, const pb::Pos2D& point)
         : intersects(intersects), withinLimits(withinLimits), point(point) {}

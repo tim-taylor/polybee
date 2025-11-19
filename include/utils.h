@@ -18,6 +18,8 @@ namespace Polybee {
         float x, y;
 
         Pos2D(float x = 0, float y = 0) : x(x), y(y) {}
+
+        void resize(float newLength);
     };
 
     struct PosAndDir2D {

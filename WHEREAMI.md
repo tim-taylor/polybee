@@ -1,3 +1,14 @@
+## 17/11/2025
+
+First attempt at a return to hive algorithm:
+
+* when a bee is foraging, it RECORDS which entrance it enters the tunnel by
+* when it stops foraging to return to hive:
+  * if outside tunnel, calc waypoints to go around tunnel and return to hive (RETURN_TO_HIVE_OUTSIDE_TUNNEL)
+  * if inside tunnel (RETURN_TO_HIVE_INSIDE_TUNNEL)
+    * first, return directly to same entrace/exit and exit tunnel
+    * then follow "outside tunnel" behaviour as above
+
 ## 5/11/2025
 
 TO DO

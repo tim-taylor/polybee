@@ -11,15 +11,18 @@
 #include "Params.h"
 #include <random>
 #include <vector>
+#include <deque>
 
 class Environment;
 class Hive;
+class TunnelEntranceInfo;
 class Plant;
 
 enum class BeeState
 {
     FORAGING,
-    RETURN_TO_HIVE,
+    RETURN_TO_HIVE_OUTSIDE_TUNNEL,
+    RETURN_TO_HIVE_INSIDE_TUNNEL,
     IN_HIVE
 };
 
@@ -50,17 +53,25 @@ public:
 private:
     void commonInit();
     void forage();
-    void returnToHive();
+    void switchToReturnToHive();
+    void returnToHiveInsideTunnel();
+    void returnToHiveOutsideTunnel();
     void stayInHive();
     void nudgeAwayFromTunnelWalls();
     pb::PosAndDir2D forageNearestFlower();
     void addToRecentlyVisitedPlants(Plant* pPlant);
+    bool lineIntersectsTunnel(float x1, float y1, float x2, float y2) const;
+    void calculateWaypointsAroundTunnel();
+    void calculateWaypointsInsideTunnel();
 
     float m_x;        // position of bee in environment coordinates
     float m_y;        // position of bee in environment coordinates
     float m_angle;    // direction of travel in radians
     float m_colorHue; // hue value for coloring the bee in visualisation (between 0.0 and 360.0)
     bool  m_inTunnel; // is the bee currently in the tunnel
+
+    const TunnelEntranceInfo* m_pLastTunnelEntrance {nullptr}; // info about the last tunnel entrance used by the bee
+    std::deque<pb::Pos2D> m_homingWaypoints; // waypoints for returning to hive
 
     int   m_currentBoutDuration { 0 }; // duration (number of iterations) of the current foraging bout
     int   m_currentHiveDuration { 0 }; // duration (number of iterations) of the current stay in the hive

@@ -141,7 +141,7 @@ Rectangle LocalVis::envToDisplayRect(const Rectangle& rect) const {
 void LocalVis::updateDrawFrame()
 {
 
-    if (WindowShouldClose()) { // Detect window close button or ESC key{
+    if (WindowShouldClose()) { // Detect window close button or ESC key
         m_pPolyBeeCore->earlyExit();
     }
 
