@@ -251,7 +251,6 @@ void Bee::updatePath()
     m_path.emplace_back(m_x, m_y);
 
     // trim path to maximum length
-     m_path.emplace_back(m_x, m_y);
     if (m_path.size() > static_cast<size_t>(Params::beePathRecordLen)) {
         m_path.erase(m_path.begin());
     }
@@ -395,6 +394,7 @@ bool Bee::headToNextWaypoint()
 void Bee::stayInHive()
 {
     m_currentHiveDuration++;
+    updatePath();
     if (m_currentHiveDuration >= Params::beeInHiveDuration) {
         // finished resting in hive, so start a new foraging bout
         m_state = BeeState::FORAGING;
