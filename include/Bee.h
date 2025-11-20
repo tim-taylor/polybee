@@ -32,7 +32,8 @@ enum class BeeState
 class Bee {
 
 public:
-    Bee(pb::Pos2D pos, float angle, Hive* pHive, Environment* pEnv);
+    //Bee(pb::Pos2D pos, float angle, Hive* pHive, Environment* pEnv);
+    Bee(Hive* pHive, Environment* pEnv);
     ~Bee() {}
 
     void update();
@@ -63,6 +64,9 @@ private:
     bool lineIntersectsTunnel(float x1, float y1, float x2, float y2) const;
     void calculateWaypointsAroundTunnel();
     void calculateWaypointsInsideTunnel();
+    bool headToNextWaypoint();
+    void updatePath();
+    void setDirAccordingToHive();
 
     float m_x;        // position of bee in environment coordinates
     float m_y;        // position of bee in environment coordinates

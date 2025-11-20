@@ -19,6 +19,7 @@ namespace Polybee {
 
         Pos2D(float x = 0, float y = 0) : x(x), y(y) {}
 
+        float length() const;
         void resize(float newLength);
     };
 

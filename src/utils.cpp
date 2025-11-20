@@ -27,8 +27,12 @@ namespace Polybee {
         return dx * dx + dy * dy;
     }
 
+    float Pos2D::length() const {
+        return std::sqrt(x * x + y * y);
+    }
+
     void Pos2D::resize(float newLength) {
-        float currentLength = std::sqrt(x * x + y * y);
+        float currentLength = length();
         if (currentLength < FLOAT_COMPARISON_EPSILON) {
             // zero-length vector, cannot resize
             return;

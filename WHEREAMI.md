@@ -1,3 +1,10 @@
+## 19/11/25
+
+TODO
+
+* When following waypoints keep bee trail data up to date
+* Debug waypoints
+
 ## 17/11/2025
 
 First attempt at a return to hive algorithm:

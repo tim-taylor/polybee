@@ -128,25 +128,8 @@ void Environment::initialiseBees()
     int numBeesPerHive = Params::numBees / numHives;
 
     for (Hive& hive : m_hives) {
-        float angle = 0.0f;
-        switch (hive.direction()) {
-        case 0: angle = -std::numbers::pi_v<float> / 2.0f; break; // North
-        case 1: angle = 0.0f; break; // East
-        case 2: angle = std::numbers::pi_v<float> / 2.0f; break; // South
-        case 3: angle = std::numbers::pi_v<float>; break; // West
-        case 4: angle = 0.0f; break; // Random (will be set per bee below)
-        default:
-            pb::msg_error_and_exit(std::format("Invalid hive direction {} specified for hive at ({},{}). Must be 0=North, 1=East, 2=South, 3=West, or 4=Random.",
-                hive.direction(), hive.x(), hive.y()));
-        }
-
         for (int j = 0; j < numBeesPerHive; ++j) {
-            float beeAngle = angle;
-            if (hive.direction() == 4) {
-                // Random direction: uniform random angle between 0 and 2π
-                beeAngle = PolyBeeCore::m_sAngle2PiDistrib(PolyBeeCore::m_sRngEngine);
-            }
-            m_bees.emplace_back(pb::Pos2D(hive.x(), hive.y()), beeAngle, &hive, this);
+            m_bees.emplace_back(&hive, this);
         }
     }
 

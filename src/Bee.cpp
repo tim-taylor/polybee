@@ -21,10 +21,13 @@ const float Bee::m_sTunnelWallBuffer {0.1f};
 
 // Bee methods
 
-Bee::Bee(pb::Pos2D pos, float angle, Hive* pHive, Environment* pEnv) :
-    m_x(pos.x), m_y(pos.y), m_angle(angle), m_pHive(pHive), m_pEnv(pEnv)
+Bee::Bee(Hive* pHive, Environment* pEnv) :
+    m_pHive(pHive), m_pEnv(pEnv)
 {
+    m_x = m_pHive->x();
+    m_y = m_pHive->y();
     commonInit();
+    setDirAccordingToHive();
 }
 
 
@@ -35,6 +38,22 @@ void Bee::commonInit() {
     m_inTunnel = m_pEnv->inTunnel(m_x, m_y);
     m_currentBoutDuration = 0;
     m_currentHiveDuration = 0;
+}
+
+
+void Bee::setDirAccordingToHive()
+{
+    assert(m_pHive != nullptr);
+    switch (m_pHive->direction()) {
+    case 0: m_angle = -std::numbers::pi_v<float> / 2.0f; break; // North
+    case 1: m_angle = 0.0f; break; // East
+    case 2: m_angle = std::numbers::pi_v<float> / 2.0f; break; // South
+    case 3: m_angle = std::numbers::pi_v<float>; break; // West
+    case 4: m_angle = PolyBeeCore::m_sAngle2PiDistrib(PolyBeeCore::m_sRngEngine);; break; // Random
+    default:
+        pb::msg_error_and_exit(std::format("Invalid hive direction {} specified for hive at ({},{}). Must be 0=North, 1=East, 2=South, 3=West, or 4=Random.",
+            m_pHive->direction(), m_pHive->x(), m_pHive->y()));
+    }
 }
 
 
@@ -66,11 +85,8 @@ void Bee::forage() {
     float oldy = y;
     */
 
-    // record current position
-    m_path.emplace_back(m_x, m_y);
-    if (m_path.size() > Params::beePathRecordLen) {
-        m_path.erase(m_path.begin());
-    }
+    // update bee's path record with current position
+    updatePath();
 
     // work out where bee would like to go next, following "forage nearest flower" strategy
     // or step in random direction if no nearby flowers found
@@ -150,25 +166,6 @@ void Bee::forage() {
     if (m_currentBoutDuration >= Params::beeForageDuration) {
         // maximum foraging bout duration reached, so return to hive
         switchToReturnToHive();
-    }
-}
-
-
-void Bee::switchToReturnToHive()
-{
-    // clear recently visited plants list so bee can visit them again on next foraging bout
-    m_recentlyVisitedPlants.clear();
-    m_currentBoutDuration = 0;
-
-    if (m_inTunnel) {
-        // bee is inside tunnel, so set state to return to hive inside tunnel
-        m_state = BeeState::RETURN_TO_HIVE_INSIDE_TUNNEL;
-        calculateWaypointsInsideTunnel();
-    }
-    else {
-        // bee is outside tunnel, so set state to return to hive outside tunnel
-        m_state = BeeState::RETURN_TO_HIVE_OUTSIDE_TUNNEL;
-        calculateWaypointsAroundTunnel();
     }
 }
 
@@ -275,6 +272,20 @@ pb::PosAndDir2D Bee::forageNearestFlower()
 }
 
 
+// record current position in path history, trimming to maximum length if necessary
+void Bee::updatePath()
+{
+    // add current position to path
+    m_path.emplace_back(m_x, m_y);
+
+    // trim path to maximum length
+     m_path.emplace_back(m_x, m_y);
+    if (m_path.size() > static_cast<size_t>(Params::beePathRecordLen)) {
+        m_path.erase(m_path.begin());
+    }
+}
+
+
 // Add the given plant to the bee's recently visited plants list.
 // If the list exceeds the maximum length, remove the oldest entry.
 //
@@ -287,7 +298,95 @@ void Bee::addToRecentlyVisitedPlants(Plant* pPlant)
 }
 
 
+void Bee::switchToReturnToHive()
+{
+    // clear recently visited plants list so bee can visit them again on next foraging bout
+    m_recentlyVisitedPlants.clear();
+    m_currentBoutDuration = 0;
+
+    if (m_inTunnel) {
+        // bee is inside tunnel, so set state to return to hive inside tunnel
+        m_state = BeeState::RETURN_TO_HIVE_INSIDE_TUNNEL;
+        calculateWaypointsInsideTunnel();
+    }
+    else {
+        // bee is outside tunnel, so set state to return to hive outside tunnel
+        m_state = BeeState::RETURN_TO_HIVE_OUTSIDE_TUNNEL;
+        calculateWaypointsAroundTunnel();
+    }
+}
+
+
+// Follow waypoints to return to end point while inside tunnel.
+// End point is this hive is it is inside the tunnel, or the last tunnel entrance used
+// to exit the tunnel if hive is outside tunnel.
 void Bee::returnToHiveInsideTunnel()
+{
+    // update bee's path record with current position
+    updatePath();
+
+    // move towards next waypoint
+    bool reachedWaypoint = headToNextWaypoint();
+
+    if (reachedWaypoint) {
+        m_homingWaypoints.pop_front();
+        if (m_homingWaypoints.empty()) {
+            // reached final waypoint
+            if (m_pHive->inTunnel()) {
+                // bee is now at hive
+                m_state = BeeState::IN_HIVE;
+                m_inTunnel = true;
+                m_currentHiveDuration = 0;
+                setDirAccordingToHive();
+            }
+            else {
+                // bee is outside tunnel, so calculate waypoints around tunnel to get to hive
+                m_state = BeeState::RETURN_TO_HIVE_OUTSIDE_TUNNEL;
+                calculateWaypointsAroundTunnel();
+            }
+        }
+    }
+}
+
+
+// Follow waypoints to return to end point while outside tunnel.
+// End point is hive if it is outside tunnel, or last tunnel entrance used to
+// enter tunnel if hive is inside tunnel.
+void Bee::returnToHiveOutsideTunnel()
+{
+    // update bee's path record with current position
+    updatePath();
+
+    // move towards next waypoint
+    bool reachedWaypoint = headToNextWaypoint();
+
+    if (reachedWaypoint) {
+        m_homingWaypoints.pop_front();
+        if (m_homingWaypoints.empty()) {
+            // reached final waypoint
+            if (m_pHive->inTunnel()) {
+                // we've been following waypoints outside the tunnel, but the hive is inside the tunnel,
+                // so now calculate waypoints inside tunnel to get to hive
+                m_state = BeeState::RETURN_TO_HIVE_INSIDE_TUNNEL;
+                calculateWaypointsInsideTunnel();
+            }
+            else {
+                // we've been following waypoints outside the tunnel, and the hive is also outside the tunnel,
+                // so we're now at the hive
+                m_state = BeeState::IN_HIVE;
+                m_inTunnel = false;
+                m_currentHiveDuration = 0;
+                setDirAccordingToHive();
+            }
+        }
+    }
+}
+
+
+// Head to next waypoint in m_homingWaypoints (the front of the deque).
+// If we're not at the final waypoint in the list, then add a little bit of jitter to each step.
+// Returns true if the waypoint has been reached, false otherwise.
+bool Bee::headToNextWaypoint()
 {
     bool reachedWaypoint = false;
     float stepLength = 1.0f;
@@ -316,32 +415,13 @@ void Bee::returnToHiveInsideTunnel()
     m_x += moveVector.x;
     m_y += moveVector.y;
 
-    if (reachedWaypoint) {
-        m_homingWaypoints.pop_front();
-        if (m_homingWaypoints.empty()) {
-            // reached final waypoint
-            if (m_pHive->inTunnel()) {
-                // bee is now at hive
-                m_state = BeeState::IN_HIVE;
-                m_currentHiveDuration = 0;
-            }
-            else {
-                // bee is outside tunnel, so calculate waypoints around tunnel to get to hive
-                m_state = BeeState::RETURN_TO_HIVE_OUTSIDE_TUNNEL;
-                calculateWaypointsAroundTunnel();
-            }
-        }
-    }
+    return reachedWaypoint;
 }
 
 
-void Bee::returnToHiveOutsideTunnel() {
-    // TODO - implement
-
-}
-
-
-void Bee::stayInHive() {
+// Stay in hive for required duration, then switch to foraging state
+void Bee::stayInHive()
+{
     m_currentHiveDuration++;
     if (m_currentHiveDuration >= Params::beeInHiveDuration) {
         // finished resting in hive, so start a new foraging bout
@@ -352,6 +432,9 @@ void Bee::stayInHive() {
 }
 
 
+// Calculate waypoints to end point when bee is inside tunnel.
+// The end point is the hive if it is inside the tunnel, or the last tunnel entrance used
+// to enter the tunnel if the hive is outside the tunnel.
 void Bee::calculateWaypointsInsideTunnel()
 {
     m_homingWaypoints.clear();
@@ -371,9 +454,9 @@ void Bee::calculateWaypointsInsideTunnel()
         ((m_pLastTunnelEntrance->y1 + m_pLastTunnelEntrance->y2) / 2.0f)
     );
 
-    pb::Pos2D vecToEntrance = (entranceCentre.x - m_x, entranceCentre.y - m_y);
+    pb::Pos2D vecToEntrance { entranceCentre.x - m_x, entranceCentre.y - m_y };
 
-    float distToEntrance = std::sqrt(vecToEntrance.x * vecToEntrance.x + vecToEntrance.y * vecToEntrance.y);
+    float distToEntrance = vecToEntrance.length();
     float bufferDist = Bee::m_sTunnelWallBuffer ; // distance to stay outside tunnel entrance when exiting
     float relDist = (distToEntrance + bufferDist) / distToEntrance;
 
@@ -384,10 +467,24 @@ void Bee::calculateWaypointsInsideTunnel()
 }
 
 
-// Calculate waypoints to navigate around the tunnel from current position to hive
+// Calculate waypoints to navigate around the tunnel from current position to end point.
+// The end point is the hive if it is outside the tunnel, or the last tunnel entrance used
+// to enter the tunnel if the hive is inside the tunnel.
 void Bee::calculateWaypointsAroundTunnel()
 {
     m_homingWaypoints.clear();
+
+    float endPointX, endPointY;
+
+    if (m_pHive->inTunnel()) {
+        // TODO should we nudge the end point a little inside the tunnel entrance?
+        endPointX = m_pLastTunnelEntrance->x1 + (m_pLastTunnelEntrance->x2 - m_pLastTunnelEntrance->x1) / 2.0f;
+        endPointY = m_pLastTunnelEntrance->y1 + (m_pLastTunnelEntrance->y2 - m_pLastTunnelEntrance->y1) / 2.0f;
+    }
+    else {
+        endPointX = m_pHive->x();
+        endPointY = m_pHive->y();
+    }
 
     auto& tunnel = m_pEnv->getTunnel();
     float tx = tunnel.x();
@@ -396,13 +493,10 @@ void Bee::calculateWaypointsAroundTunnel()
     float th = tunnel.height();
     float buffer = m_sTunnelWallBuffer;
 
-    float hiveX = m_pHive->x();
-    float hiveY = m_pHive->y();
-
-    // Check if direct path to hive intersects tunnel
-    if (!lineIntersectsTunnel(m_x, m_y, hiveX, hiveY)) {
-        // Direct path is clear, just go straight to hive
-        m_homingWaypoints.push_back(pb::Pos2D(hiveX, hiveY));
+    // Check if direct path to end point intersects tunnel
+    if (!lineIntersectsTunnel(m_x, m_y, endPointX, endPointY)) {
+        // Direct path is clear, just go straight to end point
+        m_homingWaypoints.push_back(pb::Pos2D(endPointX, endPointY));
         return;
     }
 
@@ -449,28 +543,28 @@ void Bee::calculateWaypointsAroundTunnel()
 
     // Try different routing options:
     // 1. Via top-left corner
-    pathOptions.push_back({{topLeft, pb::Pos2D(hiveX, hiveY)}, 0.0f});
+    pathOptions.push_back({{topLeft, pb::Pos2D(endPointX, endPointY)}, 0.0f});
 
     // 2. Via top-right corner
-    pathOptions.push_back({{topRight, pb::Pos2D(hiveX, hiveY)}, 0.0f});
+    pathOptions.push_back({{topRight, pb::Pos2D(endPointX, endPointY)}, 0.0f});
 
     // 3. Via bottom-left corner
-    pathOptions.push_back({{bottomLeft, pb::Pos2D(hiveX, hiveY)}, 0.0f});
+    pathOptions.push_back({{bottomLeft, pb::Pos2D(endPointX, endPointY)}, 0.0f});
 
     // 4. Via bottom-right corner
-    pathOptions.push_back({{bottomRight, pb::Pos2D(hiveX, hiveY)}, 0.0f});
+    pathOptions.push_back({{bottomRight, pb::Pos2D(endPointX, endPointY)}, 0.0f});
 
     // 5. Via top-left then top-right
-    pathOptions.push_back({{topLeft, topRight, pb::Pos2D(hiveX, hiveY)}, 0.0f});
+    pathOptions.push_back({{topLeft, topRight, pb::Pos2D(endPointX, endPointY)}, 0.0f});
 
     // 6. Via top-right then bottom-right
-    pathOptions.push_back({{topRight, bottomRight, pb::Pos2D(hiveX, hiveY)}, 0.0f});
+    pathOptions.push_back({{topRight, bottomRight, pb::Pos2D(endPointX, endPointY)}, 0.0f});
 
     // 7. Via bottom-right then bottom-left
-    pathOptions.push_back({{bottomRight, bottomLeft, pb::Pos2D(hiveX, hiveY)}, 0.0f});
+    pathOptions.push_back({{bottomRight, bottomLeft, pb::Pos2D(endPointX, endPointY)}, 0.0f});
 
     // 8. Via bottom-left then top-left
-    pathOptions.push_back({{bottomLeft, topLeft, pb::Pos2D(hiveX, hiveY)}, 0.0f});
+    pathOptions.push_back({{bottomLeft, topLeft, pb::Pos2D(endPointX, endPointY)}, 0.0f});
 
     // Calculate distances and filter out paths that still intersect the tunnel
     std::vector<PathOption> validPaths;
@@ -505,9 +599,9 @@ void Bee::calculateWaypointsAroundTunnel()
         m_homingWaypoints = shortest->waypoints;
     }
     else {
-        // Fallback: if no valid path found (shouldn't happen), just add hive as waypoint
+        // Fallback: if no valid path found (shouldn't happen), just add end point as waypoint
         // and let the collision detection handle it
-        m_homingWaypoints.push_back(pb::Pos2D(hiveX, hiveY));
+        m_homingWaypoints.push_back(pb::Pos2D(endPointX, endPointY));
     }
 }
 
@@ -553,3 +647,4 @@ bool Bee::lineIntersectsTunnel(float x1, float y1, float x2, float y2) const
 
     return false;
 }
+
