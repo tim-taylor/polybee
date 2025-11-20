@@ -432,8 +432,7 @@ void Bee::calculateWaypointsInsideTunnel()
     float bufferDist = Bee::m_sTunnelWallBuffer ; // distance to stay outside tunnel entrance when exiting
     float relDist = (distToEntrance + bufferDist) / distToEntrance;
 
-    pb::Pos2D waypoint( m_x + vecToEntrance.x * relDist,
-                        m_y + vecToEntrance.y * relDist);
+    pb::Pos2D waypoint {m_x + vecToEntrance.x * relDist, m_y + vecToEntrance.y * relDist};
 
     m_homingWaypoints.push_back(waypoint);
 }
