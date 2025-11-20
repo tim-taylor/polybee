@@ -78,13 +78,8 @@ void Bee::update() {
 }
 
 
-void Bee::forage() {
-    // TODO - remove - Temp code just for sanity check of final position, tested at end of method
-    /*
-    float oldx = x;
-    float oldy = y;
-    */
-
+void Bee::forage()
+{
     // update bee's path record with current position
     updatePath();
 
@@ -136,31 +131,8 @@ void Bee::forage() {
         }
     }
 
-    // Temp code for sanity check of final position, tested at end of method
-    /*
-    float newx_prenudge = x;
-    float newy_prenudge = y;
-    */
-
     // nudge bee away from tunnel walls if too close, to avoid any numerical issues
     nudgeAwayFromTunnelWalls();
-
-    // Temp code - sanity check
-    /*
-    float distanceMovedSq = (x - oldx) * (x - oldx) + (y - oldy) * (y - oldy);
-    static bool maxStepLengthCalculated = false;
-    static float maxStepLengthSq = 0.0f;
-    if (!maxStepLengthCalculated) {
-        maxStepLengthSq = (Params::beeStepLength * 1.2f) * (Params::beeStepLength * 1.2f);
-        maxStepLengthCalculated = true;
-    }
-    if (distanceMovedSq > maxStepLengthSq) {
-        pb::msg_error_and_exit(
-            std::format("Bee::move(): logic error: bee moved further than allowed step length, from "
-                "({}, {}) to ({}, {}) nudged to ({}, {})",
-                oldx, oldy, newx_prenudge, newy_prenudge, x, y));
-    }
-    */
 
     m_currentBoutDuration++;
     if (m_currentBoutDuration >= Params::beeForageDuration) {

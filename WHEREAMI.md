@@ -1,6 +1,13 @@
+## 20/11/25
+
+Next up:
+
+* Try doing some optimisation now the return to hive code is complete
+* Change bee's trail colours to show what state they are in?
+
 ## 19/11/25
 
-TODO
+Done the following:
 
 * When following waypoints keep bee trail data up to date
 * Debug waypoints
