@@ -364,8 +364,7 @@ bool Bee::headToNextWaypoint()
 
     const pb::Pos2D& nextWaypoint = m_homingWaypoints.front();
     pb::Pos2D moveVector = pb::Pos2D(nextWaypoint.x - m_x, nextWaypoint.y - m_y);
-
-    float distToWaypoint = std::sqrt(moveVector.x * moveVector.x + moveVector.y * moveVector.y);
+    float distToWaypoint = moveVector.length();
 
     if (distToWaypoint <= Params::beeStepLength) {
         reachedWaypoint = true;

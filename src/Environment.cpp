@@ -192,13 +192,10 @@ bool Environment::inTunnel(float x, float y) const {
 // the nearest plant or a random other visible plant based on Params::beeProbVisitNearestFlower.
 std::optional<Plant*> Environment::getNearestUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const
 {
-    // TODO - should also check whether the tunnel wall is between the bee and the plant
-
-    //Plant* pNearestPlant = nullptr;
+    // TODO - should also check whether the tunnel wall is between the bee and the plant?
 
     std::vector<NearbyPlantInfo> visiblePlants;
 
-    //float nearestDistSq = std::numeric_limits<float>::max();
     float rangeSq = Bee::visualRange() * Bee::visualRange();
 
     auto nearbyPlants = getNearbyPlants(x, y);
@@ -212,26 +209,16 @@ std::optional<Plant*> Environment::getNearestUnvisitedPlant(float x, float y, co
         if (distSq <= rangeSq) {
             // Plant is within visual range
             visiblePlants.emplace_back(pPlant, std::sqrt(distSq));
-
-            /*
-            if (distSq < nearestDistSq) {
-                nearestDistSq = distSq;
-                pNearestPlant = pPlant;
-            }
-            */
         }
     }
 
-    //if (pNearestPlant == nullptr) {
     if (visiblePlants.empty()) {
         // No unvisited plants found in local area
         return std::nullopt;
     }
     else {
-        //assert(!visiblePlants.empty());
         if (visiblePlants.size() == 1) {
             // only one visible plant found, so no further considerations required
-            //return pNearestPlant;
             return visiblePlants[0].pPlant;
         }
         else {
