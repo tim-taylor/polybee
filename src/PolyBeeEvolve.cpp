@@ -98,8 +98,11 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     }
     core.getTunnel().initialiseEntrances();
 
-    // TODO - temp code below
-    core.writeConfigFile();
+    // TODO - temp code to ensure a config file is written at start of run, in case
+    // problems arise later on
+    if (eval_counter == 0) {
+        core.writeConfigFile();
+    }
     // End temp code
 
     for (int i = 0; i < Params::numTrialsPerConfig; ++i) {
@@ -175,7 +178,17 @@ void PolyBeeEvolve::evolve() {
 
     // 5 - Output the population
     std::cout << "The population: \n" << pop;
-
+    std::cout << "\n";
+    std::cout << "Champion individual: ";
+    auto champ = pop.champion_x();
+    for (size_t i = 0; i < champ.size(); ++i) {
+        if (i > 0) {
+            std::cout << ", ";
+        }
+        std::cout << champ[i];
+    }
+    std::cout << "\n";
+    std::cout << "Champion fitness: " << pop.champion_f()[0] << std::endl;
 }
 
 
