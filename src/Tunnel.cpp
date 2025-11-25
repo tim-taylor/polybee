@@ -74,11 +74,7 @@ void Tunnel::initialise(float x, float y, float width, float height, Environment
     m_boundaries.push_back(pb::Line2D(pb::Pos2D(m_x, m_y + m_height), pb::Pos2D(m_x, m_y))); // left wall
 
     // add entrances from Params
-    auto numEntrances = Params::tunnelEntranceSpecs.size();
-    for (int i = 0; i < numEntrances; ++i) {
-        const TunnelEntranceSpec& spec = Params::tunnelEntranceSpecs[i];
-        addEntrance(spec);
-    }
+    initialiseEntrances();
 }
 
 
@@ -91,6 +87,16 @@ void Tunnel::addEntrance(const TunnelEntranceSpec& spec) {
         specCopy.e2 = tmp;
     }
     m_entrances.push_back({specCopy, this});
+}
+
+
+void Tunnel::initialiseEntrances() {
+    m_entrances.clear();
+    auto numEntrances = Params::tunnelEntranceSpecs.size();
+    for (int i = 0; i < numEntrances; ++i) {
+        const TunnelEntranceSpec& spec = Params::tunnelEntranceSpecs[i];
+        addEntrance(spec);
+    }
 }
 
 

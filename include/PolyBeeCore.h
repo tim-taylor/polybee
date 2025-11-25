@@ -39,9 +39,12 @@ public:
     void resetForNewRun();
 
     const Heatmap& getHeatmap() const { return m_env.getHeatmap(); }
+    Tunnel& getTunnel() { return m_env.getTunnel(); }
     const std::vector<Bee>& getBees() const { return m_env.getBees(); }
 
     void pauseSimulation(bool pause) {m_bPaused = pause;}
+
+    void writeConfigFile() const;
 
     //////////////////////////////////////////////////////////////
     // public static methods
@@ -59,7 +62,6 @@ private:
     //////////////////////////////////////////////////////////////
     // private methods
     void generateTimestampString();
-    //void initialiseBees();
     bool stopCriteriaReached();
     void writeOutputFiles() const;
     void printRunInfo(std::ostream& os, const std::string& filename) const;

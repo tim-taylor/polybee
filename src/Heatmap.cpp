@@ -405,7 +405,11 @@ float Heatmap::emd_opencv(const std::vector<std::vector<double>>& heatmap1,
 
     if (heatmap1.size() != heatmap2.size() ||
         (heatmap1.size() > 0 && heatmap1[0].size() != heatmap2[0].size())) {
-        pb::msg_error_and_exit("Heatmaps must have the same dimensions for EMD calculation");
+        pb::msg_error_and_exit(
+            std::format("Heatmaps must have the same dimensions for EMD calculation. Given sizes are {}x{} and {}x{}.",
+                heatmap1.size(), heatmap1.empty() ? 0 : heatmap1[0].size(),
+                heatmap2.size(), heatmap2.empty() ? 0 : heatmap2[0].size())
+        );
     }
 
     if (heatmap1.empty()) {

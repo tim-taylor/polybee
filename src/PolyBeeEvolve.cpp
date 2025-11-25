@@ -22,7 +22,7 @@
 int PolyBeeHeatmapOptimization::eval_counter = 0; // initialise static member
 
 
-// Implementation of the objective function.
+/*
 pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_double &dv) const
 {
     std::vector<double> fitnessValues;
@@ -62,13 +62,84 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     return {mean_emd};
 }
 
-
-// Implementation of the box bounds.
 std::pair<pagmo::vector_double, pagmo::vector_double> PolyBeeHeatmapOptimization::get_bounds() const
 {
     //return {{0., 1.}, {std::numbers::pi_v<double>, 20.}}; // beeMaxDirDelta range, numBees range
     return {{0.0}, {30.0}}; // beeStepLength range
+}
+*/
 
+
+// Implementation of the objective function.
+pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_double &dv) const
+{
+    std::vector<double> fitnessValues;
+    PolyBeeCore& core = m_pPolyBeeEvolve->polyBeeCore();
+
+    float entranceWidth = 100.0f; // fixed entrance width of 100 units
+
+    assert(dv.size() == 8); // we expect 8 decision variables
+    assert(entranceWidth < Params::tunnelW && entranceWidth < Params::tunnelH);
+
+    Params::tunnelEntranceSpecs.clear();
+
+    std::vector<float> tunnelLengths = {
+        Params::tunnelW - entranceWidth, // North
+        Params::tunnelH - entranceWidth, // East
+        Params::tunnelW - entranceWidth, // South
+        Params::tunnelH - entranceWidth  // West
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        int side = static_cast<int>(dv[4+i]);
+        float e1 = static_cast<float>(dv[i]) * tunnelLengths[side];
+        float e2 = e1 + entranceWidth;
+        Params::tunnelEntranceSpecs.emplace_back(e1, e2, side);
+    }
+    core.getTunnel().initialiseEntrances();
+
+    // TODO - temp code below
+    core.writeConfigFile();
+    // End temp code
+
+    for (int i = 0; i < Params::numTrialsPerConfig; ++i) {
+        ++eval_counter;
+        core.resetForNewRun();
+        core.run(false); // false = do not log output files during the run
+        const Heatmap& runHeatmap = core.getHeatmap();
+        double emd = runHeatmap.emd(m_pPolyBeeEvolve->targetHeatmap());
+        fitnessValues.push_back(emd);
+    }
+
+    double mean_emd = std::accumulate(fitnessValues.begin(), fitnessValues.end(), 0.0) / fitnessValues.size();
+
+    int num_evals_per_gen = Params::numConfigsPerGen * Params::numTrialsPerConfig;
+    int gen = (eval_counter-1) / num_evals_per_gen;
+    int eval_in_gen = (eval_counter-1) % num_evals_per_gen;
+    int config_num = eval_in_gen / Params::numTrialsPerConfig;
+
+    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: entrances e1:{},{}:{} e2:{},{}:{}, e3:{},{}:{}, e4:{},{}:{}, meanEMD {:.4f}",
+        gen, eval_counter, config_num,
+        Params::tunnelEntranceSpecs[0].e1, Params::tunnelEntranceSpecs[0].e2, Params::tunnelEntranceSpecs[0].side,
+        Params::tunnelEntranceSpecs[1].e1, Params::tunnelEntranceSpecs[1].e2, Params::tunnelEntranceSpecs[1].side,
+        Params::tunnelEntranceSpecs[2].e1, Params::tunnelEntranceSpecs[2].e2, Params::tunnelEntranceSpecs[2].side,
+        Params::tunnelEntranceSpecs[3].e1, Params::tunnelEntranceSpecs[3].e2, Params::tunnelEntranceSpecs[3].side,
+        mean_emd));
+
+    return {mean_emd};
+}
+
+
+// Implementation of the box bounds.
+std::pair<pagmo::vector_double, pagmo::vector_double> PolyBeeHeatmapOptimization::get_bounds() const
+{
+    return {{0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0}, {1.0, 1.0, 1.0, 1.0, 3, 3, 3, 3}};
+}
+
+
+// Define the number of integer (as opposed to continuous) decision variables
+pagmo::vector_double::size_type PolyBeeHeatmapOptimization::get_nix() const {
+    return 4; // last 4 decision variables are integers
 }
 
 
@@ -168,6 +239,14 @@ void PolyBeeEvolve::loadTargetHeatmap(const std::string& filename) {
         }
     }
 
-    // Store the validated data
-    m_targetHeatmap = std::move(targetData);
+    // Transpose the matrix before storing, because we access these matrices as [x][y] elsewhere
+    std::vector<std::vector<double>> transposed(expectedWidth, std::vector<double>(expectedHeight));
+    for (int i = 0; i < expectedHeight; ++i) {
+        for (int j = 0; j < expectedWidth; ++j) {
+            transposed[j][i] = targetData[i][j];
+        }
+    }
+
+    // Store the transposed data
+    m_targetHeatmap = std::move(transposed);
 }

@@ -41,7 +41,7 @@ public:
 
     bool inTunnel(float x, float y) const;
 
-    const Tunnel& getTunnel() const { return m_tunnel; }
+    Tunnel& getTunnel() { return m_tunnel; }
     const Heatmap& getHeatmap() const { return m_heatmap; }
     const std::vector<Bee>& getBees() const { return m_bees; }
     const std::vector<Plant>& getAllPlants() const { return m_allPlants; }

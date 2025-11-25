@@ -26,6 +26,9 @@ struct PolyBeeHeatmapOptimization {
     // Implementation of the box bounds.
     std::pair<pagmo::vector_double, pagmo::vector_double> get_bounds() const;
 
+    // Define the number of integer (as opposed to continuous) decision variables
+    inline pagmo::vector_double::size_type get_nix() const;
+
     // Pointer back to the PolyBeeEvolve instance
     PolyBeeEvolve* m_pPolyBeeEvolve;
 

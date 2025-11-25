@@ -59,8 +59,11 @@ public:
     Tunnel();
     ~Tunnel() {}
 
+    // initiailise the tunnel and entrances
     void initialise(float x, float y, float width, float height, Environment* pEnv);
-    void addEntrance(const TunnelEntranceSpec& spec);
+
+    // initialise entrances only (for resetting between simulation runs)
+    void initialiseEntrances();
 
     /// @brief Check if the line from point (x1, y1) to point (x2, y2) intersects any tunnel entrance
     /// @param x1 x position of point 1 in environment coordinates
@@ -77,6 +80,7 @@ public:
     const std::vector<TunnelEntranceInfo>& getEntrances() const { return m_entrances; }
 
 private:
+    void addEntrance(const TunnelEntranceSpec& spec);
     IntersectInfo getLineIntersection(const pb::Line2D& line1, const pb::Line2D& line2) const;
 
     float m_x;                  // top-left x position of tunnel in environment coordinates

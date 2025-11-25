@@ -115,23 +115,7 @@ void::PolyBeeCore::resetForNewRun()
 void PolyBeeCore::writeOutputFiles() const
 {
     // write config to file
-    std::string configFilename = std::format("{0}/{1}config-{2}.cfg",
-        Params::logDir,
-        Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
-        m_timestampStr);
-    std::ofstream configFile(configFilename);
-    if (!configFile) {
-        pb::msg_warning(
-            std::format("Unable to open config output file {} for writing. Config will not be saved to file, printing to stdout instead.",
-                configFilename));
-        std::cout << "~~~~~~~~~~ FINAL PARAM VALUES ~~~~~~~~~~";
-        Params::print(std::cout);
-    }
-    else {
-        Params::print(configFile, true);
-        configFile.close();
-        pb::msg_info(std::format("Config output written to file: {}", configFilename));
-    }
+    writeConfigFile();
 
     // write heatmap to file
     const Heatmap& heatmap = m_env.getHeatmap();
@@ -189,6 +173,29 @@ void PolyBeeCore::writeOutputFiles() const
         printRunInfo(infoFile, infoFilename);
         infoFile.close();
         pb::msg_info(std::format("Run info output written to file: {}", infoFilename));
+    }
+}
+
+
+void PolyBeeCore::writeConfigFile() const
+{
+    // write config to file
+    std::string configFilename = std::format("{0}/{1}config-{2}.cfg",
+        Params::logDir,
+        Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
+        m_timestampStr);
+    std::ofstream configFile(configFilename);
+    if (!configFile) {
+        pb::msg_warning(
+            std::format("Unable to open config output file {} for writing. Config will not be saved to file, printing to stdout instead.",
+                configFilename));
+        std::cout << "~~~~~~~~~~ FINAL PARAM VALUES ~~~~~~~~~~";
+        Params::print(std::cout);
+    }
+    else {
+        Params::print(configFile, true);
+        configFile.close();
+        pb::msg_info(std::format("Config output written to file: {}", configFilename));
     }
 }
 
