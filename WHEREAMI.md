@@ -1,3 +1,7 @@
+## 25/11/25
+
+The plot of the results from the 3rd run (out3.png) shows that very little evolution is occuring in the minimum EMD per generation over time.  Try looking at some other algorithms in Pagmo to see if they perform any better and/or look at implementing an Island model (or is the Island/archipelego stuff more for running distributed processes rather than for maintaining diversity per se? Perhaps we just need to find an algorithm that does this?? Look into this some more)
+
 ## 20/11/25
 
 Next up:
