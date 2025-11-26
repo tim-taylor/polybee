@@ -9,17 +9,28 @@ Dependencies:
 
 Or on Ubuntu/Debian:
     sudo apt install python3-matplotlib python3-numpy
+
+Usage:
+    ./plot_emd_scores.py <input_csv_file>
 """
 
 import matplotlib.pyplot as plt
 import numpy as np
 from collections import defaultdict
+import sys
+
+# Check command line arguments
+if len(sys.argv) != 2:
+    print(f"Usage: {sys.argv[0]} <input_csv_file>", file=sys.stderr)
+    sys.exit(1)
+
+input_file = sys.argv[1]
 
 # Read the CSV file
 generations = []
 emd_scores = []
 
-with open('out3.csv', 'r') as f:
+with open(input_file, 'r') as f:
     for i, line in enumerate(f):
         # Skip header rows
         #if i < 2:
@@ -49,12 +60,17 @@ unique_gens = sorted(gen_scores.keys())
 mean_scores = [np.mean(gen_scores[g]) for g in unique_gens]
 min_scores = [np.min(gen_scores[g]) for g in unique_gens]
 
-# Calculate 10-generation rolling averages
+# Calculate 10-generation rolling averages (only if we have enough generations)
 window_size = 10
-mean_rolling = np.convolve(mean_scores, np.ones(window_size)/window_size, mode='valid')
-min_rolling = np.convolve(min_scores, np.ones(window_size)/window_size, mode='valid')
-# Adjust generation indices for rolling averages (centered on window)
-rolling_gens = unique_gens[window_size-1:]
+if len(unique_gens) >= window_size:
+    mean_rolling = np.convolve(mean_scores, np.ones(window_size)/window_size, mode='valid')
+    min_rolling = np.convolve(min_scores, np.ones(window_size)/window_size, mode='valid')
+    # Adjust generation indices for rolling averages (centered on window)
+    rolling_gens = unique_gens[window_size-1:]
+else:
+    mean_rolling = None
+    min_rolling = None
+    rolling_gens = None
 
 # Create the plot
 fig, ax = plt.subplots(figsize=(12, 7))
@@ -73,14 +89,15 @@ ax.plot(unique_gens, min_scores,
         color='red', linewidth=1.5, alpha=0.5, label='Min EMD per generation',
         marker='s', markersize=3)
 
-# Rolling average plots (10 generations)
-ax.plot(rolling_gens, mean_rolling,
-        color='darkblue', linewidth=2.5, label='Mean EMD (10-gen rolling avg)',
-        linestyle='-')
+# Rolling average plots (10 generations) - only if we have enough data
+if mean_rolling is not None:
+    ax.plot(rolling_gens, mean_rolling,
+            color='darkblue', linewidth=2.5, label='Mean EMD (10-gen rolling avg)',
+            linestyle='-')
 
-ax.plot(rolling_gens, min_rolling,
-        color='darkred', linewidth=2.5, label='Min EMD (10-gen rolling avg)',
-        linestyle='-')
+    ax.plot(rolling_gens, min_rolling,
+            color='darkred', linewidth=2.5, label='Min EMD (10-gen rolling avg)',
+            linestyle='-')
 
 # Customize the plot
 ax.set_xlabel('Generation', fontsize=12, fontweight='bold')
@@ -118,7 +135,8 @@ print(f"  Overall Mean: {np.mean(emd_scores):.4f}")
 print(f"\nFinal Generation (Gen {final_gen}):")
 print(f"  Mean: {final_mean:.4f}")
 print(f"  Min: {final_min:.4f}")
-print(f"  Mean (10-gen rolling avg): {mean_rolling[-1]:.4f}")
-print(f"  Min (10-gen rolling avg): {min_rolling[-1]:.4f}")
+if mean_rolling is not None:
+    print(f"  Mean (10-gen rolling avg): {mean_rolling[-1]:.4f}")
+    print(f"  Min (10-gen rolling avg): {min_rolling[-1]:.4f}")
 
 plt.show()

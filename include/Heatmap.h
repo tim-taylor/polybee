@@ -48,9 +48,6 @@ private:
     void calcNormalised(); // calculate the normalised version of the heatmap
 
     // various implementations of EMD calculation
-    float emd_approx(const std::vector<std::vector<double>>& heatmap1, const std::vector<std::vector<double>>& heatmap2) const;
-    float emd_full(const std::vector<std::vector<double>>& heatmap1, const std::vector<std::vector<double>>& heatmap2) const;
-    float emd_hat_pele(const std::vector<std::vector<double>>& heatmap1, const std::vector<std::vector<double>>& heatmap2) const;
     float emd_opencv(const std::vector<std::vector<double>>& heatmap1, const std::vector<std::vector<double>>& heatmap2) const;
 
     template<typename T>

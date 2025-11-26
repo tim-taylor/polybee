@@ -25,9 +25,9 @@ execute_process(
 )
 
 
-# Set a build type if none is specified
-## Set a default build type. You can override this on the command line as follows:
-##  cmake -D CMAKE_BUILD_TYPE=Release ..
+# Set a default build type if none is specified
+## You can override this on the command line as follows:
+##   cmake -D CMAKE_BUILD_TYPE=Release ..
 ## Avaiable build types are [Debug|Release|MinSizeRel|RelWithDebInfo]
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
@@ -50,21 +50,6 @@ FetchContent_Declare(
 set(BUILD_EXAMPLES OFF CACHE INTERNAL "")
 FetchContent_MakeAvailable(raylib)
 
-# Problems with oneTBB and CMake FetchContent - try installing oneTBB manually if needed?
-## oneTBB (required by Pagmo)
-#FetchContent_Declare(
-#    oneTBB
-#    GIT_REPOSITORY "https://github.com/oneapi-src/oneTBB.git"
-#    GIT_TAG "v2022.2.0" # stable release as of 2023-09-15
-#    GIT_PROGRESS TRUE
-#)
-
-# Configure oneTBB to build as dynamic library
-#set(TBB_BUILD_SHARED ON CACHE INTERNAL "")
-#set(TBB_BUILD_STATIC OFF CACHE INTERNAL "")
-#FetchContent_MakeAvailable(oneTBB)
-
-
 ## Boost (required by Pagmo and also for command line argument parsing)
 if(POLICY CMP0144) # See https://forum.qt.io/topic/158929/install-boost-with-cmake
   cmake_policy(SET CMP0144 NEW)
@@ -84,10 +69,6 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(pagmo)
-
-## LEMON library for graph algorithms (for full EMD)
-# Using local modified version with C++20 compatibility fixes
-#add_subdirectory(3rdparty/lemon-a278d16bd2d0)
 
 # Our Project
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_BINARY_DIR}/bin/debug)
@@ -128,13 +109,10 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 # include directories
 target_include_directories(${PROJECT_NAME} PRIVATE
     "${PROJECT_SOURCE_DIR}/include"
-    #"${PROJECT_SOURCE_DIR}/3rdparty/lemon-a278d16bd2d0"
-    #"${CMAKE_BINARY_DIR}/3rdparty/lemon-a278d16bd2d0"
     ${OpenCV_INCLUDE_DIRS}
 )
 
 # link libraries
-#target_link_libraries(${PROJECT_NAME} raylib Boost::program_options lemon pagmo tbb)
 target_link_libraries(${PROJECT_NAME} raylib Boost::program_options Threads::Threads pagmo ${OpenCV_LIBS})
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)

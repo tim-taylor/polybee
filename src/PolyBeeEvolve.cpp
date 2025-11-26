@@ -12,7 +12,12 @@
 #include <pagmo/problem.hpp>
 #include <pagmo/population.hpp>
 #include <pagmo/algorithm.hpp>
-#include <pagmo/algorithms/de1220.hpp>
+//#include <pagmo/algorithms/de1220.hpp>
+//#include <pagmo/algorithms/gaco.hpp>
+//#include <pagmo/algorithms/pso_gen.hpp>
+//#include <pagmo/algorithms/sga.hpp>
+#include <pagmo/algorithms/cmaes.hpp>
+//#include <pagmo/algorithms/xnes.hpp>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -98,12 +103,11 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     }
     core.getTunnel().initialiseEntrances();
 
-    // TODO - temp code to ensure a config file is written at start of run, in case
-    // problems arise later on
+    // Write config file for this configuration once at the start of the run
     if (eval_counter == 0) {
         core.writeConfigFile();
+        std::cout << "~~~~~~~~~~" << std::endl;
     }
-    // End temp code
 
     for (int i = 0; i < Params::numTrialsPerConfig; ++i) {
         ++eval_counter;
@@ -121,7 +125,7 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     int eval_in_gen = (eval_counter-1) % num_evals_per_gen;
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
-    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: entrances e1:{},{}:{} e2:{},{}:{}, e3:{},{}:{}, e4:{},{}:{}, meanEMD {:.4f}",
+    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: entrances e1:{},{}:{} e2:{},{}:{} e3:{},{}:{} e4:{},{}:{}, meanEMD {:.4f}",
         gen, eval_counter, config_num,
         Params::tunnelEntranceSpecs[0].e1, Params::tunnelEntranceSpecs[0].e2, Params::tunnelEntranceSpecs[0].side,
         Params::tunnelEntranceSpecs[1].e1, Params::tunnelEntranceSpecs[1].e2, Params::tunnelEntranceSpecs[1].side,
@@ -158,9 +162,17 @@ void PolyBeeEvolve::evolve() {
     pagmo::problem prob{PolyBeeHeatmapOptimization{this}};
 
     // 2 - Instantiate a pagmo algorithm
-    // (here we use the DE 122- differential evolution algorithm with default parameters)
-    pagmo::algorithm algo{pagmo::de1220(Params::numGenerations-1)}; // -1 because the initial population counts as a generation
-    //pagmo::algorithm algo{pagmo::sade(Params::numGenerations-1)}; // -1 because the initial population counts as a generation
+    // For info on available algorithms see: https://esa.github.io/pagmo2/overview.html
+    int numGensForAlgo = Params::numGenerations - 1; // -1 because Pagmo doesn't count the initial population evaluation as a generation
+    //pagmo::algorithm algo{pagmo::de1220(numGensForAlgo)}; // not suitable for stochastic problems
+    //pagmo::algorithm algo{pagmo::sade(numGensForAlgo)};   // not suitable for stochastic problems
+    //pagmo::algorithm algo {pagmo::gaco(numGensForAlgo)};
+    //pagmo::algorithm algo {pagmo::pso_gen(numGensForAlgo)};
+    //pagmo::algorithm algo {pagmo::sga(numGensForAlgo)};
+    pagmo::algorithm algo {pagmo::cmaes(numGensForAlgo)};
+    //pagmo::algorithm algo {pagmo::xnes(numGensForAlgo)};
+
+    std::cout << "Using algorithm: " << algo.get_name() << std::endl;
 
     // ensure that the Pagmo RNG seed is determined by our own RNG, so runs can be reproduced
     // by just ensuring we use the same seed for our own RNG
@@ -182,9 +194,7 @@ void PolyBeeEvolve::evolve() {
     std::cout << "Champion individual: ";
     auto champ = pop.champion_x();
     for (size_t i = 0; i < champ.size(); ++i) {
-        if (i > 0) {
-            std::cout << ", ";
-        }
+        if (i > 0) { std::cout << ", "; }
         std::cout << champ[i];
     }
     std::cout << "\n";
