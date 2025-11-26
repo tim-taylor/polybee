@@ -12,12 +12,13 @@
 #include <pagmo/problem.hpp>
 #include <pagmo/population.hpp>
 #include <pagmo/algorithm.hpp>
-//#include <pagmo/algorithms/de1220.hpp>
+//#include <pagmo/algorithms/de1220.hpp> // not suitable for stochastic problems
+//#include <pagmo/algorithms/sade.hpp>   // not suitable for stochastic problems
 //#include <pagmo/algorithms/gaco.hpp>
 //#include <pagmo/algorithms/pso_gen.hpp>
-//#include <pagmo/algorithms/sga.hpp>
-#include <pagmo/algorithms/cmaes.hpp>
-//#include <pagmo/algorithms/xnes.hpp>
+#include <pagmo/algorithms/sga.hpp>
+//#include <pagmo/algorithms/cmaes.hpp> // produces an error (tries to use side=5) at end of first generation
+//#include <pagmo/algorithms/xnes.hpp>  // produces an error (tries to use side=5) at end of first generation
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -168,9 +169,9 @@ void PolyBeeEvolve::evolve() {
     //pagmo::algorithm algo{pagmo::sade(numGensForAlgo)};   // not suitable for stochastic problems
     //pagmo::algorithm algo {pagmo::gaco(numGensForAlgo)};
     //pagmo::algorithm algo {pagmo::pso_gen(numGensForAlgo)};
-    //pagmo::algorithm algo {pagmo::sga(numGensForAlgo)};
-    pagmo::algorithm algo {pagmo::cmaes(numGensForAlgo)};
-    //pagmo::algorithm algo {pagmo::xnes(numGensForAlgo)};
+    pagmo::algorithm algo {pagmo::sga(numGensForAlgo)};
+    //pagmo::algorithm algo {pagmo::cmaes(numGensForAlgo)}; // produces an error (tries to use side=5) at end of first generation
+    //pagmo::algorithm algo {pagmo::xnes(numGensForAlgo)};  // produces an error (tries to use side=5) at end of first generation
 
     std::cout << "Using algorithm: " << algo.get_name() << std::endl;
 

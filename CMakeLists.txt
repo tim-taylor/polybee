@@ -68,6 +68,9 @@ FetchContent_Declare(
     GIT_PROGRESS TRUE
 )
 
+# Enable Eigen3 support in Pagmo (requires libeigen3-dev to be installed on the system)
+set(PAGMO_WITH_EIGEN3 ON CACHE BOOL "Enable Eigen3 support in Pagmo" FORCE)
+
 FetchContent_MakeAvailable(pagmo)
 
 # Our Project

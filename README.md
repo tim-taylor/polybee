@@ -15,7 +15,7 @@ Or just the components we actually use:
 ### OpenCV
 * `libopencv-dev`
 
-## No longer required?
+### Used by Pagmo library
 
-### oneTBB
 * `libtbb-dev`
+* `libeigen3-dev`
