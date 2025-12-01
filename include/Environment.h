@@ -43,6 +43,7 @@ public:
 
     Tunnel& getTunnel() { return m_tunnel; }
     const Heatmap& getHeatmap() const { return m_heatmap; }
+    const std::vector<std::vector<double>>& getRawTargetHeatmapNormalised() const { return m_rawTargetHeatmapNormalised; }
     const std::vector<Bee>& getBees() const { return m_bees; }
     const std::vector<Plant>& getAllPlants() const { return m_allPlants; }
     std::vector<Plant*> getNearbyPlants(float x, float y) const;
@@ -54,6 +55,7 @@ private:
     void initialiseHives();
     void initialiseBees();
     void initialiseHeatmap();
+    void initialiseTargetHeatmap();
     void resetBees();
     void resetPlants();
     pb::Pos2D envPosToGridIndex(float x, float y) const;
@@ -70,6 +72,7 @@ private:
     size_t m_plantGridW {1};
     size_t m_plantGridH {1};
     Heatmap m_heatmap;
+    std::vector<std::vector<double>> m_rawTargetHeatmapNormalised; // target heatmap for use in PolyBeeEvolve, and for calculating EMD in one-off runs
 };
 
 #endif /* _ENVIRONMENT_H */

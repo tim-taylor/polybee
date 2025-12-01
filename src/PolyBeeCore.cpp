@@ -216,6 +216,11 @@ void PolyBeeCore::printRunInfo(std::ostream& os, const std::string& filename) co
         CV_VERSION_MAJOR,
         CV_VERSION_MINOR,
         CV_VERSION_REVISION);
+    auto target = m_env.getRawTargetHeatmapNormalised();
+    if (!target.empty()) {
+        float finalEmd = heatmap.emd(target);
+        os << std::format("Final EMD between output heatmap and target heatmap: {:.6f}\n", finalEmd);
+    }
 }
 
 

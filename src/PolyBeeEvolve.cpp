@@ -81,6 +81,7 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
 {
     std::vector<double> fitnessValues;
     PolyBeeCore& core = m_pPolyBeeEvolve->polyBeeCore();
+    const Environment& env = core.getEnvironment();
 
     float entranceWidth = 100.0f; // fixed entrance width of 100 units
 
@@ -115,7 +116,8 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
         core.resetForNewRun();
         core.run(false); // false = do not log output files during the run
         const Heatmap& runHeatmap = core.getHeatmap();
-        double emd = runHeatmap.emd(m_pPolyBeeEvolve->targetHeatmap());
+        //double emd = runHeatmap.emd(m_pPolyBeeEvolve->targetHeatmap());
+        double emd = runHeatmap.emd(env.getRawTargetHeatmapNormalised());
         fitnessValues.push_back(emd);
     }
 
@@ -152,8 +154,10 @@ pagmo::vector_double::size_type PolyBeeHeatmapOptimization::get_nix() const {
 
 
 PolyBeeEvolve::PolyBeeEvolve(PolyBeeCore& core) : m_polyBeeCore(core) {
+    /*
     // Read in the target heatmap and store it in m_targetHeatmap
     loadTargetHeatmap(Params::strTargetHeatmapFilename);
+    */
 };
 
 
@@ -173,8 +177,6 @@ void PolyBeeEvolve::evolve() {
     //pagmo::algorithm algo {pagmo::cmaes(numGensForAlgo)}; // produces an error (tries to use side=5) at end of first generation
     //pagmo::algorithm algo {pagmo::xnes(numGensForAlgo)};  // produces an error (tries to use side=5) at end of first generation
 
-    std::cout << "Using algorithm: " << algo.get_name() << std::endl;
-
     // ensure that the Pagmo RNG seed is determined by our own RNG, so runs can be reproduced
     // by just ensuring we use the same seed for our own RNG
     unsigned int algo_seed = static_cast<unsigned int>(PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine));
@@ -190,19 +192,59 @@ void PolyBeeEvolve::evolve() {
     pop = algo.evolve(pop);
 
     // 5 - Output the population
-    std::cout << "The population: \n" << pop;
-    std::cout << "\n";
-    std::cout << "Champion individual: ";
-    auto champ = pop.champion_x();
-    for (size_t i = 0; i < champ.size(); ++i) {
-        if (i > 0) { std::cout << ", "; }
-        std::cout << champ[i];
-    }
-    std::cout << "\n";
-    std::cout << "Champion fitness: " << pop.champion_f()[0] << std::endl;
+    writeResultsFile(algo, pop, true);
 }
 
 
+void PolyBeeEvolve::writeResultsFile(const pagmo::algorithm& algo, const pagmo::population& pop, bool alsoToStdout) const
+{
+    // write evolution results to file
+    std::string resultsFilename = std::format("{0}/{1}evo-results-{2}.cfg",
+        Params::logDir,
+        Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
+        m_polyBeeCore.getTimestampStr());
+
+    std::ofstream resultsFile(resultsFilename);
+
+    if (!resultsFile) {
+        if (!resultsFile) {
+            pb::msg_warning(
+                std::format("Unable to open evol-results output file {} for writing. Results will not be saved to file, printing to stdout instead.",
+                    resultsFilename));
+        }
+        std::cout << "~~~~~~~~~~ EVOLUTION RESULTS ~~~~~~~~~~";
+        writeResultsFileHelper(std::cout, algo, pop);
+    }
+    else {
+        writeResultsFileHelper(resultsFile, algo, pop);
+        resultsFile.close();
+        pb::msg_info(std::format("Evolution results written to file: {}", resultsFilename));
+        if (alsoToStdout) {
+            std::cout << "~~~~~~~~~~ EVOLUTION RESULTS ~~~~~~~~~~";
+            writeResultsFileHelper(std::cout, algo, pop);
+        }
+    }
+}
+
+
+// Helper method to write results to a given output stream
+void PolyBeeEvolve::writeResultsFileHelper(std::ostream& os, const pagmo::algorithm& algo, const pagmo::population& pop) const
+{
+    os << "Using algorithm: " << algo.get_name() << std::endl;
+    os << "The population: \n" << pop;
+    os << "\n";
+    os << "Champion individual: ";
+    auto champ = pop.champion_x();
+    for (size_t i = 0; i < champ.size(); ++i) {
+        if (i > 0) { os << ", "; }
+        os << champ[i];
+    }
+    os << "\n";
+    os << "Champion fitness: " << pop.champion_f()[0] << std::endl;
+}
+
+
+/*
 void PolyBeeEvolve::loadTargetHeatmap(const std::string& filename) {
     // Check if file exists and can be opened
     std::ifstream file(filename);
@@ -274,3 +316,4 @@ void PolyBeeEvolve::loadTargetHeatmap(const std::string& filename) {
     // Store the transposed data
     m_targetHeatmap = std::move(transposed);
 }
+*/

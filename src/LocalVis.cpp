@@ -304,7 +304,14 @@ void LocalVis::drawStatusText()
     }
 
     if (showHeatmap() && m_bShowEMD) {
-        DrawText(std::format("EMD (OpenCV) to uniform target: {:.4f} :: {} microseconds", m_currentEMD, m_currentEMDTime).c_str(),
+        std::string targetStr;
+        if (m_pPolyBeeCore->getEnvironment().getRawTargetHeatmapNormalised().empty()) {
+            targetStr = "uniform target";
+        }
+        else {
+            targetStr = "provided target";
+        }
+        DrawText(std::format("EMD (OpenCV) to {}: {:.4f} :: {} microseconds", targetStr, m_currentEMD, m_currentEMDTime).c_str(),
             10, GetScreenHeight() - 30, FONT_SIZE_REG, RAYWHITE);
     }
 }
@@ -514,7 +521,13 @@ void LocalVis::drawHeatmap()
     if (m_bShowEMD && !m_bPaused && !m_bWaitingForUserToClose)
     {
         auto start = std::chrono::high_resolution_clock::now();
-        m_currentEMD = heatmap.emd(heatmap.uniformTargetNormalised());
+        const Environment& env = m_pPolyBeeCore->getEnvironment();
+        if (env.getRawTargetHeatmapNormalised().empty()) {
+            m_currentEMD = heatmap.emd(heatmap.uniformTargetNormalised());
+        }
+        else {
+            m_currentEMD = heatmap.emd(env.getRawTargetHeatmapNormalised());
+        }
         auto end = std::chrono::high_resolution_clock::now();
         m_currentEMDTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     }

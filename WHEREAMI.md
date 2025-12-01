@@ -1,7 +1,14 @@
 ## 26/11/25
 
+Have added target heatmap to Environment so this can be loaded for normal (non evolve) runs.
+Can now remove target heatmap code from PolyBeeEvolve and use the code in Environment instead.
+Next up, check new code is working, and write final EMD between Env m_heatmap and m_targetHeatmap
+to run info file at end of run.
+
 SGA algorithm seems to be the best. Next step is to try this with Island / Archipelago features with
 migration to see if this maintains diversity for longer and results in better final solutions.
+
+Modify python script so it takes a second command line arg that is added to the title of the chart
 
 Also try evolving with target heatmap even across all of inside of tunnel
 

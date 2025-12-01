@@ -8,8 +8,10 @@
 #define _POLYBEEEVOLVE_H
 
 #include "PolyBeeCore.h"
-#include <pagmo/types.hpp>
-#include <vector>
+#include <pagmo/population.hpp>
+#include <pagmo/algorithm.hpp>
+//#include <vector>
+#include <ostream>
 
 class PolyBeeEvolve;
 
@@ -48,14 +50,15 @@ public:
     void evolve(); // run optimization
 
     PolyBeeCore& polyBeeCore() { return m_polyBeeCore; }
-    const std::vector<std::vector<double>>& targetHeatmap() const { return m_targetHeatmap; }
+    //const std::vector<std::vector<double>>& targetHeatmap() const { return m_targetHeatmap; }
 
 private:
     void loadTargetHeatmap(const std::string& filename);
+    void writeResultsFile(const pagmo::algorithm& algo, const pagmo::population& pop, bool alsoToStdout) const;
+    void writeResultsFileHelper(std::ostream& os, const pagmo::algorithm& algo, const pagmo::population& pop) const;
 
     PolyBeeCore& m_polyBeeCore;
-
-    std::vector<std::vector<double>> m_targetHeatmap; // the target heatmap we are trying to evolve towards
+    //std::vector<std::vector<double>> m_targetHeatmap; // the target heatmap we are trying to evolve towards
 };
 
 #endif /* _POLYBEEEVOLVE_H */

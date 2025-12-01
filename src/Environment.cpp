@@ -12,6 +12,8 @@
 #include <format>
 #include <cassert>
 #include <algorithm>
+#include <fstream>
+#include <sstream>
 
 
 Environment::Environment() {
@@ -26,6 +28,7 @@ void Environment::initialise() {
     initialiseHives();
     initialiseBees();
     initialiseHeatmap();
+    initialiseTargetHeatmap();
 }
 
 
@@ -143,6 +146,89 @@ void Environment::initialiseBees()
 void Environment::initialiseHeatmap() {
     m_heatmap.initialise(&m_bees);
     pb::msg_info(std::format("Initial EMD between uniform target and anti-target heatmaps: {:.6f}", m_heatmap.high_emd()));
+}
+
+
+void Environment::initialiseTargetHeatmap()
+{
+    if (Params::strTargetHeatmapFilename.empty()) {
+        // no target heatmap specified
+        pb::msg_info("No target heatmap specified, so will not calculate EMD at end of run.");
+        return;
+    }
+
+    // Ensure core heatmap has been initialised
+    assert(m_heatmap.size_x() > 0 && m_heatmap.size_y() > 0);
+
+    // Check if target heatmap file exists and can be opened
+    std::string filename = Params::strTargetHeatmapFilename;
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        pb::msg_error_and_exit("Cannot open target heatmap file: " + filename);
+    }
+
+    // Get expected dimensions from the core heatmap
+    int expectedWidth = m_heatmap.size_x();
+    int expectedHeight = m_heatmap.size_y();
+
+    // Read CSV data
+    std::vector<std::vector<double>> targetData;
+    std::string line;
+
+    while (std::getline(file, line)) {
+        if (line.empty()) continue; // Skip empty lines
+
+        std::vector<double> row;
+        std::stringstream ss(line);
+        std::string cell;
+
+        while (std::getline(ss, cell, ',')) {
+            try {
+                double value = std::stod(cell);
+                row.push_back(value);
+            } catch (const std::exception& e) {
+                pb::msg_error_and_exit("Invalid numeric value in target heatmap CSV file: " + cell);
+            }
+        }
+
+        if (!row.empty()) {
+            targetData.push_back(row);
+        }
+    }
+
+    file.close();
+
+    // Check dimensions match
+    if (targetData.empty()) {
+        pb::msg_error_and_exit("Target heatmap file is empty: " + filename);
+    }
+
+    int actualHeight = static_cast<int>(targetData.size());
+    int actualWidth = static_cast<int>(targetData[0].size());
+
+    if (actualHeight != expectedHeight || actualWidth != expectedWidth) {
+        pb::msg_error_and_exit(
+            std::format("Target heatmap dimensions ({}x{} do not match core heatmap dimensions ({}x{})",
+                actualWidth, actualHeight, expectedWidth, expectedHeight));
+    }
+
+    // Check all rows have the same width
+    for (size_t i = 0; i < targetData.size(); ++i) {
+        if (static_cast<int>(targetData[i].size()) != expectedWidth) {
+            pb::msg_error_and_exit(std::format("Inconsistent row width in CSV file at row {}", i + 1));
+        }
+    }
+
+    // Transpose the matrix before storing, because we access these matrices as [x][y] elsewhere
+    std::vector<std::vector<double>> transposed(expectedWidth, std::vector<double>(expectedHeight));
+    for (int i = 0; i < expectedHeight; ++i) {
+        for (int j = 0; j < expectedWidth; ++j) {
+            transposed[j][i] = targetData[i][j];
+        }
+    }
+
+    // Store the transposed data
+    m_rawTargetHeatmapNormalised = std::move(transposed);
 }
 
 

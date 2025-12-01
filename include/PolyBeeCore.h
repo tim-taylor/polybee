@@ -38,6 +38,8 @@ public:
     void earlyExit();
     void resetForNewRun();
 
+    const Environment& getEnvironment() const { return m_env; }
+    Environment& getEnvironment() { return m_env; }
     const Heatmap& getHeatmap() const { return m_env.getHeatmap(); }
     Tunnel& getTunnel() { return m_env.getTunnel(); }
     const std::vector<Bee>& getBees() const { return m_env.getBees(); }
@@ -45,6 +47,8 @@ public:
     void pauseSimulation(bool pause) {m_bPaused = pause;}
 
     void writeConfigFile() const;
+
+    const std::string& getTimestampStr() const { return m_timestampStr; }
 
     //////////////////////////////////////////////////////////////
     // public static methods
