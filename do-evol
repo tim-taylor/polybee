@@ -1,2 +1,2 @@
 #!/bin/bash
-./run-debug -c config-files/evolve-entrance-positions-4-rows.cfg --num-bees 250 --num-trials-per-config 250 --num-generations=50 | tee out-sga-250-bees-250-reps-50-gens.txt
+./run-release -c config-files/evolve-entrance-positions-4-rows.cfg --num-bees 250 --num-trials-per-config 150 --num-generations=50 | tee out-sga-250-bees-150-reps-50-gens.txt
