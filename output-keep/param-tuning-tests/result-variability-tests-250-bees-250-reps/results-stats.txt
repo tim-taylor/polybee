@@ -1,0 +1,10 @@
+
+Data Statistics:
+  Count: 250
+  Min: 1.5183
+  Q1 (25th percentile): 1.7250
+  Median (50th percentile): 1.8064
+  Q3 (75th percentile): 1.8868
+  Max: 2.1251
+  Mean: 1.8084
+  Std Dev: 0.1214

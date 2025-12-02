@@ -1,0 +1,7 @@
+Run: output/evolve-entrance-positions-4-rows-run-info-20251202-112510-05670d.txt
+High EMD value: 13.499981
+Polybee version: 0.1.0.0
+Git branch: main
+Git commit hash: 647ceaa
+OpenCV version: 4.6.0
+Final EMD between output heatmap and target heatmap: 1.932951
