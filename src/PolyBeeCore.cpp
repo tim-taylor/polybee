@@ -189,7 +189,7 @@ void PolyBeeCore::writeConfigFile() const
         pb::msg_warning(
             std::format("Unable to open config output file {} for writing. Config will not be saved to file, printing to stdout instead.",
                 configFilename));
-        std::cout << "~~~~~~~~~~ FINAL PARAM VALUES ~~~~~~~~~~";
+        std::cout << "~~~~~~~~~~ FINAL PARAM VALUES ~~~~~~~~~~" << std::endl;
         Params::print(std::cout);
     }
     else {

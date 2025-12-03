@@ -212,7 +212,7 @@ void PolyBeeEvolve::writeResultsFile(const pagmo::algorithm& algo, const pagmo::
                 std::format("Unable to open evol-results output file {} for writing. Results will not be saved to file, printing to stdout instead.",
                     resultsFilename));
         }
-        std::cout << "~~~~~~~~~~ EVOLUTION RESULTS ~~~~~~~~~~";
+        std::cout << "~~~~~~~~~~ EVOLUTION RESULTS ~~~~~~~~~~" << std::endl;
         writeResultsFileHelper(std::cout, algo, pop);
     }
     else {
@@ -220,7 +220,7 @@ void PolyBeeEvolve::writeResultsFile(const pagmo::algorithm& algo, const pagmo::
         resultsFile.close();
         pb::msg_info(std::format("Evolution results written to file: {}", resultsFilename));
         if (alsoToStdout) {
-            std::cout << "~~~~~~~~~~ EVOLUTION RESULTS ~~~~~~~~~~";
+            std::cout << "~~~~~~~~~~ EVOLUTION RESULTS ~~~~~~~~~~" << std::endl;
             writeResultsFileHelper(std::cout, algo, pop);
         }
     }

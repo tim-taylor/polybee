@@ -1,5 +1,7 @@
 ## 26/11/25
 
+Maybe change PolyBeeEvolve fitness code to use median EMD for a config rather than mean EMD
+
 Have added target heatmap to Environment so this can be loaded for normal (non evolve) runs.
 Can now remove target heatmap code from PolyBeeEvolve and use the code in Environment instead.
 Next up, check new code is working, and write final EMD between Env m_heatmap and m_targetHeatmap

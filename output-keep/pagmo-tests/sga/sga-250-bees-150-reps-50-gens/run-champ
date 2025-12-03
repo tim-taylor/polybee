@@ -1,0 +1,3 @@
+#!/bin/bash
+cd /home/tim/projects/polybee
+./run-debug -c config-files/evolve-entrance-positions-4-rows.cfg --num-bees 250 --tunnel-entrance 143.27,243.27:3 --tunnel-entrance 204.21,304.21:2 --tunnel-entrance 267.26,367.26:3 --tunnel-entrance 210.1,310.1:1 --evolve 0 --visualise 1 --bee-path-record-len 200
