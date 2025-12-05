@@ -41,6 +41,7 @@ PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
     if (!Params::bCommandLineQuiet) {
         std::cout << "~~~~~~~~~~ FINAL PARAM VALUES ~~~~~~~~~~\n";
         Params::print(std::cout);
+        std::cout << "~~~~~~~~~~\n";
     }
 
     if (Params::hiveSpecs.empty()) {
