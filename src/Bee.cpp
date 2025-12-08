@@ -24,20 +24,18 @@ const float Bee::m_sTunnelWallBuffer {0.1f};
 Bee::Bee(Hive* pHive, Environment* pEnv) :
     m_pHive(pHive), m_pEnv(pEnv)
 {
+    assert(Params::initialised());
+
     m_x = m_pHive->x();
     m_y = m_pHive->y();
-    commonInit();
-    setDirAccordingToHive();
-}
-
-
-void Bee::commonInit() {
-    assert(Params::initialised());
     m_distDir.param(std::uniform_real_distribution<float>::param_type(-Params::beeMaxDirDelta, Params::beeMaxDirDelta));
     m_colorHue = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine) * 360.0f;
     m_inTunnel = m_pEnv->inTunnel(m_x, m_y);
     m_currentBoutDuration = 0;
     m_currentHiveDuration = 0;
+    m_state = BeeState::FORAGING;
+    setDirAccordingToHive();
+    m_energy = Params::beeInitialEnergy;
 }
 
 
@@ -63,6 +61,9 @@ void Bee::update() {
     case BeeState::FORAGING:
         forage();
         break;
+    case BeeState::ON_FLOWER:
+        stayOnFlower();
+        break;
     case BeeState::RETURN_TO_HIVE_INSIDE_TUNNEL:
         returnToHiveInsideTunnel();
         break;
@@ -81,11 +82,19 @@ void Bee::update() {
 void Bee::forage()
 {
     // update bee's path record with current position
-    updatePath();
+    updatePathHistory();
 
+    pb::PosAndDir2D desiredMove;
     // work out where bee would like to go next, following "forage nearest flower" strategy
     // or step in random direction if no nearby flowers found
-    pb::PosAndDir2D desiredMove = forageNearestFlower();
+    auto desiredMoveOpt = forageNearestFlower();
+    if (desiredMoveOpt.has_value()) {
+        desiredMove = desiredMoveOpt.value();
+    }
+    else {
+        // no nearby unvisited flowers found, so move in random direction
+        desiredMove = moveInRandomDirection();
+    }
 
     // keep within bounds of environment
     if (desiredMove.x < 0.0f) desiredMove.x = 0.0f;
@@ -100,6 +109,11 @@ void Bee::forage()
         m_angle = desiredMove.angle;
         m_x = desiredMove.x;
         m_y = desiredMove.y;
+        if (m_state == BeeState::ON_FLOWER) {
+            // bee has just landed on its target flower. Its state has already been updated in forageNearestFlower(),
+            // so our work here is done
+            return;
+        }
     }
     else {
         // bee has crossed tunnel boundary, so we need to figure out if it can enter/exit the tunnel at this point
@@ -135,8 +149,17 @@ void Bee::forage()
     nudgeAwayFromTunnelWalls();
 
     m_currentBoutDuration++;
+
+    // TODO - is this bit now obsolete?
+    // do we still want a fixed max foraging bout duration, or just have bees return to hive when they run out of energy?
     if (m_currentBoutDuration >= Params::beeForageDuration) {
         // maximum foraging bout duration reached, so return to hive
+        switchToReturnToHive();
+    }
+
+    m_energy -= Params::beeEnergyDepletionPerStep;
+    if (m_energy <= 0.0f) {
+        // bee has run out of energy, so return to hive
         switchToReturnToHive();
     }
 }
@@ -192,9 +215,11 @@ void Bee::nudgeAwayFromTunnelWalls()
 }
 
 
-// Calculate where the bee would like to go next, following forage for nearest flower strategy
-// or step in random direction if no nearby flowers found.
-// Returns the new (x,y) position as a Pos2D struct, but does not actually update the bee's position.
+// Search for the bee's next target flower following a "forage nearest flower" strategy.
+// If a nearby unvisited flower is found, return a new position moving towards that flower,
+// otherwise, return std::nullopt.
+//
+// NB Returns the new (x,y) position as a Pos2D struct, but does not actually update the bee's position.
 // The calling method is responsible for checking if the new position is valid (e.g. that it is
 // within the bounds of the environment and that it doesn't cross a tunnel wall except at defined
 // entrance/exit points), and updating the bee's position if appropriate.
@@ -202,11 +227,12 @@ void Bee::nudgeAwayFromTunnelWalls()
 // Note, this method is not const because it uses m_distDir which updates its internal state
 // each time it is called.
 //
-pb::PosAndDir2D Bee::forageNearestFlower()
+std::optional<pb::PosAndDir2D> Bee::forageNearestFlower()
 {
     pb::PosAndDir2D result;
 
     auto plantInfo = m_pEnv->getNearestUnvisitedPlant(m_x, m_y, m_recentlyVisitedPlants);
+
     if (plantInfo.has_value()) {
         Plant* pPlant = plantInfo.value();
         // found a nearby plant to forage from
@@ -226,26 +252,40 @@ pb::PosAndDir2D Bee::forageNearestFlower()
             // to keep memory length within limit)
             pPlant->setVisited();
             addToRecentlyVisitedPlants(pPlant);
+
+            // and switch to ON_FLOWER state
+            switchToOnFlower(pPlant);
         }
         else {
             // plant is further away than one step length, so just head in its direction
             result.x = m_x + Params::beeStepLength * std::cos(angleToPlant);
             result.y = m_y + Params::beeStepLength * std::sin(angleToPlant);
         }
+
+        return result;
     }
     else {
-        // no nearby plants found, so just move in random direction
-        result.angle = m_angle + m_distDir(PolyBeeCore::m_sRngEngine);
-        result.x = m_x + Params::beeStepLength * std::cos(result.angle);
-        result.y = m_y + Params::beeStepLength * std::sin(result.angle);
+        // no unvisited nearby plants found
+        return std::nullopt;
     }
+}
+
+
+// Calculate a new position by moving in a random direction from the bee's current position.
+pb::PosAndDir2D Bee::moveInRandomDirection()
+{
+    pb::PosAndDir2D result;
+
+    result.angle = m_angle + m_distDir(PolyBeeCore::m_sRngEngine);
+    result.x = m_x + Params::beeStepLength * std::cos(result.angle);
+    result.y = m_y + Params::beeStepLength * std::sin(result.angle);
 
     return result;
 }
 
 
 // record current position in path history, trimming to maximum length if necessary
-void Bee::updatePath()
+void Bee::updatePathHistory()
 {
     // add current position to path
     m_path.emplace_back(m_x, m_y);
@@ -265,6 +305,27 @@ void Bee::addToRecentlyVisitedPlants(Plant* pPlant)
     m_recentlyVisitedPlants.push_back(pPlant);
     if (m_recentlyVisitedPlants.size() > Params::beeVisitMemoryLength) {
         m_recentlyVisitedPlants.erase(m_recentlyVisitedPlants.begin());
+    }
+}
+
+
+void Bee::switchToOnFlower(Plant* pPlant)
+{
+    m_state = BeeState::ON_FLOWER;
+    m_energy += pPlant->extractNectar(Params::beeEnergyBoostPerFlower); // boost bee's energy on visiting a flower
+    m_currentFlowerDuration = 0;
+    // we don't reset bout duration here, as the bee is still in the same foraging bout
+}
+
+
+void Bee::stayOnFlower()
+{
+    m_currentFlowerDuration++;
+    updatePathHistory();
+    if (m_currentFlowerDuration >= Params::beeNumStepsOnFlower) {
+        // finished resting in hive, so restart foraging
+        m_state = BeeState::FORAGING;
+        m_currentFlowerDuration = 0;
     }
 }
 
@@ -294,7 +355,7 @@ void Bee::switchToReturnToHive()
 void Bee::returnToHiveInsideTunnel()
 {
     // update bee's path record with current position
-    updatePath();
+    updatePathHistory();
 
     // move towards next waypoint
     bool reachedWaypoint = headToNextWaypoint();
@@ -326,7 +387,7 @@ void Bee::returnToHiveInsideTunnel()
 void Bee::returnToHiveOutsideTunnel()
 {
     // update bee's path record with current position
-    updatePath();
+    updatePathHistory();
 
     // move towards next waypoint
     bool reachedWaypoint = headToNextWaypoint();
@@ -393,12 +454,13 @@ bool Bee::headToNextWaypoint()
 void Bee::stayInHive()
 {
     m_currentHiveDuration++;
-    updatePath();
+    updatePathHistory();
     if (m_currentHiveDuration >= Params::beeInHiveDuration) {
         // finished resting in hive, so start a new foraging bout
         m_state = BeeState::FORAGING;
         m_currentHiveDuration = 0;
         m_currentBoutDuration = 0;
+        m_energy = Params::beeInitialEnergy;
     }
 }
 

@@ -34,6 +34,9 @@ std::vector<TunnelEntranceSpec> Params::tunnelEntranceSpecs;
 // Patch configuration
 std::vector<PatchSpec> Params::patchSpecs;
 
+// Flower configuration
+float Params::flowerInitialNectar;
+
 // Bee configuration
 int Params::numBees;
 float Params::beeMaxDirDelta;
@@ -42,8 +45,12 @@ int Params::beePathRecordLen;
 float Params::beeVisualRange;
 int Params::beeVisitMemoryLength;
 float Params::beeProbVisitNearestFlower;
-int Params::beeForageDuration;
+int Params::beeForageDuration;  // Is this now obsolete?
 int Params::beeInHiveDuration;
+float Params::beeInitialEnergy;
+float Params::beeEnergyDepletionPerStep;
+float Params::beeEnergyBoostPerFlower;
+int Params::beeNumStepsOnFlower;
 
 // Hive configuration
 std::vector<HiveSpec> Params::hiveSpecs;
@@ -126,6 +133,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("tunnel-height", "tunnelH", ParamType::FLOAT, &tunnelH, 50.0f, "Height (number of cells) of tunnel");
     REGISTRY.emplace_back("tunnel-x", "tunnelX", ParamType::FLOAT, &tunnelX, 200.0f, "X position of left edge of tunnel");
     REGISTRY.emplace_back("tunnel-y", "tunnelY", ParamType::FLOAT, &tunnelY, 100.0f, "Y position of top edge of tunnel");
+    REGISTRY.emplace_back("flower-initial-nectar", "flowerInitialNectar", ParamType::FLOAT, &flowerInitialNectar, 100.0f, "Initial nectar amount for each flower");
     REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
     REGISTRY.emplace_back("bee-max-dir-delta", "beeMaxDirDelta", ParamType::FLOAT, &beeMaxDirDelta, 0.4f, "Maximum change in direction (radians) per step");
     REGISTRY.emplace_back("bee-step-length", "beeStepLength", ParamType::FLOAT, &beeStepLength, 20.0f, "How far a bee moves forward at each time step");
@@ -135,6 +143,10 @@ void Params::initRegistry()
     REGISTRY.emplace_back("bee-prob-visit-nearest-flower", "beeProbVisitNearestFlower", ParamType::FLOAT, &beeProbVisitNearestFlower, 0.8f, "Probability that a bee visits the nearest flower rather than a random visible flower");
     REGISTRY.emplace_back("bee-forage-duration", "beeForageDuration", ParamType::INT, &beeForageDuration, 1000, "Duration (number of iterations) of a bee's foraging bout");
     REGISTRY.emplace_back("bee-in-hive-duration", "beeInHiveDuration", ParamType::INT, &beeInHiveDuration, 200, "Duration (number of iterations) of a bee's stay in the hive between foraging bouts");
+    REGISTRY.emplace_back("bee-initial-energy", "beeInitialEnergy", ParamType::FLOAT, &beeInitialEnergy, 100.0f, "Energy a bee has when it leaves the hive to commence a foraging trip");
+    REGISTRY.emplace_back("bee-energy-depletion-per-step", "beeEnergyDepletionPerStep", ParamType::FLOAT, &beeEnergyDepletionPerStep, 1.0f, "Energy a bee expends on each step when foraging");
+    REGISTRY.emplace_back("bee-energy-boost-per-flower", "beeEnergyBoostPerFlower", ParamType::FLOAT, &beeEnergyBoostPerFlower, 10.0f, "Energy a bee extracts from an unvisited flower");
+    REGISTRY.emplace_back("bee-num-steps-on-flower", "beeNumStepsOnFlower", ParamType::INT, &beeNumStepsOnFlower, 5, "Number of simulation steps a bee will stay on a flower having landed on it");
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");
     REGISTRY.emplace_back("num-trials-per-config", "numTrialsPerConfig", ParamType::INT, &numTrialsPerConfig, 1, "Number of trials to run for each configuration/individual in each generation");

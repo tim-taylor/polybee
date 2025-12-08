@@ -119,6 +119,9 @@ public:
     // Patch configuration
     static std::vector<PatchSpec> patchSpecs;
 
+    // Flower configuration
+    static float flowerInitialNectar; // initial nectar amount for each flower
+
     // Bee configuration
     static int numBees;
     static float beeMaxDirDelta; // maximum change in direction (radians) per step
@@ -129,6 +132,10 @@ public:
     static float beeProbVisitNearestFlower; // probability that a bee visits the nearest flower rather than a random visible flower
     static int beeForageDuration; // duration (number of iterations) of a bee's foraging bout
     static int beeInHiveDuration; // duration (number of iterations) of a bee's stay in the hive between foraging bouts
+    static float beeInitialEnergy; // energy a bee has when it leaves the hive to commence a foraging trip
+    static float beeEnergyDepletionPerStep; // energy a bee expends on each step when foraging
+    static float beeEnergyBoostPerFlower; // energy a bee extracts from an unvisited flower
+    static int beeNumStepsOnFlower; // number of simulation steps a bee will stay on a flower having landed on it
 
     // Hive configuration
     static std::vector<HiveSpec> hiveSpecs;

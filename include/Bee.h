@@ -12,6 +12,7 @@
 #include <random>
 #include <vector>
 #include <deque>
+#include <optional>
 
 class Environment;
 class Hive;
@@ -21,6 +22,7 @@ class Plant;
 enum class BeeState
 {
     FORAGING,
+    ON_FLOWER,
     RETURN_TO_HIVE_OUTSIDE_TUNNEL,
     RETURN_TO_HIVE_INSIDE_TUNNEL,
     IN_HIVE
@@ -52,33 +54,37 @@ public:
     void setState(BeeState state) { m_state = state; }
 
 private:
-    void commonInit();
     void forage();
     void switchToReturnToHive();
+    void switchToOnFlower(Plant* pPlant);
     void returnToHiveInsideTunnel();
     void returnToHiveOutsideTunnel();
+    void stayOnFlower();
     void stayInHive();
     void nudgeAwayFromTunnelWalls();
-    pb::PosAndDir2D forageNearestFlower();
+    std::optional<pb::PosAndDir2D> forageNearestFlower();
+    pb::PosAndDir2D moveInRandomDirection();
     void addToRecentlyVisitedPlants(Plant* pPlant);
     bool lineIntersectsTunnel(float x1, float y1, float x2, float y2) const;
     void calculateWaypointsAroundTunnel();
     void calculateWaypointsInsideTunnel();
     bool headToNextWaypoint();
-    void updatePath();
+    void updatePathHistory();
     void setDirAccordingToHive();
 
-    float m_x;        // position of bee in environment coordinates
-    float m_y;        // position of bee in environment coordinates
-    float m_angle;    // direction of travel in radians
-    float m_colorHue; // hue value for coloring the bee in visualisation (between 0.0 and 360.0)
-    bool  m_inTunnel; // is the bee currently in the tunnel
+    float m_x;          // position of bee in environment coordinates
+    float m_y;          // position of bee in environment coordinates
+    float m_angle;      // direction of travel in radians
+    float m_energy;     // energy level of the bee
+    float m_colorHue;   // hue value for coloring the bee in visualisation (between 0.0 and 360.0)
+    bool  m_inTunnel;   // is the bee currently in the tunnel
 
-    const TunnelEntranceInfo* m_pLastTunnelEntrance {nullptr}; // info about the last tunnel entrance used by the bee
+    const TunnelEntranceInfo* m_pLastTunnelEntrance { nullptr }; // info about the last tunnel entrance used by the bee
     std::deque<pb::Pos2D> m_homingWaypoints; // waypoints for returning to hive
 
-    int   m_currentBoutDuration { 0 }; // duration (number of iterations) of the current foraging bout
-    int   m_currentHiveDuration { 0 }; // duration (number of iterations) of the current stay in the hive
+    int   m_currentBoutDuration { 0 };  // duration (number of iterations) of the current foraging bout
+    int   m_currentHiveDuration { 0 };  // duration (number of iterations) of the current stay in the hive
+    int   m_currentFlowerDuration { 0 };// duration (number of iterations) on current flower
 
     BeeState m_state { BeeState::FORAGING };
 

@@ -13,8 +13,7 @@
 class Plant {
 
 public:
-    Plant() : m_x(0.0f), m_y(0.0f), m_speciesID(0) {}
-    Plant(float x, float y, int speciesID) : m_x(x), m_y(y), m_speciesID(speciesID) {}
+    Plant(float x, float y, int speciesID);
     ~Plant() {}
 
     float x() const { return m_x; }
@@ -22,12 +21,14 @@ public:
     int speciesID() const { return m_speciesID; }
     bool visited() const { return m_visited; }
     void setVisited(bool visited = true) { m_visited = visited; }
+    float extractNectar(float amountWanted);
 
 private:
     float m_x {0.0f};
     float m_y {0.0f};
     int m_speciesID {0};
     bool m_visited {false};
+    float m_nectarAmount {0.0f}; // amount of nectar available in the flower
 };
 
 #endif /* _PLANT_H */
