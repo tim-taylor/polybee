@@ -271,12 +271,12 @@ bool Environment::inTunnel(float x, float y) const {
 }
 
 
-// Find the nearest unvisited plant to the given position (x,y).
+// Find an unvisited plant nearby to the given position (x,y).
 // Returns std::nullopt if no unvisited plant is found within visual range.
 // The 'visited' parameter is a list of plants that have recently been visited by the bee.
-// This method considers only plants within visual range, and selects either
-// the nearest plant or a random other visible plant based on Params::beeProbVisitNearestFlower.
-std::optional<Plant*> Environment::getNearestUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const
+// This method considers only plants within visual range. If more than one unvisited plant is found,
+// it uses a distance-weighted random selection to pick one.
+std::optional<Plant*> Environment::selectNearbyUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const
 {
     // TODO - should also check whether the tunnel wall is between the bee and the plant?
 

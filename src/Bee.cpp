@@ -89,7 +89,15 @@ void Bee::forage()
     // or step in random direction if no nearby flowers found
     auto desiredMoveOpt = forageNearestFlower();
     if (desiredMoveOpt.has_value()) {
-        desiredMove = desiredMoveOpt.value();
+        float rnd = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine);
+        if (rnd < Params::beeProbVisitNearestFlower) {
+            // move towards nearest unvisited flower
+            desiredMove = desiredMoveOpt.value();
+        }
+        else {
+            // move in random direction
+            desiredMove = moveInRandomDirection();
+        }
     }
     else {
         // no nearby unvisited flowers found, so move in random direction
@@ -117,14 +125,14 @@ void Bee::forage()
     }
     else {
         // bee has crossed tunnel boundary, so we need to figure out if it can enter/exit the tunnel at this point
-        auto intersectInfo = m_pEnv->getTunnel().intersectsEntrance(m_x, m_y, desiredMove.x, desiredMove.y);
+        auto intersectInfo = m_pEnv->getTunnel().intersectsTunnelBoundary(m_x, m_y, desiredMove.x, desiredMove.y);
 
         if (!intersectInfo.intersects) {
             pb::msg_error_and_exit(
                 std::format("Bee::move(): logic error: expected intersection when crossing tunnel boundary, from ({}, {}) to ({}, {})",
                     m_x, m_y, desiredMove.x, desiredMove.y));
         }
-        else if (intersectInfo.withinLimits) {
+        else if (intersectInfo.crossesEntrance) {
             // the bee passed through an entrance, so it can move to the new position
             m_angle = desiredMove.angle;
             m_x = desiredMove.x;
@@ -139,7 +147,11 @@ void Bee::forage()
         else {
             // the bee collided with the tunnel wall, so it cannot move where it wanted to go.
             // Instead, set its position to the point where it hit the wall
-            m_angle = desiredMove.angle; // TODO should maybe recalculate actual angle here?
+
+            // TODO should maybe recalculate actual angle here?
+            // - we now have intersectInfo.intersectedLine which we can use to calculate reflection angle
+            m_angle = desiredMove.angle;
+
             m_x = intersectInfo.point.x;
             m_y = intersectInfo.point.y;
         }
@@ -157,8 +169,10 @@ void Bee::forage()
         switchToReturnToHive();
     }
 
+    // deplete bee's energy level
     m_energy -= Params::beeEnergyDepletionPerStep;
-    if (m_energy <= 0.0f) {
+
+    if (m_energy <= Params::beeEnergyMinThreshold || m_energy >= Params::beeEnergyMaxThreshold) {
         // bee has run out of energy, so return to hive
         switchToReturnToHive();
     }
@@ -217,12 +231,16 @@ void Bee::nudgeAwayFromTunnelWalls()
 
 // Search for the bee's next target flower following a "forage nearest flower" strategy.
 // If a nearby unvisited flower is found, return a new position moving towards that flower,
-// otherwise, return std::nullopt.
+// otherwise, return std::nullopt. It's up to the calling method in Bee::forage() to decide what to do
+// if no flower is found -- it will move the bee in a random direction.
 //
 // NB Returns the new (x,y) position as a Pos2D struct, but does not actually update the bee's position.
 // The calling method is responsible for checking if the new position is valid (e.g. that it is
 // within the bounds of the environment and that it doesn't cross a tunnel wall except at defined
 // entrance/exit points), and updating the bee's position if appropriate.
+//
+// Note, if the bee reaches the target flower, this method will also switch the bee's state to ON_FLOWER.
+// The calling code can check the bee's state after calling this method to see if that happened.
 //
 // Note, this method is not const because it uses m_distDir which updates its internal state
 // each time it is called.
@@ -231,7 +249,7 @@ std::optional<pb::PosAndDir2D> Bee::forageNearestFlower()
 {
     pb::PosAndDir2D result;
 
-    auto plantInfo = m_pEnv->getNearestUnvisitedPlant(m_x, m_y, m_recentlyVisitedPlants);
+    auto plantInfo = m_pEnv->selectNearbyUnvisitedPlant(m_x, m_y, m_recentlyVisitedPlants);
 
     if (plantInfo.has_value()) {
         Plant* pPlant = plantInfo.value();

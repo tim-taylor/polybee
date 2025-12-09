@@ -1,3 +1,17 @@
+## 8/12/25
+
+Email from Alan on 4/12:
+
+> …in *our* current model, nothing is actually “attracting” the bees to prefer a region of food to one where there is no food except the type of hops they make, right? I.e. we aren't actually “exhausting" our bees who find no food and “replenishing” the energy levels of bees who do find food. That would drive bees lost outside back to the hive earlier than bees finding nectar while they are outside the hive. It would also drive bees exploring areas already explored by other bees back to the hive earlier than bees in new areas with lots of nectar. Implementing this would drastically swing the behaviour away from areas of no food into areas where there is food. Right? Should we try this next, before building more simulations?
+
+My reply on 5/12:
+
+> That sounds good, Alan. You're right, at the moment there is nothing about nectar or energy levels in the simulation.  I'll start designing and coding this on Monday, and we can talk more about the details in our next zoom call (on Tuesday if that works for you?).
+
+So, need to give flowers nectar, and give bees an energy level - refilled when they leave hive. If bees have N successive landings without getting a nectar reward, they do a Levy flight to somewhere else. When bee has collected X amount of nectar, returns to hive. If a bee's energy level is below a threshold N it returns to hive.
+- Add a feeding state when bee is on flower - remains their for T timesteps
+- Possibly have Levy flight instead of random if no target found?
+
 ## 26/11/25
 
 Maybe change PolyBeeEvolve fitness code to use median EMD for a config rather than mean EMD

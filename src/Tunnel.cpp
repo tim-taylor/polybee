@@ -100,7 +100,21 @@ void Tunnel::initialiseEntrances() {
 }
 
 
-IntersectInfo Tunnel::intersectsEntrance(float x1, float y1, float x2, float y2) const
+// Check if the line from point (x1, y1) to point (x2, y2) intersects any tunnel entrance,
+// or else whether it intersects the tunnel walls outside any entrance, and
+// return information about the intersection.
+//
+// If an intersection occurs at an entrance, the returned IntersectInfo struct will have
+// intersects=true, crossesEntrance=true, pEntranceUsed=the entrance that was used,
+// and point=the intersection point.
+//
+// If an intersection occurs with the tunnel walls but outside any entrance, the returned
+// IntersectInfo will have intersects=true, crossesEntrance=false, pEntranceUsed=nullptr,
+// and point=the intersection point.
+//
+// If no intersection occurs, intersects=false.
+//
+IntersectInfo Tunnel::intersectsTunnelBoundary(float x1, float y1, float x2, float y2) const
 {
     assert(m_pEnv != nullptr);
 
@@ -122,7 +136,7 @@ IntersectInfo Tunnel::intersectsEntrance(float x1, float y1, float x2, float y2)
 
         auto intersectInfo = getLineIntersection(line1, line2);
 
-        if (intersectInfo.intersects && intersectInfo.withinLimits) {
+        if (intersectInfo.intersects && intersectInfo.crossesEntrance) {
             intersectInfo.pEntranceUsed = &entrance; // set pointer to the entrance that was used
             return intersectInfo;
         }
@@ -133,11 +147,11 @@ IntersectInfo Tunnel::intersectsEntrance(float x1, float y1, float x2, float y2)
     // provide an intersection point even if the bee didn't cross at an entrance
     for (const auto& wall : m_boundaries) {
         auto intersectInfo = getLineIntersection(line1, wall);
-        if (intersectInfo.withinLimits) {
-            return {true, false, intersectInfo.point};
+        if (intersectInfo.crossesEntrance) {
+            return {true, false, intersectInfo.point, wall}; // intersection with wall outside entrance limits
         }
     }
-    pb::msg_error_and_exit("Tunnel::intersectsEntrance(): logic error: expected to find an intersection with tunnel walls when crossing boundary outside entrances.");
+    pb::msg_error_and_exit("Tunnel::intersectsTunnelBoundary(): logic error: expected to find an intersection with tunnel walls when crossing boundary outside entrances.");
     return {false, false}; // to satisfy compiler
 }
 
@@ -175,10 +189,10 @@ IntersectInfo Tunnel::getLineIntersection(const pb::Line2D& line1, const pb::Lin
 
     // Check if intersection point is within both line segments
     if (t >= 0.0f && t <= 1.0f && u >= 0.0f && u <= 1.0f) {
-        return {true, true, intersection};
+        return {true, true, intersection, line2};
     }
     else {
-        return {true, false, intersection};
+        return {true, false, intersection, line2};
     }
 }
 

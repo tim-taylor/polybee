@@ -51,6 +51,8 @@ float Params::beeInitialEnergy;
 float Params::beeEnergyDepletionPerStep;
 float Params::beeEnergyBoostPerFlower;
 int Params::beeNumStepsOnFlower;
+float Params::beeEnergyMinThreshold;
+float Params::beeEnergyMaxThreshold;
 
 // Hive configuration
 std::vector<HiveSpec> Params::hiveSpecs;
@@ -140,13 +142,15 @@ void Params::initRegistry()
     REGISTRY.emplace_back("bee-path-record-len", "beePathRecordLen", ParamType::INT, &beePathRecordLen, 250, "Maximum number of positions to record in bee's path");
     REGISTRY.emplace_back("bee-visual-range", "beeVisualRange", ParamType::FLOAT, &beeVisualRange, 1.0f, "Maximum distance over which a bee can detect a flower");
     REGISTRY.emplace_back("bee-visit-memory-length", "beeVisitMemoryLength", ParamType::INT, &beeVisitMemoryLength, 5, "How many recently visited plants a bee remembers");
-    REGISTRY.emplace_back("bee-prob-visit-nearest-flower", "beeProbVisitNearestFlower", ParamType::FLOAT, &beeProbVisitNearestFlower, 0.8f, "Probability that a bee visits the nearest flower rather than a random visible flower");
+    REGISTRY.emplace_back("bee-prob-visit-nearest-flower", "beeProbVisitNearestFlower", ParamType::FLOAT, &beeProbVisitNearestFlower, 0.9f, "Probability that a bee visits a nearby flower rather than a move in a random direction");
     REGISTRY.emplace_back("bee-forage-duration", "beeForageDuration", ParamType::INT, &beeForageDuration, 1000, "Duration (number of iterations) of a bee's foraging bout");
     REGISTRY.emplace_back("bee-in-hive-duration", "beeInHiveDuration", ParamType::INT, &beeInHiveDuration, 200, "Duration (number of iterations) of a bee's stay in the hive between foraging bouts");
     REGISTRY.emplace_back("bee-initial-energy", "beeInitialEnergy", ParamType::FLOAT, &beeInitialEnergy, 100.0f, "Energy a bee has when it leaves the hive to commence a foraging trip");
     REGISTRY.emplace_back("bee-energy-depletion-per-step", "beeEnergyDepletionPerStep", ParamType::FLOAT, &beeEnergyDepletionPerStep, 1.0f, "Energy a bee expends on each step when foraging");
     REGISTRY.emplace_back("bee-energy-boost-per-flower", "beeEnergyBoostPerFlower", ParamType::FLOAT, &beeEnergyBoostPerFlower, 10.0f, "Energy a bee extracts from an unvisited flower");
     REGISTRY.emplace_back("bee-num-steps-on-flower", "beeNumStepsOnFlower", ParamType::INT, &beeNumStepsOnFlower, 5, "Number of simulation steps a bee will stay on a flower having landed on it");
+    REGISTRY.emplace_back("bee-energy-min-threshold", "beeEnergyMinThreshold", ParamType::FLOAT, &beeEnergyMinThreshold, 0.0f, "Lower threshold of bee's energy store below which it will return to hive to replenish");
+    REGISTRY.emplace_back("bee-energy-max-threshold", "beeEnergyMaxThreshold", ParamType::FLOAT, &beeEnergyMaxThreshold, 100.0f, "Upper threshold of bee's energy store above which it will return to hive after successful foraging");
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");
     REGISTRY.emplace_back("num-trials-per-config", "numTrialsPerConfig", ParamType::INT, &numTrialsPerConfig, 1, "Number of trials to run for each configuration/individual in each generation");

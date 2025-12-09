@@ -47,7 +47,7 @@ public:
     const std::vector<Bee>& getBees() const { return m_bees; }
     const std::vector<Plant>& getAllPlants() const { return m_allPlants; }
     std::vector<Plant*> getNearbyPlants(float x, float y) const;
-    std::optional<Plant*> getNearestUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const; // get nearest plant to a given position within maxDistance
+    std::optional<Plant*> selectNearbyUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const; // get nearest plant to a given position within maxDistance
 
 private:
     void initialiseTunnel();

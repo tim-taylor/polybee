@@ -136,6 +136,8 @@ public:
     static float beeEnergyDepletionPerStep; // energy a bee expends on each step when foraging
     static float beeEnergyBoostPerFlower; // energy a bee extracts from an unvisited flower
     static int beeNumStepsOnFlower; // number of simulation steps a bee will stay on a flower having landed on it
+    static float beeEnergyMinThreshold; // lower threshold of bee's energy below which it will return to hive
+    static float beeEnergyMaxThreshold; // upper threshold of bee's energy above which it will return to hive
 
     // Hive configuration
     static std::vector<HiveSpec> hiveSpecs;

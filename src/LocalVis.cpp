@@ -418,10 +418,9 @@ void LocalVis::drawBees()
             v.y += envToDisplayY(bee.y());
         }
 
-        //DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], LIME);
         DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], ColorFromHSV(bee.colorHue(), 0.7f, 0.9f));
 
-        if (m_bShowTrails) {
+        if (m_bShowTrails && !(bee.path().empty())) {
             size_t pathIdxMax = bee.path().size()-1;
             int drawCount = 0;
 

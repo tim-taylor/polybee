@@ -17,7 +17,7 @@ namespace Polybee {
     struct Pos2D {
         float x, y;
 
-        Pos2D(float x = 0, float y = 0) : x(x), y(y) {}
+        Pos2D(float x = 0.0f, float y = 0.0f) : x(x), y(y) {}
 
         float length() const;
         void resize(float newLength);
@@ -27,12 +27,13 @@ namespace Polybee {
         float x, y;
         float angle; // direction in radians
 
-        PosAndDir2D(float x = 0, float y = 0, float angle = 0) : x(x), y(y), angle(angle) {}
+        PosAndDir2D(float x = 0.0f, float y = 0.0f, float angle = 0.0f) : x(x), y(y), angle(angle) {}
     };
 
     struct Line2D {
         Pos2D start, end;
 
+        Line2D() {}
         Line2D(Pos2D start, Pos2D end) : start(start), end(end) {}
     };
 

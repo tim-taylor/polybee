@@ -38,15 +38,18 @@ struct TunnelEntranceInfo {
 
 struct IntersectInfo {
     bool intersects;                                    // do the lines intersect at all
-    bool withinLimits;                                  // is the intersection point within the entrance limits (if applicable)
+    bool crossesEntrance;                               // is the intersection point within the entrance limits (if applicable)
     pb::Pos2D point;                                    // intersection point (if intersects is true)
+    pb::Line2D intersectedLine;                         // the line that was intersected (if intersects is true)
+                                                        // (this will be either a tunnel wall or an entrance line,
+                                                        // depending on whether crossesEntrance is true)
     const TunnelEntranceInfo* pEntranceUsed {nullptr};  // pointer to the entrance that was used (if applicable)
 
-    IntersectInfo(bool intersects, bool withinLimits, const pb::Pos2D& point)
-        : intersects(intersects), withinLimits(withinLimits), point(point) {}
+    IntersectInfo(bool intersects, bool crossesEntrance, const pb::Pos2D& point, const pb::Line2D& intersectedLine)
+        : intersects(intersects), crossesEntrance(crossesEntrance), point(point), intersectedLine(intersectedLine) {}
 
-    IntersectInfo(bool intersects, bool withinLimits)
-        : intersects(intersects), withinLimits(withinLimits) {}
+    IntersectInfo(bool intersects, bool crossesEntrance)
+        : intersects(intersects), crossesEntrance(crossesEntrance) {}
 };
 
 
@@ -71,7 +74,7 @@ public:
     /// @param x2 x position of point 2 in environment coordinates
     /// @param y2 y position of point 2 in environment coordinates
     /// @return information about the intersection
-    IntersectInfo intersectsEntrance(float x1, float y1, float x2, float y2) const;
+    IntersectInfo intersectsTunnelBoundary(float x1, float y1, float x2, float y2) const;
 
     float x() const { return m_x; }
     float y() const { return m_y; }
