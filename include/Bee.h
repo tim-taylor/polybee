@@ -61,7 +61,9 @@ private:
     void returnToHiveOutsideTunnel();
     void stayOnFlower();
     void stayInHive();
+    void keepMoveWithinEnvironment(pb::PosAndDir2D& desiredMove);
     void nudgeAwayFromTunnelWalls();
+    float alignAngleWithLine(float desiredAngle, float line_dx, float line_dy) const;
     std::optional<pb::PosAndDir2D> forageNearestFlower();
     pb::PosAndDir2D moveInRandomDirection();
     void addToRecentlyVisitedPlants(Plant* pPlant);

@@ -105,6 +105,7 @@ void Bee::forage()
     }
 
     // keep within bounds of environment
+    keepMoveWithinEnvironment(desiredMove);
     if (desiredMove.x < 0.0f) desiredMove.x = 0.0f;
     if (desiredMove.y < 0.0f) desiredMove.y = 0.0f;
     if (desiredMove.x > Params::envW) desiredMove.x = Params::envW;
@@ -148,12 +149,13 @@ void Bee::forage()
             // the bee collided with the tunnel wall, so it cannot move where it wanted to go.
             // Instead, set its position to the point where it hit the wall
 
-            // TODO should maybe recalculate actual angle here?
-            // - we now have intersectInfo.intersectedLine which we can use to calculate reflection angle
-            m_angle = desiredMove.angle;
-
             m_x = intersectInfo.point.x;
             m_y = intersectInfo.point.y;
+
+            // and align its direction to be along the wall, in the direction closest to its desired movement direction
+            float dx = intersectInfo.intersectedLine.end.x - intersectInfo.intersectedLine.start.x;
+            float dy = intersectInfo.intersectedLine.end.y - intersectInfo.intersectedLine.start.y;
+            m_angle = alignAngleWithLine(desiredMove.angle, dx, dy);
         }
     }
 
@@ -175,6 +177,53 @@ void Bee::forage()
     if (m_energy <= Params::beeEnergyMinThreshold || m_energy >= Params::beeEnergyMaxThreshold) {
         // bee has run out of energy, so return to hive
         switchToReturnToHive();
+    }
+}
+
+
+// calculate the angle along the line defined by (line_dx, line_dy) in the direction that is
+// closest to desiredAngle (used when a bee hits a tunnel wall and we want to align its direction
+// along the wall)
+float Bee::alignAngleWithLine(float desiredAngle, float line_dx, float line_dy) const
+{
+    float lineAngle = std::atan2(line_dy, line_dx);
+
+    // Use dot product to determine which direction along the line is closer to desiredAngle
+    float dotProduct = line_dx * std::cos(desiredAngle) + line_dy * std::sin(desiredAngle);
+
+    if (dotProduct >= 0.0f) {
+        return lineAngle;
+    } else {
+        return lineAngle + std::numbers::pi_v<float>;
+    }
+}
+
+
+void Bee::keepMoveWithinEnvironment(pb::PosAndDir2D& desiredMove)
+{
+    pb::Pos2D LR(0,1);
+    pb::Pos2D TB(1,0);
+
+    if (desiredMove.x < 0.0f) {
+        // off left edge
+        desiredMove.x = 0.0f;
+        desiredMove.angle = alignAngleWithLine(desiredMove.angle, LR.x, LR.y);
+    }
+    else if (desiredMove.x > Params::envW) {
+        // off right edge
+        desiredMove.x = Params::envW;
+        desiredMove.angle = alignAngleWithLine(desiredMove.angle, LR.x, LR.y);
+    }
+
+    if (desiredMove.y < 0.0f) {
+        // off top edge
+        desiredMove.y = 0.0f;
+        desiredMove.angle = alignAngleWithLine(desiredMove.angle, TB.x, TB.y);
+    }
+    else if (desiredMove.y > Params::envH) {
+        // off bottom edge
+        desiredMove.y = Params::envH;
+        desiredMove.angle = alignAngleWithLine(desiredMove.angle, TB.x, TB.y);
     }
 }
 
