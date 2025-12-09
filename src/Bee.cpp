@@ -106,10 +106,6 @@ void Bee::forage()
 
     // keep within bounds of environment
     keepMoveWithinEnvironment(desiredMove);
-    if (desiredMove.x < 0.0f) desiredMove.x = 0.0f;
-    if (desiredMove.y < 0.0f) desiredMove.y = 0.0f;
-    if (desiredMove.x > Params::envW) desiredMove.x = Params::envW;
-    if (desiredMove.y > Params::envH) desiredMove.y = Params::envH;
 
     // check if new position is valid
     bool newPosInTunnel = m_pEnv->inTunnel(desiredMove.x, desiredMove.y);
@@ -181,9 +177,10 @@ void Bee::forage()
 }
 
 
-// calculate the angle along the line defined by (line_dx, line_dy) in the direction that is
-// closest to desiredAngle (used when a bee hits a tunnel wall and we want to align its direction
-// along the wall)
+// Calculates the angle of the line defined by (line_dx, line_dy) in the direction along
+// the line that is closest to desiredAngle. This is used, for example, when a bee hits a
+// tunnel wall and we want to align its direction along the wall.
+//
 float Bee::alignAngleWithLine(float desiredAngle, float line_dx, float line_dy) const
 {
     float lineAngle = std::atan2(line_dy, line_dx);
@@ -199,6 +196,11 @@ float Bee::alignAngleWithLine(float desiredAngle, float line_dx, float line_dy) 
 }
 
 
+// Check whether the desired move would take the bee outside the environment bounds,
+// and if so, adjust the position to be on the edge and align the angle along the edge.
+//
+// Note, this method modifies the desiredMove parameter in place.
+//
 void Bee::keepMoveWithinEnvironment(pb::PosAndDir2D& desiredMove)
 {
     pb::Pos2D LR(0,1);
@@ -228,6 +230,9 @@ void Bee::keepMoveWithinEnvironment(pb::PosAndDir2D& desiredMove)
 }
 
 
+// To avoid any problems with numerical precision when bees are close to tunnel walls,
+// nudge them away from the walls if they are within a small buffer distance.
+//
 void Bee::nudgeAwayFromTunnelWalls()
 {
     auto& tunnel = m_pEnv->getTunnel();
