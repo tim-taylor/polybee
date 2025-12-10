@@ -1,0 +1,7 @@
+Run: output/param-config-tests-with-energetics-75-bees-100-reps-run-88-run-info-20251210-193450-53f32b.txt
+High EMD value: 13.499981
+Polybee version: 0.1.0.0
+Git branch: main
+Git commit hash: 2f9b553
+OpenCV version: 4.6.0
+Final EMD between output heatmap and target heatmap: 4.225955
