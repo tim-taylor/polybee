@@ -1,3 +1,17 @@
+## 10/12/25
+
+TODO:
+
+* Run SGA using new energetics - meld params in evolve-entrance-positions-4-rows.cfg and test-bee-energetics-1.cfg
+- might be handy to re-run tests of best numBees and numRepeatsPerConfig.
+Does this improve the results? (see Alan's comments in email of 4/12 - see entry below for 8/12)
+
+* Get defendable real-world values for amount of nectar stored by flower, given to bee, used by bee, etc.
+* Also get defendable values of tunnel dimensions, patch dimensions, patch density, bee visual radius, bee step length, etc.
+
+* Do Alan's suggested sanity check (see notepad notes from 9/12/25) of running 2 diff configs on the same env to see how much difference there really is - i.e. how much of results is driven by crop following behaviour
+
+
 ## 8/12/25
 
 Email from Alan on 4/12:

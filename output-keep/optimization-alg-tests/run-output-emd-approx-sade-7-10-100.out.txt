@@ -1,0 +1,787 @@
+~~~~~~~~~~ FINAL PARAM VALUES ~~~~~~~~~~
+config-filename: polybee.cfg
+env-width: 800
+env-height: 800
+tunnel-width: 50
+tunnel-height: 50
+tunnel-x: 200
+tunnel-y: 100
+num-bees: 10
+bee-max-dir-delta: 0.5
+bee-path-record-len: 250
+num-iterations: 1000
+evolve: true
+target-heatmap-filename: target-heatmap-8x8-uniform.csv
+num-trials-per-config: 10
+num-configs-per-gen: 7
+num-generations: 100
+visualise: false
+vis-cell-size: 1
+vis-delay-per-step: 10
+vis-bee-path-draw-len: 250
+vis-bee-path-thickness: 5
+heatmap-cell-size: 100
+logging: true
+log-dir: output
+log-filename-prefix: test
+rng-seed: LryEWaHmjvxxOrRtvEvy
+command-line-quiet: false
+Hives:
+hive1: (400,400):4
+INFO: Gen 0 eval_ctr 10 config_num 0 dirdelta 0.7142 meanEMD 4.0301
+INFO: Gen 0 eval_ctr 20 config_num 1 dirdelta 1.0021 meanEMD 3.2217
+INFO: Gen 0 eval_ctr 30 config_num 2 dirdelta 3.0732 meanEMD 4.4563
+INFO: Gen 0 eval_ctr 40 config_num 3 dirdelta 1.4313 meanEMD 2.2487
+INFO: Gen 0 eval_ctr 50 config_num 4 dirdelta 0.9677 meanEMD 2.6823
+INFO: Gen 0 eval_ctr 60 config_num 5 dirdelta 0.8290 meanEMD 3.6185
+INFO: Gen 0 eval_ctr 70 config_num 6 dirdelta 0.2725 meanEMD 7.8678
+INFO: Gen 1 eval_ctr 80 config_num 0 dirdelta 0.8071 meanEMD 3.4859
+INFO: Gen 1 eval_ctr 90 config_num 1 dirdelta 0.7192 meanEMD 3.5749
+INFO: Gen 1 eval_ctr 100 config_num 2 dirdelta 3.1060 meanEMD 3.7114
+INFO: Gen 1 eval_ctr 110 config_num 3 dirdelta 1.2303 meanEMD 2.0610
+INFO: Gen 1 eval_ctr 120 config_num 4 dirdelta 2.6901 meanEMD 3.9398
+INFO: Gen 1 eval_ctr 130 config_num 5 dirdelta 1.7630 meanEMD 2.1397
+INFO: Gen 1 eval_ctr 140 config_num 6 dirdelta 0.7898 meanEMD 4.0047
+INFO: Gen 2 eval_ctr 150 config_num 0 dirdelta 0.8958 meanEMD 2.9951
+INFO: Gen 2 eval_ctr 160 config_num 1 dirdelta 2.4488 meanEMD 3.1100
+INFO: Gen 2 eval_ctr 170 config_num 2 dirdelta 0.8267 meanEMD 3.4849
+INFO: Gen 2 eval_ctr 180 config_num 3 dirdelta 2.2949 meanEMD 2.6950
+INFO: Gen 2 eval_ctr 190 config_num 4 dirdelta 1.9215 meanEMD 3.1829
+INFO: Gen 2 eval_ctr 200 config_num 5 dirdelta 1.5735 meanEMD 2.1741
+INFO: Gen 2 eval_ctr 210 config_num 6 dirdelta 1.2451 meanEMD 2.8747
+INFO: Gen 3 eval_ctr 220 config_num 0 dirdelta 1.7431 meanEMD 2.4739
+INFO: Gen 3 eval_ctr 230 config_num 1 dirdelta 0.5278 meanEMD 5.1869
+INFO: Gen 3 eval_ctr 240 config_num 2 dirdelta 1.1210 meanEMD 2.3939
+INFO: Gen 3 eval_ctr 250 config_num 3 dirdelta 2.5589 meanEMD 3.8660
+INFO: Gen 3 eval_ctr 260 config_num 4 dirdelta 1.4040 meanEMD 1.5660
+INFO: Gen 3 eval_ctr 270 config_num 5 dirdelta 0.7450 meanEMD 3.3863
+INFO: Gen 3 eval_ctr 280 config_num 6 dirdelta 2.1595 meanEMD 3.5302
+INFO: Gen 4 eval_ctr 290 config_num 0 dirdelta 1.5966 meanEMD 2.7031
+INFO: Gen 4 eval_ctr 300 config_num 1 dirdelta 0.7778 meanEMD 3.4489
+INFO: Gen 4 eval_ctr 310 config_num 2 dirdelta 1.6421 meanEMD 2.5083
+INFO: Gen 4 eval_ctr 320 config_num 3 dirdelta 2.5491 meanEMD 2.8523
+INFO: Gen 4 eval_ctr 330 config_num 4 dirdelta 1.4165 meanEMD 2.3795
+INFO: Gen 4 eval_ctr 340 config_num 5 dirdelta 1.1642 meanEMD 2.5450
+INFO: Gen 4 eval_ctr 350 config_num 6 dirdelta 1.3012 meanEMD 2.7626
+INFO: Gen 5 eval_ctr 360 config_num 0 dirdelta 2.3452 meanEMD 3.5188
+INFO: Gen 5 eval_ctr 370 config_num 1 dirdelta 1.3765 meanEMD 2.2429
+INFO: Gen 5 eval_ctr 380 config_num 2 dirdelta 1.1524 meanEMD 2.8330
+INFO: Gen 5 eval_ctr 390 config_num 3 dirdelta 1.4261 meanEMD 2.7236
+INFO: Gen 5 eval_ctr 400 config_num 4 dirdelta 1.9987 meanEMD 2.4776
+INFO: Gen 5 eval_ctr 410 config_num 5 dirdelta 2.2341 meanEMD 2.6560
+INFO: Gen 5 eval_ctr 420 config_num 6 dirdelta 0.4249 meanEMD 6.4192
+INFO: Gen 6 eval_ctr 430 config_num 0 dirdelta 1.5098 meanEMD 2.2029
+INFO: Gen 6 eval_ctr 440 config_num 1 dirdelta 1.4416 meanEMD 2.1439
+INFO: Gen 6 eval_ctr 450 config_num 2 dirdelta 1.8114 meanEMD 3.1826
+INFO: Gen 6 eval_ctr 460 config_num 3 dirdelta 1.9747 meanEMD 3.2061
+INFO: Gen 6 eval_ctr 470 config_num 4 dirdelta 1.9450 meanEMD 3.1178
+INFO: Gen 6 eval_ctr 480 config_num 5 dirdelta 1.2146 meanEMD 2.4990
+INFO: Gen 6 eval_ctr 490 config_num 6 dirdelta 1.7980 meanEMD 2.7013
+INFO: Gen 7 eval_ctr 500 config_num 0 dirdelta 1.3012 meanEMD 2.4038
+INFO: Gen 7 eval_ctr 510 config_num 1 dirdelta 1.8509 meanEMD 2.6442
+INFO: Gen 7 eval_ctr 520 config_num 2 dirdelta 1.1411 meanEMD 2.2177
+INFO: Gen 7 eval_ctr 530 config_num 3 dirdelta 1.6101 meanEMD 2.4883
+INFO: Gen 7 eval_ctr 540 config_num 4 dirdelta 1.6742 meanEMD 3.0306
+INFO: Gen 7 eval_ctr 550 config_num 5 dirdelta 1.4080 meanEMD 2.4845
+INFO: Gen 7 eval_ctr 560 config_num 6 dirdelta 1.7840 meanEMD 2.9149
+INFO: Gen 8 eval_ctr 570 config_num 0 dirdelta 1.4237 meanEMD 2.0633
+INFO: Gen 8 eval_ctr 580 config_num 1 dirdelta 1.7507 meanEMD 1.6890
+INFO: Gen 8 eval_ctr 590 config_num 2 dirdelta 1.5778 meanEMD 2.6108
+INFO: Gen 8 eval_ctr 600 config_num 3 dirdelta 1.3837 meanEMD 2.7341
+INFO: Gen 8 eval_ctr 610 config_num 4 dirdelta 2.0114 meanEMD 3.3072
+INFO: Gen 8 eval_ctr 620 config_num 5 dirdelta 1.1161 meanEMD 2.7254
+INFO: Gen 8 eval_ctr 630 config_num 6 dirdelta 1.1422 meanEMD 2.4179
+INFO: Gen 9 eval_ctr 640 config_num 0 dirdelta 1.2285 meanEMD 2.7322
+INFO: Gen 9 eval_ctr 650 config_num 1 dirdelta 1.3559 meanEMD 2.5655
+INFO: Gen 9 eval_ctr 660 config_num 2 dirdelta 1.9954 meanEMD 2.2774
+INFO: Gen 9 eval_ctr 670 config_num 3 dirdelta 1.0723 meanEMD 2.6879
+INFO: Gen 9 eval_ctr 680 config_num 4 dirdelta 1.6559 meanEMD 2.5467
+INFO: Gen 9 eval_ctr 690 config_num 5 dirdelta 1.9105 meanEMD 2.2742
+INFO: Gen 9 eval_ctr 700 config_num 6 dirdelta 1.2832 meanEMD 3.4161
+INFO: Gen 10 eval_ctr 710 config_num 0 dirdelta 1.5799 meanEMD 2.6542
+INFO: Gen 10 eval_ctr 720 config_num 1 dirdelta 1.8017 meanEMD 3.1209
+INFO: Gen 10 eval_ctr 730 config_num 2 dirdelta 1.5169 meanEMD 3.3942
+INFO: Gen 10 eval_ctr 740 config_num 3 dirdelta 0.7897 meanEMD 3.5294
+INFO: Gen 10 eval_ctr 750 config_num 4 dirdelta 1.6764 meanEMD 2.2487
+INFO: Gen 10 eval_ctr 760 config_num 5 dirdelta 0.9936 meanEMD 2.9574
+INFO: Gen 10 eval_ctr 770 config_num 6 dirdelta 0.9667 meanEMD 3.1830
+INFO: Gen 11 eval_ctr 780 config_num 0 dirdelta 1.7627 meanEMD 2.8659
+INFO: Gen 11 eval_ctr 790 config_num 1 dirdelta 1.4255 meanEMD 2.5356
+INFO: Gen 11 eval_ctr 800 config_num 2 dirdelta 1.8686 meanEMD 3.1007
+INFO: Gen 11 eval_ctr 810 config_num 3 dirdelta 1.2527 meanEMD 2.5827
+INFO: Gen 11 eval_ctr 820 config_num 4 dirdelta 1.5300 meanEMD 2.6071
+INFO: Gen 11 eval_ctr 830 config_num 5 dirdelta 1.0236 meanEMD 2.1554
+INFO: Gen 11 eval_ctr 840 config_num 6 dirdelta 1.2843 meanEMD 2.2241
+INFO: Gen 12 eval_ctr 850 config_num 0 dirdelta 1.5871 meanEMD 2.3653
+INFO: Gen 12 eval_ctr 860 config_num 1 dirdelta 1.7835 meanEMD 2.8194
+INFO: Gen 12 eval_ctr 870 config_num 2 dirdelta 1.2028 meanEMD 2.4622
+INFO: Gen 12 eval_ctr 880 config_num 3 dirdelta 1.5435 meanEMD 2.0168
+INFO: Gen 12 eval_ctr 890 config_num 4 dirdelta 1.2091 meanEMD 2.5228
+INFO: Gen 12 eval_ctr 900 config_num 5 dirdelta 1.3454 meanEMD 2.4271
+INFO: Gen 12 eval_ctr 910 config_num 6 dirdelta 1.0323 meanEMD 2.5585
+INFO: Gen 13 eval_ctr 920 config_num 0 dirdelta 1.7975 meanEMD 2.9363
+INFO: Gen 13 eval_ctr 930 config_num 1 dirdelta 1.8012 meanEMD 3.6072
+INFO: Gen 13 eval_ctr 940 config_num 2 dirdelta 1.4260 meanEMD 2.8601
+INFO: Gen 13 eval_ctr 950 config_num 3 dirdelta 1.5364 meanEMD 2.3841
+INFO: Gen 13 eval_ctr 960 config_num 4 dirdelta 1.8714 meanEMD 2.8267
+INFO: Gen 13 eval_ctr 970 config_num 5 dirdelta 1.2630 meanEMD 2.9625
+INFO: Gen 13 eval_ctr 980 config_num 6 dirdelta 1.5579 meanEMD 3.4755
+INFO: Gen 14 eval_ctr 990 config_num 0 dirdelta 1.8976 meanEMD 2.3504
+INFO: Gen 14 eval_ctr 1000 config_num 1 dirdelta 1.4519 meanEMD 2.1614
+INFO: Gen 14 eval_ctr 1010 config_num 2 dirdelta 1.2609 meanEMD 2.3849
+INFO: Gen 14 eval_ctr 1020 config_num 3 dirdelta 1.3483 meanEMD 2.0817
+INFO: Gen 14 eval_ctr 1030 config_num 4 dirdelta 1.1856 meanEMD 2.7509
+INFO: Gen 14 eval_ctr 1040 config_num 5 dirdelta 1.6066 meanEMD 2.2814
+INFO: Gen 14 eval_ctr 1050 config_num 6 dirdelta 1.4870 meanEMD 3.0240
+INFO: Gen 15 eval_ctr 1060 config_num 0 dirdelta 1.7105 meanEMD 2.6362
+INFO: Gen 15 eval_ctr 1070 config_num 1 dirdelta 1.3717 meanEMD 2.7866
+INFO: Gen 15 eval_ctr 1080 config_num 2 dirdelta 1.3844 meanEMD 3.0192
+INFO: Gen 15 eval_ctr 1090 config_num 3 dirdelta 1.8435 meanEMD 2.8590
+INFO: Gen 15 eval_ctr 1100 config_num 4 dirdelta 1.8356 meanEMD 2.1558
+INFO: Gen 15 eval_ctr 1110 config_num 5 dirdelta 1.0476 meanEMD 2.3686
+INFO: Gen 15 eval_ctr 1120 config_num 6 dirdelta 1.1079 meanEMD 2.6827
+INFO: Gen 16 eval_ctr 1130 config_num 0 dirdelta 1.7032 meanEMD 2.1538
+INFO: Gen 16 eval_ctr 1140 config_num 1 dirdelta 1.5945 meanEMD 2.9619
+INFO: Gen 16 eval_ctr 1150 config_num 2 dirdelta 1.7857 meanEMD 2.9638
+INFO: Gen 16 eval_ctr 1160 config_num 3 dirdelta 1.4844 meanEMD 2.2551
+INFO: Gen 16 eval_ctr 1170 config_num 4 dirdelta 1.5323 meanEMD 2.3410
+INFO: Gen 16 eval_ctr 1180 config_num 5 dirdelta 1.2898 meanEMD 2.7015
+INFO: Gen 16 eval_ctr 1190 config_num 6 dirdelta 0.9667 meanEMD 2.7332
+INFO: Gen 17 eval_ctr 1200 config_num 0 dirdelta 1.5834 meanEMD 3.3632
+INFO: Gen 17 eval_ctr 1210 config_num 1 dirdelta 1.3855 meanEMD 2.6998
+INFO: Gen 17 eval_ctr 1220 config_num 2 dirdelta 1.0730 meanEMD 3.0267
+INFO: Gen 17 eval_ctr 1230 config_num 3 dirdelta 1.4175 meanEMD 2.5910
+INFO: Gen 17 eval_ctr 1240 config_num 4 dirdelta 1.0627 meanEMD 2.1711
+INFO: Gen 17 eval_ctr 1250 config_num 5 dirdelta 1.4581 meanEMD 2.6932
+INFO: Gen 17 eval_ctr 1260 config_num 6 dirdelta 0.8918 meanEMD 3.3558
+INFO: Gen 18 eval_ctr 1270 config_num 0 dirdelta 1.7228 meanEMD 2.4013
+INFO: Gen 18 eval_ctr 1280 config_num 1 dirdelta 1.6802 meanEMD 2.6859
+INFO: Gen 18 eval_ctr 1290 config_num 2 dirdelta 1.7772 meanEMD 2.1601
+INFO: Gen 18 eval_ctr 1300 config_num 3 dirdelta 1.4630 meanEMD 3.4474
+INFO: Gen 18 eval_ctr 1310 config_num 4 dirdelta 1.5246 meanEMD 3.1507
+INFO: Gen 18 eval_ctr 1320 config_num 5 dirdelta 1.7054 meanEMD 2.8800
+INFO: Gen 18 eval_ctr 1330 config_num 6 dirdelta 0.7954 meanEMD 3.1432
+INFO: Gen 19 eval_ctr 1340 config_num 0 dirdelta 1.1899 meanEMD 2.3927
+INFO: Gen 19 eval_ctr 1350 config_num 1 dirdelta 1.2814 meanEMD 2.1982
+INFO: Gen 19 eval_ctr 1360 config_num 2 dirdelta 1.7809 meanEMD 2.0676
+INFO: Gen 19 eval_ctr 1370 config_num 3 dirdelta 1.2671 meanEMD 2.4244
+INFO: Gen 19 eval_ctr 1380 config_num 4 dirdelta 1.8194 meanEMD 2.8695
+INFO: Gen 19 eval_ctr 1390 config_num 5 dirdelta 1.6263 meanEMD 2.5425
+INFO: Gen 19 eval_ctr 1400 config_num 6 dirdelta 1.7758 meanEMD 2.5233
+INFO: Gen 20 eval_ctr 1410 config_num 0 dirdelta 1.7421 meanEMD 3.0630
+INFO: Gen 20 eval_ctr 1420 config_num 1 dirdelta 1.5934 meanEMD 2.2348
+INFO: Gen 20 eval_ctr 1430 config_num 2 dirdelta 1.2809 meanEMD 3.1629
+INFO: Gen 20 eval_ctr 1440 config_num 3 dirdelta 1.6702 meanEMD 2.8209
+INFO: Gen 20 eval_ctr 1450 config_num 4 dirdelta 1.8805 meanEMD 2.3268
+INFO: Gen 20 eval_ctr 1460 config_num 5 dirdelta 1.9284 meanEMD 2.7201
+INFO: Gen 20 eval_ctr 1470 config_num 6 dirdelta 1.2518 meanEMD 2.5392
+INFO: Gen 21 eval_ctr 1480 config_num 0 dirdelta 1.9741 meanEMD 3.0914
+INFO: Gen 21 eval_ctr 1490 config_num 1 dirdelta 1.7604 meanEMD 2.5496
+INFO: Gen 21 eval_ctr 1500 config_num 2 dirdelta 1.3844 meanEMD 2.2448
+INFO: Gen 21 eval_ctr 1510 config_num 3 dirdelta 1.6433 meanEMD 2.5928
+INFO: Gen 21 eval_ctr 1520 config_num 4 dirdelta 1.8818 meanEMD 2.1822
+INFO: Gen 21 eval_ctr 1530 config_num 5 dirdelta 1.6199 meanEMD 2.8336
+INFO: Gen 21 eval_ctr 1540 config_num 6 dirdelta 1.4381 meanEMD 3.0370
+INFO: Gen 22 eval_ctr 1550 config_num 0 dirdelta 1.7105 meanEMD 3.5049
+INFO: Gen 22 eval_ctr 1560 config_num 1 dirdelta 1.2288 meanEMD 1.6995
+INFO: Gen 22 eval_ctr 1570 config_num 2 dirdelta 1.2186 meanEMD 2.6279
+INFO: Gen 22 eval_ctr 1580 config_num 3 dirdelta 1.7004 meanEMD 1.8926
+INFO: Gen 22 eval_ctr 1590 config_num 4 dirdelta 1.6634 meanEMD 2.4265
+INFO: Gen 22 eval_ctr 1600 config_num 5 dirdelta 1.4121 meanEMD 2.2809
+INFO: Gen 22 eval_ctr 1610 config_num 6 dirdelta 1.4456 meanEMD 2.4189
+INFO: Gen 23 eval_ctr 1620 config_num 0 dirdelta 1.4185 meanEMD 2.4830
+INFO: Gen 23 eval_ctr 1630 config_num 1 dirdelta 1.7122 meanEMD 2.8042
+INFO: Gen 23 eval_ctr 1640 config_num 2 dirdelta 1.4464 meanEMD 2.7605
+INFO: Gen 23 eval_ctr 1650 config_num 3 dirdelta 1.4144 meanEMD 2.7141
+INFO: Gen 23 eval_ctr 1660 config_num 4 dirdelta 2.1542 meanEMD 3.1544
+INFO: Gen 23 eval_ctr 1670 config_num 5 dirdelta 1.4121 meanEMD 2.2131
+INFO: Gen 23 eval_ctr 1680 config_num 6 dirdelta 1.7295 meanEMD 2.4976
+INFO: Gen 24 eval_ctr 1690 config_num 0 dirdelta 1.9190 meanEMD 3.3521
+INFO: Gen 24 eval_ctr 1700 config_num 1 dirdelta 1.3682 meanEMD 3.1992
+INFO: Gen 24 eval_ctr 1710 config_num 2 dirdelta 1.6827 meanEMD 3.2845
+INFO: Gen 24 eval_ctr 1720 config_num 3 dirdelta 1.4308 meanEMD 2.1870
+INFO: Gen 24 eval_ctr 1730 config_num 4 dirdelta 1.3008 meanEMD 3.0746
+INFO: Gen 24 eval_ctr 1740 config_num 5 dirdelta 1.4403 meanEMD 3.3133
+INFO: Gen 24 eval_ctr 1750 config_num 6 dirdelta 1.4147 meanEMD 3.0159
+INFO: Gen 25 eval_ctr 1760 config_num 0 dirdelta 1.7947 meanEMD 2.8725
+INFO: Gen 25 eval_ctr 1770 config_num 1 dirdelta 1.7586 meanEMD 3.2128
+INFO: Gen 25 eval_ctr 1780 config_num 2 dirdelta 1.8489 meanEMD 3.2445
+INFO: Gen 25 eval_ctr 1790 config_num 3 dirdelta 1.2235 meanEMD 2.6827
+INFO: Gen 25 eval_ctr 1800 config_num 4 dirdelta 1.4887 meanEMD 2.5654
+INFO: Gen 25 eval_ctr 1810 config_num 5 dirdelta 1.5889 meanEMD 2.6239
+INFO: Gen 25 eval_ctr 1820 config_num 6 dirdelta 1.5776 meanEMD 2.4964
+INFO: Gen 26 eval_ctr 1830 config_num 0 dirdelta 1.2856 meanEMD 2.7380
+INFO: Gen 26 eval_ctr 1840 config_num 1 dirdelta 1.2816 meanEMD 2.3887
+INFO: Gen 26 eval_ctr 1850 config_num 2 dirdelta 1.4799 meanEMD 2.4409
+INFO: Gen 26 eval_ctr 1860 config_num 3 dirdelta 1.3396 meanEMD 2.6740
+INFO: Gen 26 eval_ctr 1870 config_num 4 dirdelta 1.2692 meanEMD 2.6751
+INFO: Gen 26 eval_ctr 1880 config_num 5 dirdelta 1.4900 meanEMD 2.6166
+INFO: Gen 26 eval_ctr 1890 config_num 6 dirdelta 2.0276 meanEMD 3.0741
+INFO: Gen 27 eval_ctr 1900 config_num 0 dirdelta 1.4382 meanEMD 2.9454
+INFO: Gen 27 eval_ctr 1910 config_num 1 dirdelta 1.7674 meanEMD 2.6039
+INFO: Gen 27 eval_ctr 1920 config_num 2 dirdelta 1.6746 meanEMD 2.9831
+INFO: Gen 27 eval_ctr 1930 config_num 3 dirdelta 1.1173 meanEMD 2.6499
+INFO: Gen 27 eval_ctr 1940 config_num 4 dirdelta 1.4134 meanEMD 1.8732
+INFO: Gen 27 eval_ctr 1950 config_num 5 dirdelta 1.6280 meanEMD 2.2507
+INFO: Gen 27 eval_ctr 1960 config_num 6 dirdelta 1.4106 meanEMD 2.1073
+INFO: Gen 28 eval_ctr 1970 config_num 0 dirdelta 1.8645 meanEMD 2.5950
+INFO: Gen 28 eval_ctr 1980 config_num 1 dirdelta 1.3595 meanEMD 2.8828
+INFO: Gen 28 eval_ctr 1990 config_num 2 dirdelta 1.3535 meanEMD 2.2807
+INFO: Gen 28 eval_ctr 2000 config_num 3 dirdelta 1.9768 meanEMD 2.7999
+INFO: Gen 28 eval_ctr 2010 config_num 4 dirdelta 1.1212 meanEMD 2.0714
+INFO: Gen 28 eval_ctr 2020 config_num 5 dirdelta 1.7790 meanEMD 2.6142
+INFO: Gen 28 eval_ctr 2030 config_num 6 dirdelta 1.4697 meanEMD 2.3829
+INFO: Gen 29 eval_ctr 2040 config_num 0 dirdelta 1.8630 meanEMD 2.8057
+INFO: Gen 29 eval_ctr 2050 config_num 1 dirdelta 1.7081 meanEMD 3.1575
+INFO: Gen 29 eval_ctr 2060 config_num 2 dirdelta 1.4623 meanEMD 2.2255
+INFO: Gen 29 eval_ctr 2070 config_num 3 dirdelta 1.2395 meanEMD 2.9996
+INFO: Gen 29 eval_ctr 2080 config_num 4 dirdelta 1.1174 meanEMD 2.4172
+INFO: Gen 29 eval_ctr 2090 config_num 5 dirdelta 1.6066 meanEMD 2.3039
+INFO: Gen 29 eval_ctr 2100 config_num 6 dirdelta 1.1928 meanEMD 2.9806
+INFO: Gen 30 eval_ctr 2110 config_num 0 dirdelta 1.3382 meanEMD 2.3228
+INFO: Gen 30 eval_ctr 2120 config_num 1 dirdelta 1.3718 meanEMD 2.9202
+INFO: Gen 30 eval_ctr 2130 config_num 2 dirdelta 1.7166 meanEMD 3.0568
+INFO: Gen 30 eval_ctr 2140 config_num 3 dirdelta 1.7846 meanEMD 2.4940
+INFO: Gen 30 eval_ctr 2150 config_num 4 dirdelta 1.7130 meanEMD 2.7515
+INFO: Gen 30 eval_ctr 2160 config_num 5 dirdelta 1.8878 meanEMD 2.1857
+INFO: Gen 30 eval_ctr 2170 config_num 6 dirdelta 1.4829 meanEMD 2.7398
+INFO: Gen 31 eval_ctr 2180 config_num 0 dirdelta 1.7775 meanEMD 3.2149
+INFO: Gen 31 eval_ctr 2190 config_num 1 dirdelta 1.3692 meanEMD 2.0843
+INFO: Gen 31 eval_ctr 2200 config_num 2 dirdelta 1.3581 meanEMD 2.0279
+INFO: Gen 31 eval_ctr 2210 config_num 3 dirdelta 1.4144 meanEMD 2.4036
+INFO: Gen 31 eval_ctr 2220 config_num 4 dirdelta 1.7705 meanEMD 2.5644
+INFO: Gen 31 eval_ctr 2230 config_num 5 dirdelta 1.2495 meanEMD 2.1631
+INFO: Gen 31 eval_ctr 2240 config_num 6 dirdelta 1.1911 meanEMD 2.9361
+INFO: Gen 32 eval_ctr 2250 config_num 0 dirdelta 1.8004 meanEMD 2.9071
+INFO: Gen 32 eval_ctr 2260 config_num 1 dirdelta 1.4081 meanEMD 1.9858
+INFO: Gen 32 eval_ctr 2270 config_num 2 dirdelta 1.6979 meanEMD 2.3922
+INFO: Gen 32 eval_ctr 2280 config_num 3 dirdelta 1.5254 meanEMD 2.2935
+INFO: Gen 32 eval_ctr 2290 config_num 4 dirdelta 1.3478 meanEMD 2.2473
+INFO: Gen 32 eval_ctr 2300 config_num 5 dirdelta 1.6382 meanEMD 2.8772
+INFO: Gen 32 eval_ctr 2310 config_num 6 dirdelta 1.6599 meanEMD 2.5933
+INFO: Gen 33 eval_ctr 2320 config_num 0 dirdelta 1.2872 meanEMD 2.5925
+INFO: Gen 33 eval_ctr 2330 config_num 1 dirdelta 1.4003 meanEMD 3.1374
+INFO: Gen 33 eval_ctr 2340 config_num 2 dirdelta 1.3296 meanEMD 2.0009
+INFO: Gen 33 eval_ctr 2350 config_num 3 dirdelta 1.3934 meanEMD 2.2374
+INFO: Gen 33 eval_ctr 2360 config_num 4 dirdelta 1.3681 meanEMD 2.6235
+INFO: Gen 33 eval_ctr 2370 config_num 5 dirdelta 1.3808 meanEMD 2.7200
+INFO: Gen 33 eval_ctr 2380 config_num 6 dirdelta 1.6074 meanEMD 2.7458
+INFO: Gen 34 eval_ctr 2390 config_num 0 dirdelta 1.4186 meanEMD 1.9384
+INFO: Gen 34 eval_ctr 2400 config_num 1 dirdelta 1.4198 meanEMD 2.7028
+INFO: Gen 34 eval_ctr 2410 config_num 2 dirdelta 1.4590 meanEMD 2.3859
+INFO: Gen 34 eval_ctr 2420 config_num 3 dirdelta 1.7163 meanEMD 2.6564
+INFO: Gen 34 eval_ctr 2430 config_num 4 dirdelta 1.4864 meanEMD 2.5919
+INFO: Gen 34 eval_ctr 2440 config_num 5 dirdelta 1.7083 meanEMD 1.8805
+INFO: Gen 34 eval_ctr 2450 config_num 6 dirdelta 2.0724 meanEMD 2.8085
+INFO: Gen 35 eval_ctr 2460 config_num 0 dirdelta 1.5110 meanEMD 2.4886
+INFO: Gen 35 eval_ctr 2470 config_num 1 dirdelta 1.7922 meanEMD 3.7075
+INFO: Gen 35 eval_ctr 2480 config_num 2 dirdelta 1.3873 meanEMD 2.8865
+INFO: Gen 35 eval_ctr 2490 config_num 3 dirdelta 1.2104 meanEMD 2.6519
+INFO: Gen 35 eval_ctr 2500 config_num 4 dirdelta 1.4010 meanEMD 2.6315
+INFO: Gen 35 eval_ctr 2510 config_num 5 dirdelta 1.6718 meanEMD 2.3888
+INFO: Gen 35 eval_ctr 2520 config_num 6 dirdelta 1.4099 meanEMD 2.4722
+INFO: Gen 36 eval_ctr 2530 config_num 0 dirdelta 1.4064 meanEMD 2.1822
+INFO: Gen 36 eval_ctr 2540 config_num 1 dirdelta 1.6974 meanEMD 3.1450
+INFO: Gen 36 eval_ctr 2550 config_num 2 dirdelta 1.4339 meanEMD 2.5150
+INFO: Gen 36 eval_ctr 2560 config_num 3 dirdelta 1.2368 meanEMD 2.8972
+INFO: Gen 36 eval_ctr 2570 config_num 4 dirdelta 1.3959 meanEMD 2.1868
+INFO: Gen 36 eval_ctr 2580 config_num 5 dirdelta 1.4507 meanEMD 2.3553
+INFO: Gen 36 eval_ctr 2590 config_num 6 dirdelta 1.9578 meanEMD 3.1130
+INFO: Gen 37 eval_ctr 2600 config_num 0 dirdelta 1.6770 meanEMD 2.2478
+INFO: Gen 37 eval_ctr 2610 config_num 1 dirdelta 1.3797 meanEMD 2.2513
+INFO: Gen 37 eval_ctr 2620 config_num 2 dirdelta 1.3284 meanEMD 2.1986
+INFO: Gen 37 eval_ctr 2630 config_num 3 dirdelta 1.4476 meanEMD 2.1268
+INFO: Gen 37 eval_ctr 2640 config_num 4 dirdelta 1.1677 meanEMD 2.3284
+INFO: Gen 37 eval_ctr 2650 config_num 5 dirdelta 1.4567 meanEMD 2.3588
+INFO: Gen 37 eval_ctr 2660 config_num 6 dirdelta 1.5376 meanEMD 2.2965
+INFO: Gen 38 eval_ctr 2670 config_num 0 dirdelta 1.1249 meanEMD 2.9295
+INFO: Gen 38 eval_ctr 2680 config_num 1 dirdelta 1.3966 meanEMD 1.8709
+INFO: Gen 38 eval_ctr 2690 config_num 2 dirdelta 1.7840 meanEMD 2.7503
+INFO: Gen 38 eval_ctr 2700 config_num 3 dirdelta 1.2395 meanEMD 2.2347
+INFO: Gen 38 eval_ctr 2710 config_num 4 dirdelta 1.4119 meanEMD 2.4541
+INFO: Gen 38 eval_ctr 2720 config_num 5 dirdelta 1.4040 meanEMD 2.4037
+INFO: Gen 38 eval_ctr 2730 config_num 6 dirdelta 1.1061 meanEMD 2.5309
+INFO: Gen 39 eval_ctr 2740 config_num 0 dirdelta 1.8218 meanEMD 3.2075
+INFO: Gen 39 eval_ctr 2750 config_num 1 dirdelta 1.4612 meanEMD 2.6129
+INFO: Gen 39 eval_ctr 2760 config_num 2 dirdelta 1.6439 meanEMD 2.1647
+INFO: Gen 39 eval_ctr 2770 config_num 3 dirdelta 1.3334 meanEMD 2.1843
+INFO: Gen 39 eval_ctr 2780 config_num 4 dirdelta 1.0799 meanEMD 2.5208
+INFO: Gen 39 eval_ctr 2790 config_num 5 dirdelta 1.7484 meanEMD 2.2504
+INFO: Gen 39 eval_ctr 2800 config_num 6 dirdelta 1.6960 meanEMD 2.7004
+INFO: Gen 40 eval_ctr 2810 config_num 0 dirdelta 1.6270 meanEMD 2.2871
+INFO: Gen 40 eval_ctr 2820 config_num 1 dirdelta 1.4467 meanEMD 2.7968
+INFO: Gen 40 eval_ctr 2830 config_num 2 dirdelta 1.3491 meanEMD 2.7443
+INFO: Gen 40 eval_ctr 2840 config_num 3 dirdelta 1.6574 meanEMD 2.5666
+INFO: Gen 40 eval_ctr 2850 config_num 4 dirdelta 1.6880 meanEMD 2.4118
+INFO: Gen 40 eval_ctr 2860 config_num 5 dirdelta 1.3362 meanEMD 2.7050
+INFO: Gen 40 eval_ctr 2870 config_num 6 dirdelta 1.6968 meanEMD 2.2957
+INFO: Gen 41 eval_ctr 2880 config_num 0 dirdelta 1.4151 meanEMD 2.0383
+INFO: Gen 41 eval_ctr 2890 config_num 1 dirdelta 1.7529 meanEMD 2.3474
+INFO: Gen 41 eval_ctr 2900 config_num 2 dirdelta 1.8225 meanEMD 2.7827
+INFO: Gen 41 eval_ctr 2910 config_num 3 dirdelta 1.6759 meanEMD 2.6670
+INFO: Gen 41 eval_ctr 2920 config_num 4 dirdelta 1.9525 meanEMD 3.5091
+INFO: Gen 41 eval_ctr 2930 config_num 5 dirdelta 1.7149 meanEMD 2.0755
+INFO: Gen 41 eval_ctr 2940 config_num 6 dirdelta 1.6976 meanEMD 2.6208
+INFO: Gen 42 eval_ctr 2950 config_num 0 dirdelta 1.7298 meanEMD 2.0739
+INFO: Gen 42 eval_ctr 2960 config_num 1 dirdelta 1.7498 meanEMD 3.0044
+INFO: Gen 42 eval_ctr 2970 config_num 2 dirdelta 1.4186 meanEMD 1.9324
+INFO: Gen 42 eval_ctr 2980 config_num 3 dirdelta 1.1577 meanEMD 2.3744
+INFO: Gen 42 eval_ctr 2990 config_num 4 dirdelta 1.7630 meanEMD 1.9832
+INFO: Gen 42 eval_ctr 3000 config_num 5 dirdelta 1.2514 meanEMD 2.5545
+INFO: Gen 42 eval_ctr 3010 config_num 6 dirdelta 1.3367 meanEMD 2.3544
+INFO: Gen 43 eval_ctr 3020 config_num 0 dirdelta 1.6648 meanEMD 3.5949
+INFO: Gen 43 eval_ctr 3030 config_num 1 dirdelta 1.3685 meanEMD 2.6585
+INFO: Gen 43 eval_ctr 3040 config_num 2 dirdelta 1.4121 meanEMD 2.1409
+INFO: Gen 43 eval_ctr 3050 config_num 3 dirdelta 1.6759 meanEMD 2.2307
+INFO: Gen 43 eval_ctr 3060 config_num 4 dirdelta 1.1542 meanEMD 2.1634
+INFO: Gen 43 eval_ctr 3070 config_num 5 dirdelta 1.2849 meanEMD 2.2940
+INFO: Gen 43 eval_ctr 3080 config_num 6 dirdelta 1.1977 meanEMD 2.7219
+INFO: Gen 44 eval_ctr 3090 config_num 0 dirdelta 1.7896 meanEMD 2.9706
+INFO: Gen 44 eval_ctr 3100 config_num 1 dirdelta 1.3540 meanEMD 2.3014
+INFO: Gen 44 eval_ctr 3110 config_num 2 dirdelta 1.6976 meanEMD 2.0765
+INFO: Gen 44 eval_ctr 3120 config_num 3 dirdelta 1.2414 meanEMD 2.0236
+INFO: Gen 44 eval_ctr 3130 config_num 4 dirdelta 1.6560 meanEMD 2.0582
+INFO: Gen 44 eval_ctr 3140 config_num 5 dirdelta 1.2506 meanEMD 2.7505
+INFO: Gen 44 eval_ctr 3150 config_num 6 dirdelta 1.6374 meanEMD 2.1905
+INFO: Gen 45 eval_ctr 3160 config_num 0 dirdelta 1.7027 meanEMD 2.3361
+INFO: Gen 45 eval_ctr 3170 config_num 1 dirdelta 1.4123 meanEMD 2.6449
+INFO: Gen 45 eval_ctr 3180 config_num 2 dirdelta 1.6931 meanEMD 2.0118
+INFO: Gen 45 eval_ctr 3190 config_num 3 dirdelta 1.4102 meanEMD 1.7673
+INFO: Gen 45 eval_ctr 3200 config_num 4 dirdelta 1.1542 meanEMD 2.8519
+INFO: Gen 45 eval_ctr 3210 config_num 5 dirdelta 1.2543 meanEMD 3.3382
+INFO: Gen 45 eval_ctr 3220 config_num 6 dirdelta 1.4234 meanEMD 2.8932
+INFO: Gen 46 eval_ctr 3230 config_num 0 dirdelta 1.7525 meanEMD 2.6136
+INFO: Gen 46 eval_ctr 3240 config_num 1 dirdelta 1.4675 meanEMD 2.9082
+INFO: Gen 46 eval_ctr 3250 config_num 2 dirdelta 1.7507 meanEMD 2.7852
+INFO: Gen 46 eval_ctr 3260 config_num 3 dirdelta 1.2513 meanEMD 2.5283
+INFO: Gen 46 eval_ctr 3270 config_num 4 dirdelta 1.7205 meanEMD 3.1106
+INFO: Gen 46 eval_ctr 3280 config_num 5 dirdelta 1.8852 meanEMD 2.2089
+INFO: Gen 46 eval_ctr 3290 config_num 6 dirdelta 1.3790 meanEMD 3.0823
+INFO: Gen 47 eval_ctr 3300 config_num 0 dirdelta 1.5167 meanEMD 2.5290
+INFO: Gen 47 eval_ctr 3310 config_num 1 dirdelta 1.4529 meanEMD 2.2590
+INFO: Gen 47 eval_ctr 3320 config_num 2 dirdelta 1.7728 meanEMD 2.2764
+INFO: Gen 47 eval_ctr 3330 config_num 3 dirdelta 1.7083 meanEMD 1.8483
+INFO: Gen 47 eval_ctr 3340 config_num 4 dirdelta 1.1174 meanEMD 2.3622
+INFO: Gen 47 eval_ctr 3350 config_num 5 dirdelta 1.2542 meanEMD 2.1672
+INFO: Gen 47 eval_ctr 3360 config_num 6 dirdelta 1.4060 meanEMD 2.6021
+INFO: Gen 48 eval_ctr 3370 config_num 0 dirdelta 1.7060 meanEMD 2.4912
+INFO: Gen 48 eval_ctr 3380 config_num 1 dirdelta 1.4093 meanEMD 2.8275
+INFO: Gen 48 eval_ctr 3390 config_num 2 dirdelta 1.3476 meanEMD 3.0194
+INFO: Gen 48 eval_ctr 3400 config_num 3 dirdelta 1.4140 meanEMD 2.7307
+INFO: Gen 48 eval_ctr 3410 config_num 4 dirdelta 1.4217 meanEMD 2.5163
+INFO: Gen 48 eval_ctr 3420 config_num 5 dirdelta 1.7119 meanEMD 2.7356
+INFO: Gen 48 eval_ctr 3430 config_num 6 dirdelta 1.6376 meanEMD 2.6676
+INFO: Gen 49 eval_ctr 3440 config_num 0 dirdelta 1.8083 meanEMD 2.3221
+INFO: Gen 49 eval_ctr 3450 config_num 1 dirdelta 1.4624 meanEMD 2.9165
+INFO: Gen 49 eval_ctr 3460 config_num 2 dirdelta 1.7111 meanEMD 3.4638
+INFO: Gen 49 eval_ctr 3470 config_num 3 dirdelta 1.7539 meanEMD 3.1952
+INFO: Gen 49 eval_ctr 3480 config_num 4 dirdelta 1.2820 meanEMD 2.6807
+INFO: Gen 49 eval_ctr 3490 config_num 5 dirdelta 1.5722 meanEMD 2.7023
+INFO: Gen 49 eval_ctr 3500 config_num 6 dirdelta 1.6653 meanEMD 1.9240
+INFO: Gen 50 eval_ctr 3510 config_num 0 dirdelta 1.5144 meanEMD 2.1508
+INFO: Gen 50 eval_ctr 3520 config_num 1 dirdelta 1.7507 meanEMD 2.8999
+INFO: Gen 50 eval_ctr 3530 config_num 2 dirdelta 1.7056 meanEMD 1.9786
+INFO: Gen 50 eval_ctr 3540 config_num 3 dirdelta 1.6608 meanEMD 2.4619
+INFO: Gen 50 eval_ctr 3550 config_num 4 dirdelta 1.9575 meanEMD 3.4245
+INFO: Gen 50 eval_ctr 3560 config_num 5 dirdelta 1.8619 meanEMD 3.2391
+INFO: Gen 50 eval_ctr 3570 config_num 6 dirdelta 1.6231 meanEMD 2.6155
+INFO: Gen 51 eval_ctr 3580 config_num 0 dirdelta 1.5144 meanEMD 2.4256
+INFO: Gen 51 eval_ctr 3590 config_num 1 dirdelta 1.4487 meanEMD 2.0297
+INFO: Gen 51 eval_ctr 3600 config_num 2 dirdelta 1.7083 meanEMD 2.7432
+INFO: Gen 51 eval_ctr 3610 config_num 3 dirdelta 1.5786 meanEMD 2.5797
+INFO: Gen 51 eval_ctr 3620 config_num 4 dirdelta 1.4943 meanEMD 2.4247
+INFO: Gen 51 eval_ctr 3630 config_num 5 dirdelta 1.8647 meanEMD 3.2752
+INFO: Gen 51 eval_ctr 3640 config_num 6 dirdelta 1.4151 meanEMD 2.6121
+INFO: Gen 52 eval_ctr 3650 config_num 0 dirdelta 1.3350 meanEMD 1.8828
+INFO: Gen 52 eval_ctr 3660 config_num 1 dirdelta 1.4696 meanEMD 2.4541
+INFO: Gen 52 eval_ctr 3670 config_num 2 dirdelta 1.4202 meanEMD 2.3840
+INFO: Gen 52 eval_ctr 3680 config_num 3 dirdelta 1.2220 meanEMD 2.4989
+INFO: Gen 52 eval_ctr 3690 config_num 4 dirdelta 1.4055 meanEMD 2.4270
+INFO: Gen 52 eval_ctr 3700 config_num 5 dirdelta 1.7573 meanEMD 2.7381
+INFO: Gen 52 eval_ctr 3710 config_num 6 dirdelta 1.8958 meanEMD 3.0506
+INFO: Gen 53 eval_ctr 3720 config_num 0 dirdelta 1.6771 meanEMD 2.4682
+INFO: Gen 53 eval_ctr 3730 config_num 1 dirdelta 1.4312 meanEMD 2.9351
+INFO: Gen 53 eval_ctr 3740 config_num 2 dirdelta 1.7749 meanEMD 2.5075
+INFO: Gen 53 eval_ctr 3750 config_num 3 dirdelta 1.9001 meanEMD 2.8776
+INFO: Gen 53 eval_ctr 3760 config_num 4 dirdelta 1.7135 meanEMD 2.5932
+INFO: Gen 53 eval_ctr 3770 config_num 5 dirdelta 1.5749 meanEMD 2.4198
+INFO: Gen 53 eval_ctr 3780 config_num 6 dirdelta 1.3724 meanEMD 2.6305
+INFO: Gen 54 eval_ctr 3790 config_num 0 dirdelta 1.0833 meanEMD 2.6455
+INFO: Gen 54 eval_ctr 3800 config_num 1 dirdelta 1.3476 meanEMD 2.5020
+INFO: Gen 54 eval_ctr 3810 config_num 2 dirdelta 1.4763 meanEMD 2.7424
+INFO: Gen 54 eval_ctr 3820 config_num 3 dirdelta 1.6020 meanEMD 1.9306
+INFO: Gen 54 eval_ctr 3830 config_num 4 dirdelta 1.7717 meanEMD 2.2652
+INFO: Gen 54 eval_ctr 3840 config_num 5 dirdelta 1.5983 meanEMD 3.1593
+INFO: Gen 54 eval_ctr 3850 config_num 6 dirdelta 1.6146 meanEMD 2.2595
+INFO: Gen 55 eval_ctr 3860 config_num 0 dirdelta 1.3374 meanEMD 2.5678
+INFO: Gen 55 eval_ctr 3870 config_num 1 dirdelta 1.2849 meanEMD 2.8397
+INFO: Gen 55 eval_ctr 3880 config_num 2 dirdelta 1.6681 meanEMD 2.4083
+INFO: Gen 55 eval_ctr 3890 config_num 3 dirdelta 1.6737 meanEMD 3.6622
+INFO: Gen 55 eval_ctr 3900 config_num 4 dirdelta 1.4543 meanEMD 3.4363
+INFO: Gen 55 eval_ctr 3910 config_num 5 dirdelta 1.8492 meanEMD 2.6076
+INFO: Gen 55 eval_ctr 3920 config_num 6 dirdelta 1.7021 meanEMD 2.6804
+INFO: Gen 56 eval_ctr 3930 config_num 0 dirdelta 1.8065 meanEMD 2.7598
+INFO: Gen 56 eval_ctr 3940 config_num 1 dirdelta 1.6717 meanEMD 1.7958
+INFO: Gen 56 eval_ctr 3950 config_num 2 dirdelta 1.3414 meanEMD 2.5201
+INFO: Gen 56 eval_ctr 3960 config_num 3 dirdelta 1.7566 meanEMD 3.1636
+INFO: Gen 56 eval_ctr 3970 config_num 4 dirdelta 1.6119 meanEMD 2.5663
+INFO: Gen 56 eval_ctr 3980 config_num 5 dirdelta 1.7130 meanEMD 3.3482
+INFO: Gen 56 eval_ctr 3990 config_num 6 dirdelta 1.6650 meanEMD 2.5109
+INFO: Gen 57 eval_ctr 4000 config_num 0 dirdelta 1.3224 meanEMD 2.6443
+INFO: Gen 57 eval_ctr 4010 config_num 1 dirdelta 1.7883 meanEMD 2.4290
+INFO: Gen 57 eval_ctr 4020 config_num 2 dirdelta 1.4759 meanEMD 2.5101
+INFO: Gen 57 eval_ctr 4030 config_num 3 dirdelta 1.2031 meanEMD 3.0676
+INFO: Gen 57 eval_ctr 4040 config_num 4 dirdelta 1.4460 meanEMD 2.6166
+INFO: Gen 57 eval_ctr 4050 config_num 5 dirdelta 1.3036 meanEMD 2.9115
+INFO: Gen 57 eval_ctr 4060 config_num 6 dirdelta 1.8782 meanEMD 2.6935
+INFO: Gen 58 eval_ctr 4070 config_num 0 dirdelta 1.6671 meanEMD 3.4200
+INFO: Gen 58 eval_ctr 4080 config_num 1 dirdelta 1.6662 meanEMD 2.8332
+INFO: Gen 58 eval_ctr 4090 config_num 2 dirdelta 1.6426 meanEMD 2.9661
+INFO: Gen 58 eval_ctr 4100 config_num 3 dirdelta 1.5107 meanEMD 2.7230
+INFO: Gen 58 eval_ctr 4110 config_num 4 dirdelta 1.6482 meanEMD 2.7052
+INFO: Gen 58 eval_ctr 4120 config_num 5 dirdelta 1.8814 meanEMD 2.2518
+INFO: Gen 58 eval_ctr 4130 config_num 6 dirdelta 1.1995 meanEMD 2.4584
+INFO: Gen 59 eval_ctr 4140 config_num 0 dirdelta 1.7730 meanEMD 2.7301
+INFO: Gen 59 eval_ctr 4150 config_num 1 dirdelta 1.7163 meanEMD 3.2352
+INFO: Gen 59 eval_ctr 4160 config_num 2 dirdelta 1.4182 meanEMD 2.0316
+INFO: Gen 59 eval_ctr 4170 config_num 3 dirdelta 1.2319 meanEMD 1.9360
+INFO: Gen 59 eval_ctr 4180 config_num 4 dirdelta 1.7455 meanEMD 3.3598
+INFO: Gen 59 eval_ctr 4190 config_num 5 dirdelta 1.6744 meanEMD 2.7878
+INFO: Gen 59 eval_ctr 4200 config_num 6 dirdelta 1.6543 meanEMD 2.8604
+INFO: Gen 60 eval_ctr 4210 config_num 0 dirdelta 1.6894 meanEMD 1.8350
+INFO: Gen 60 eval_ctr 4220 config_num 1 dirdelta 1.6152 meanEMD 2.7547
+INFO: Gen 60 eval_ctr 4230 config_num 2 dirdelta 1.4183 meanEMD 2.3783
+INFO: Gen 60 eval_ctr 4240 config_num 3 dirdelta 1.3595 meanEMD 2.5666
+INFO: Gen 60 eval_ctr 4250 config_num 4 dirdelta 1.3712 meanEMD 2.5393
+INFO: Gen 60 eval_ctr 4260 config_num 5 dirdelta 1.6706 meanEMD 3.3444
+INFO: Gen 60 eval_ctr 4270 config_num 6 dirdelta 1.3426 meanEMD 2.2945
+INFO: Gen 61 eval_ctr 4280 config_num 0 dirdelta 1.7795 meanEMD 2.9087
+INFO: Gen 61 eval_ctr 4290 config_num 1 dirdelta 1.3665 meanEMD 2.6123
+INFO: Gen 61 eval_ctr 4300 config_num 2 dirdelta 1.6994 meanEMD 2.3255
+INFO: Gen 61 eval_ctr 4310 config_num 3 dirdelta 1.4279 meanEMD 2.5066
+INFO: Gen 61 eval_ctr 4320 config_num 4 dirdelta 1.1674 meanEMD 2.8086
+INFO: Gen 61 eval_ctr 4330 config_num 5 dirdelta 1.2819 meanEMD 2.4029
+INFO: Gen 61 eval_ctr 4340 config_num 6 dirdelta 1.4491 meanEMD 2.0017
+INFO: Gen 62 eval_ctr 4350 config_num 0 dirdelta 1.4287 meanEMD 3.3704
+INFO: Gen 62 eval_ctr 4360 config_num 1 dirdelta 1.6958 meanEMD 2.5357
+INFO: Gen 62 eval_ctr 4370 config_num 2 dirdelta 1.6427 meanEMD 2.9688
+INFO: Gen 62 eval_ctr 4380 config_num 3 dirdelta 1.3938 meanEMD 2.4116
+INFO: Gen 62 eval_ctr 4390 config_num 4 dirdelta 1.4177 meanEMD 2.0118
+INFO: Gen 62 eval_ctr 4400 config_num 5 dirdelta 1.8189 meanEMD 2.4889
+INFO: Gen 62 eval_ctr 4410 config_num 6 dirdelta 1.4218 meanEMD 1.9467
+INFO: Gen 63 eval_ctr 4420 config_num 0 dirdelta 1.6852 meanEMD 2.3884
+INFO: Gen 63 eval_ctr 4430 config_num 1 dirdelta 1.6384 meanEMD 2.8716
+INFO: Gen 63 eval_ctr 4440 config_num 2 dirdelta 1.7055 meanEMD 2.1830
+INFO: Gen 63 eval_ctr 4450 config_num 3 dirdelta 1.8571 meanEMD 2.6470
+INFO: Gen 63 eval_ctr 4460 config_num 4 dirdelta 1.9949 meanEMD 2.1935
+INFO: Gen 63 eval_ctr 4470 config_num 5 dirdelta 1.6135 meanEMD 2.0554
+INFO: Gen 63 eval_ctr 4480 config_num 6 dirdelta 1.6199 meanEMD 2.3253
+INFO: Gen 64 eval_ctr 4490 config_num 0 dirdelta 1.8397 meanEMD 3.3431
+INFO: Gen 64 eval_ctr 4500 config_num 1 dirdelta 1.4060 meanEMD 3.2015
+INFO: Gen 64 eval_ctr 4510 config_num 2 dirdelta 1.5822 meanEMD 2.1915
+INFO: Gen 64 eval_ctr 4520 config_num 3 dirdelta 1.4534 meanEMD 2.3404
+INFO: Gen 64 eval_ctr 4530 config_num 4 dirdelta 1.9162 meanEMD 2.9949
+INFO: Gen 64 eval_ctr 4540 config_num 5 dirdelta 1.6660 meanEMD 2.5100
+INFO: Gen 64 eval_ctr 4550 config_num 6 dirdelta 1.6543 meanEMD 2.5302
+INFO: Gen 65 eval_ctr 4560 config_num 0 dirdelta 1.4048 meanEMD 2.2248
+INFO: Gen 65 eval_ctr 4570 config_num 1 dirdelta 1.3801 meanEMD 2.4216
+INFO: Gen 65 eval_ctr 4580 config_num 2 dirdelta 1.4021 meanEMD 2.8424
+INFO: Gen 65 eval_ctr 4590 config_num 3 dirdelta 1.8591 meanEMD 3.6426
+INFO: Gen 65 eval_ctr 4600 config_num 4 dirdelta 1.1528 meanEMD 2.6609
+INFO: Gen 65 eval_ctr 4610 config_num 5 dirdelta 1.6872 meanEMD 2.5277
+INFO: Gen 65 eval_ctr 4620 config_num 6 dirdelta 1.4218 meanEMD 1.7604
+INFO: Gen 66 eval_ctr 4630 config_num 0 dirdelta 1.6936 meanEMD 2.6059
+INFO: Gen 66 eval_ctr 4640 config_num 1 dirdelta 1.7062 meanEMD 3.1723
+INFO: Gen 66 eval_ctr 4650 config_num 2 dirdelta 1.4615 meanEMD 3.0067
+INFO: Gen 66 eval_ctr 4660 config_num 3 dirdelta 1.4077 meanEMD 2.8860
+INFO: Gen 66 eval_ctr 4670 config_num 4 dirdelta 1.4284 meanEMD 2.3459
+INFO: Gen 66 eval_ctr 4680 config_num 5 dirdelta 1.5569 meanEMD 1.8021
+INFO: Gen 66 eval_ctr 4690 config_num 6 dirdelta 1.7400 meanEMD 2.0115
+INFO: Gen 67 eval_ctr 4700 config_num 0 dirdelta 1.7906 meanEMD 2.4130
+INFO: Gen 67 eval_ctr 4710 config_num 1 dirdelta 1.4612 meanEMD 2.7704
+INFO: Gen 67 eval_ctr 4720 config_num 2 dirdelta 1.6226 meanEMD 2.6725
+INFO: Gen 67 eval_ctr 4730 config_num 3 dirdelta 1.2538 meanEMD 2.8707
+INFO: Gen 67 eval_ctr 4740 config_num 4 dirdelta 1.2648 meanEMD 2.8730
+INFO: Gen 67 eval_ctr 4750 config_num 5 dirdelta 1.5511 meanEMD 2.0209
+INFO: Gen 67 eval_ctr 4760 config_num 6 dirdelta 1.2112 meanEMD 2.1451
+INFO: Gen 68 eval_ctr 4770 config_num 0 dirdelta 1.4582 meanEMD 2.7986
+INFO: Gen 68 eval_ctr 4780 config_num 1 dirdelta 1.6393 meanEMD 2.2735
+INFO: Gen 68 eval_ctr 4790 config_num 2 dirdelta 1.3812 meanEMD 2.2374
+INFO: Gen 68 eval_ctr 4800 config_num 3 dirdelta 1.4204 meanEMD 1.8139
+INFO: Gen 68 eval_ctr 4810 config_num 4 dirdelta 1.3052 meanEMD 2.2906
+INFO: Gen 68 eval_ctr 4820 config_num 5 dirdelta 1.7504 meanEMD 3.3870
+INFO: Gen 68 eval_ctr 4830 config_num 6 dirdelta 1.8117 meanEMD 2.3588
+INFO: Gen 69 eval_ctr 4840 config_num 0 dirdelta 1.5615 meanEMD 2.2151
+INFO: Gen 69 eval_ctr 4850 config_num 1 dirdelta 1.6669 meanEMD 2.7970
+INFO: Gen 69 eval_ctr 4860 config_num 2 dirdelta 1.5591 meanEMD 2.0831
+INFO: Gen 69 eval_ctr 4870 config_num 3 dirdelta 1.7459 meanEMD 2.9777
+INFO: Gen 69 eval_ctr 4880 config_num 4 dirdelta 1.8646 meanEMD 3.4513
+INFO: Gen 69 eval_ctr 4890 config_num 5 dirdelta 1.3072 meanEMD 2.5149
+INFO: Gen 69 eval_ctr 4900 config_num 6 dirdelta 1.4325 meanEMD 3.0405
+INFO: Gen 70 eval_ctr 4910 config_num 0 dirdelta 1.5135 meanEMD 2.3777
+INFO: Gen 70 eval_ctr 4920 config_num 1 dirdelta 1.5578 meanEMD 1.9627
+INFO: Gen 70 eval_ctr 4930 config_num 2 dirdelta 1.4302 meanEMD 2.5179
+INFO: Gen 70 eval_ctr 4940 config_num 3 dirdelta 1.6961 meanEMD 2.1381
+INFO: Gen 70 eval_ctr 4950 config_num 4 dirdelta 1.7630 meanEMD 2.5350
+INFO: Gen 70 eval_ctr 4960 config_num 5 dirdelta 1.6284 meanEMD 3.0613
+INFO: Gen 70 eval_ctr 4970 config_num 6 dirdelta 1.8010 meanEMD 2.9899
+INFO: Gen 71 eval_ctr 4980 config_num 0 dirdelta 1.7474 meanEMD 2.4639
+INFO: Gen 71 eval_ctr 4990 config_num 1 dirdelta 1.4212 meanEMD 2.3179
+INFO: Gen 71 eval_ctr 5000 config_num 2 dirdelta 1.4358 meanEMD 2.8040
+INFO: Gen 71 eval_ctr 5010 config_num 3 dirdelta 1.6727 meanEMD 2.7613
+INFO: Gen 71 eval_ctr 5020 config_num 4 dirdelta 1.6901 meanEMD 2.4576
+INFO: Gen 71 eval_ctr 5030 config_num 5 dirdelta 1.3072 meanEMD 2.3249
+INFO: Gen 71 eval_ctr 5040 config_num 6 dirdelta 1.6688 meanEMD 2.8151
+INFO: Gen 72 eval_ctr 5050 config_num 0 dirdelta 1.4627 meanEMD 2.3233
+INFO: Gen 72 eval_ctr 5060 config_num 1 dirdelta 1.3592 meanEMD 2.0599
+INFO: Gen 72 eval_ctr 5070 config_num 2 dirdelta 1.3924 meanEMD 2.4808
+INFO: Gen 72 eval_ctr 5080 config_num 3 dirdelta 1.6188 meanEMD 2.9392
+INFO: Gen 72 eval_ctr 5090 config_num 4 dirdelta 1.6391 meanEMD 2.9399
+INFO: Gen 72 eval_ctr 5100 config_num 5 dirdelta 1.5498 meanEMD 1.8440
+INFO: Gen 72 eval_ctr 5110 config_num 6 dirdelta 1.3472 meanEMD 2.0434
+INFO: Gen 73 eval_ctr 5120 config_num 0 dirdelta 1.3864 meanEMD 2.2687
+INFO: Gen 73 eval_ctr 5130 config_num 1 dirdelta 1.2697 meanEMD 2.2813
+INFO: Gen 73 eval_ctr 5140 config_num 2 dirdelta 1.4686 meanEMD 2.8320
+INFO: Gen 73 eval_ctr 5150 config_num 3 dirdelta 1.7777 meanEMD 2.6596
+INFO: Gen 73 eval_ctr 5160 config_num 4 dirdelta 1.5506 meanEMD 2.8858
+INFO: Gen 73 eval_ctr 5170 config_num 5 dirdelta 1.7142 meanEMD 2.1354
+INFO: Gen 73 eval_ctr 5180 config_num 6 dirdelta 1.8071 meanEMD 3.1936
+INFO: Gen 74 eval_ctr 5190 config_num 0 dirdelta 1.6453 meanEMD 3.0269
+INFO: Gen 74 eval_ctr 5200 config_num 1 dirdelta 1.4235 meanEMD 2.0829
+INFO: Gen 74 eval_ctr 5210 config_num 2 dirdelta 1.3955 meanEMD 2.2012
+INFO: Gen 74 eval_ctr 5220 config_num 3 dirdelta 1.4024 meanEMD 2.8205
+INFO: Gen 74 eval_ctr 5230 config_num 4 dirdelta 1.6813 meanEMD 2.5207
+INFO: Gen 74 eval_ctr 5240 config_num 5 dirdelta 1.4161 meanEMD 2.1605
+INFO: Gen 74 eval_ctr 5250 config_num 6 dirdelta 1.2050 meanEMD 2.1246
+INFO: Gen 75 eval_ctr 5260 config_num 0 dirdelta 1.7284 meanEMD 3.2344
+INFO: Gen 75 eval_ctr 5270 config_num 1 dirdelta 1.5175 meanEMD 2.4843
+INFO: Gen 75 eval_ctr 5280 config_num 2 dirdelta 1.7535 meanEMD 3.2391
+INFO: Gen 75 eval_ctr 5290 config_num 3 dirdelta 1.4893 meanEMD 2.4320
+INFO: Gen 75 eval_ctr 5300 config_num 4 dirdelta 1.1316 meanEMD 2.9672
+INFO: Gen 75 eval_ctr 5310 config_num 5 dirdelta 1.7461 meanEMD 2.7810
+INFO: Gen 75 eval_ctr 5320 config_num 6 dirdelta 1.6020 meanEMD 2.9557
+INFO: Gen 76 eval_ctr 5330 config_num 0 dirdelta 1.4464 meanEMD 2.2208
+INFO: Gen 76 eval_ctr 5340 config_num 1 dirdelta 1.6911 meanEMD 2.2818
+INFO: Gen 76 eval_ctr 5350 config_num 2 dirdelta 1.4437 meanEMD 2.3933
+INFO: Gen 76 eval_ctr 5360 config_num 3 dirdelta 1.4035 meanEMD 2.1832
+INFO: Gen 76 eval_ctr 5370 config_num 4 dirdelta 1.1930 meanEMD 2.2275
+INFO: Gen 76 eval_ctr 5380 config_num 5 dirdelta 1.6331 meanEMD 2.7845
+INFO: Gen 76 eval_ctr 5390 config_num 6 dirdelta 1.6007 meanEMD 2.4717
+INFO: Gen 77 eval_ctr 5400 config_num 0 dirdelta 1.4620 meanEMD 2.3637
+INFO: Gen 77 eval_ctr 5410 config_num 1 dirdelta 1.6873 meanEMD 2.6380
+INFO: Gen 77 eval_ctr 5420 config_num 2 dirdelta 1.4130 meanEMD 2.5116
+INFO: Gen 77 eval_ctr 5430 config_num 3 dirdelta 1.7610 meanEMD 2.5260
+INFO: Gen 77 eval_ctr 5440 config_num 4 dirdelta 1.1833 meanEMD 2.3308
+INFO: Gen 77 eval_ctr 5450 config_num 5 dirdelta 1.6836 meanEMD 2.5079
+INFO: Gen 77 eval_ctr 5460 config_num 6 dirdelta 1.5654 meanEMD 2.4124
+INFO: Gen 78 eval_ctr 5470 config_num 0 dirdelta 1.5746 meanEMD 2.7925
+INFO: Gen 78 eval_ctr 5480 config_num 1 dirdelta 1.3729 meanEMD 2.0317
+INFO: Gen 78 eval_ctr 5490 config_num 2 dirdelta 1.3688 meanEMD 2.8668
+INFO: Gen 78 eval_ctr 5500 config_num 3 dirdelta 1.4006 meanEMD 1.7889
+INFO: Gen 78 eval_ctr 5510 config_num 4 dirdelta 1.5499 meanEMD 2.2227
+INFO: Gen 78 eval_ctr 5520 config_num 5 dirdelta 1.4770 meanEMD 2.1158
+INFO: Gen 78 eval_ctr 5530 config_num 6 dirdelta 1.5551 meanEMD 2.4730
+INFO: Gen 79 eval_ctr 5540 config_num 0 dirdelta 1.2460 meanEMD 2.4482
+INFO: Gen 79 eval_ctr 5550 config_num 1 dirdelta 1.4012 meanEMD 2.3885
+INFO: Gen 79 eval_ctr 5560 config_num 2 dirdelta 1.3966 meanEMD 3.0970
+INFO: Gen 79 eval_ctr 5570 config_num 3 dirdelta 1.7535 meanEMD 3.0297
+INFO: Gen 79 eval_ctr 5580 config_num 4 dirdelta 1.8646 meanEMD 2.2015
+INFO: Gen 79 eval_ctr 5590 config_num 5 dirdelta 1.8646 meanEMD 2.7499
+INFO: Gen 79 eval_ctr 5600 config_num 6 dirdelta 1.9311 meanEMD 2.8061
+INFO: Gen 80 eval_ctr 5610 config_num 0 dirdelta 1.4610 meanEMD 2.1982
+INFO: Gen 80 eval_ctr 5620 config_num 1 dirdelta 1.4413 meanEMD 2.2448
+INFO: Gen 80 eval_ctr 5630 config_num 2 dirdelta 1.3541 meanEMD 2.2023
+INFO: Gen 80 eval_ctr 5640 config_num 3 dirdelta 1.9071 meanEMD 2.2014
+INFO: Gen 80 eval_ctr 5650 config_num 4 dirdelta 1.5711 meanEMD 2.6328
+INFO: Gen 80 eval_ctr 5660 config_num 5 dirdelta 1.6824 meanEMD 3.3266
+INFO: Gen 80 eval_ctr 5670 config_num 6 dirdelta 1.2166 meanEMD 2.3979
+INFO: Gen 81 eval_ctr 5680 config_num 0 dirdelta 1.5218 meanEMD 2.5985
+INFO: Gen 81 eval_ctr 5690 config_num 1 dirdelta 1.4014 meanEMD 2.6273
+INFO: Gen 81 eval_ctr 5700 config_num 2 dirdelta 1.4442 meanEMD 2.8935
+INFO: Gen 81 eval_ctr 5710 config_num 3 dirdelta 1.3453 meanEMD 2.8453
+INFO: Gen 81 eval_ctr 5720 config_num 4 dirdelta 1.7757 meanEMD 2.7921
+INFO: Gen 81 eval_ctr 5730 config_num 5 dirdelta 1.4715 meanEMD 2.5290
+INFO: Gen 81 eval_ctr 5740 config_num 6 dirdelta 1.7553 meanEMD 2.3683
+INFO: Gen 82 eval_ctr 5750 config_num 0 dirdelta 1.4065 meanEMD 1.9129
+INFO: Gen 82 eval_ctr 5760 config_num 1 dirdelta 1.5980 meanEMD 2.0980
+INFO: Gen 82 eval_ctr 5770 config_num 2 dirdelta 1.4664 meanEMD 2.9039
+INFO: Gen 82 eval_ctr 5780 config_num 3 dirdelta 1.7580 meanEMD 2.6559
+INFO: Gen 82 eval_ctr 5790 config_num 4 dirdelta 1.6710 meanEMD 2.6633
+INFO: Gen 82 eval_ctr 5800 config_num 5 dirdelta 1.7541 meanEMD 2.4320
+INFO: Gen 82 eval_ctr 5810 config_num 6 dirdelta 1.2112 meanEMD 2.3849
+INFO: Gen 83 eval_ctr 5820 config_num 0 dirdelta 1.7474 meanEMD 3.1953
+INFO: Gen 83 eval_ctr 5830 config_num 1 dirdelta 1.5557 meanEMD 3.1383
+INFO: Gen 83 eval_ctr 5840 config_num 2 dirdelta 1.4190 meanEMD 2.9919
+INFO: Gen 83 eval_ctr 5850 config_num 3 dirdelta 1.6912 meanEMD 3.6267
+INFO: Gen 83 eval_ctr 5860 config_num 4 dirdelta 1.7107 meanEMD 2.0908
+INFO: Gen 83 eval_ctr 5870 config_num 5 dirdelta 1.6928 meanEMD 1.9547
+INFO: Gen 83 eval_ctr 5880 config_num 6 dirdelta 1.8071 meanEMD 1.9744
+INFO: Gen 84 eval_ctr 5890 config_num 0 dirdelta 1.3680 meanEMD 2.2908
+INFO: Gen 84 eval_ctr 5900 config_num 1 dirdelta 1.3877 meanEMD 3.2146
+INFO: Gen 84 eval_ctr 5910 config_num 2 dirdelta 1.3395 meanEMD 3.4041
+INFO: Gen 84 eval_ctr 5920 config_num 3 dirdelta 1.5834 meanEMD 2.8762
+INFO: Gen 84 eval_ctr 5930 config_num 4 dirdelta 1.1813 meanEMD 2.9533
+INFO: Gen 84 eval_ctr 5940 config_num 5 dirdelta 1.6968 meanEMD 2.3130
+INFO: Gen 84 eval_ctr 5950 config_num 6 dirdelta 1.5179 meanEMD 2.2197
+INFO: Gen 85 eval_ctr 5960 config_num 0 dirdelta 1.4822 meanEMD 2.4846
+INFO: Gen 85 eval_ctr 5970 config_num 1 dirdelta 1.5149 meanEMD 2.9685
+INFO: Gen 85 eval_ctr 5980 config_num 2 dirdelta 1.1745 meanEMD 2.3990
+INFO: Gen 85 eval_ctr 5990 config_num 3 dirdelta 1.5672 meanEMD 2.6297
+INFO: Gen 85 eval_ctr 6000 config_num 4 dirdelta 1.6507 meanEMD 1.8547
+INFO: Gen 85 eval_ctr 6010 config_num 5 dirdelta 1.2790 meanEMD 2.6712
+INFO: Gen 85 eval_ctr 6020 config_num 6 dirdelta 1.9335 meanEMD 2.9182
+INFO: Gen 86 eval_ctr 6030 config_num 0 dirdelta 1.4501 meanEMD 2.6901
+INFO: Gen 86 eval_ctr 6040 config_num 1 dirdelta 1.4127 meanEMD 2.7624
+INFO: Gen 86 eval_ctr 6050 config_num 2 dirdelta 1.3561 meanEMD 2.5156
+INFO: Gen 86 eval_ctr 6060 config_num 3 dirdelta 1.5940 meanEMD 2.6683
+INFO: Gen 86 eval_ctr 6070 config_num 4 dirdelta 1.2770 meanEMD 2.8676
+INFO: Gen 86 eval_ctr 6080 config_num 5 dirdelta 1.4007 meanEMD 2.1792
+INFO: Gen 86 eval_ctr 6090 config_num 6 dirdelta 1.7569 meanEMD 2.9764
+INFO: Gen 87 eval_ctr 6100 config_num 0 dirdelta 1.6945 meanEMD 3.0437
+INFO: Gen 87 eval_ctr 6110 config_num 1 dirdelta 1.6903 meanEMD 2.0194
+INFO: Gen 87 eval_ctr 6120 config_num 2 dirdelta 1.5536 meanEMD 2.1935
+INFO: Gen 87 eval_ctr 6130 config_num 3 dirdelta 1.7217 meanEMD 2.8147
+INFO: Gen 87 eval_ctr 6140 config_num 4 dirdelta 1.3069 meanEMD 2.4503
+INFO: Gen 87 eval_ctr 6150 config_num 5 dirdelta 1.2859 meanEMD 2.9145
+INFO: Gen 87 eval_ctr 6160 config_num 6 dirdelta 1.3094 meanEMD 2.0264
+INFO: Gen 88 eval_ctr 6170 config_num 0 dirdelta 1.4260 meanEMD 2.1632
+INFO: Gen 88 eval_ctr 6180 config_num 1 dirdelta 1.7119 meanEMD 2.5231
+INFO: Gen 88 eval_ctr 6190 config_num 2 dirdelta 1.6916 meanEMD 3.2629
+INFO: Gen 88 eval_ctr 6200 config_num 3 dirdelta 1.4855 meanEMD 2.1516
+INFO: Gen 88 eval_ctr 6210 config_num 4 dirdelta 1.6859 meanEMD 3.6385
+INFO: Gen 88 eval_ctr 6220 config_num 5 dirdelta 1.5603 meanEMD 2.8751
+INFO: Gen 88 eval_ctr 6230 config_num 6 dirdelta 1.8348 meanEMD 2.5061
+INFO: Gen 89 eval_ctr 6240 config_num 0 dirdelta 1.5746 meanEMD 3.1436
+INFO: Gen 89 eval_ctr 6250 config_num 1 dirdelta 1.7503 meanEMD 2.8344
+INFO: Gen 89 eval_ctr 6260 config_num 2 dirdelta 1.4070 meanEMD 2.7676
+INFO: Gen 89 eval_ctr 6270 config_num 3 dirdelta 1.6801 meanEMD 2.5107
+INFO: Gen 89 eval_ctr 6280 config_num 4 dirdelta 1.7055 meanEMD 2.5172
+INFO: Gen 89 eval_ctr 6290 config_num 5 dirdelta 1.6968 meanEMD 2.1012
+INFO: Gen 89 eval_ctr 6300 config_num 6 dirdelta 1.9311 meanEMD 3.4156
+INFO: Gen 90 eval_ctr 6310 config_num 0 dirdelta 1.4620 meanEMD 2.7886
+INFO: Gen 90 eval_ctr 6320 config_num 1 dirdelta 1.5968 meanEMD 2.3052
+INFO: Gen 90 eval_ctr 6330 config_num 2 dirdelta 1.3819 meanEMD 2.6665
+INFO: Gen 90 eval_ctr 6340 config_num 3 dirdelta 1.4837 meanEMD 2.9589
+INFO: Gen 90 eval_ctr 6350 config_num 4 dirdelta 1.7974 meanEMD 3.4216
+INFO: Gen 90 eval_ctr 6360 config_num 5 dirdelta 1.6952 meanEMD 2.9965
+INFO: Gen 90 eval_ctr 6370 config_num 6 dirdelta 1.6347 meanEMD 2.1681
+INFO: Gen 91 eval_ctr 6380 config_num 0 dirdelta 1.4260 meanEMD 1.8448
+INFO: Gen 91 eval_ctr 6390 config_num 1 dirdelta 1.4230 meanEMD 3.2065
+INFO: Gen 91 eval_ctr 6400 config_num 2 dirdelta 1.4174 meanEMD 2.4930
+INFO: Gen 91 eval_ctr 6410 config_num 3 dirdelta 1.4985 meanEMD 2.6572
+INFO: Gen 91 eval_ctr 6420 config_num 4 dirdelta 1.7017 meanEMD 3.0468
+INFO: Gen 91 eval_ctr 6430 config_num 5 dirdelta 1.6882 meanEMD 3.0858
+INFO: Gen 91 eval_ctr 6440 config_num 6 dirdelta 1.6153 meanEMD 2.5096
+INFO: Gen 92 eval_ctr 6450 config_num 0 dirdelta 1.3712 meanEMD 2.8307
+INFO: Gen 92 eval_ctr 6460 config_num 1 dirdelta 1.4076 meanEMD 2.4445
+INFO: Gen 92 eval_ctr 6470 config_num 2 dirdelta 1.3529 meanEMD 2.3935
+INFO: Gen 92 eval_ctr 6480 config_num 3 dirdelta 1.4000 meanEMD 3.0563
+INFO: Gen 92 eval_ctr 6490 config_num 4 dirdelta 1.5472 meanEMD 2.4092
+INFO: Gen 92 eval_ctr 6500 config_num 5 dirdelta 1.3796 meanEMD 2.9902
+INFO: Gen 92 eval_ctr 6510 config_num 6 dirdelta 1.6603 meanEMD 2.7491
+INFO: Gen 93 eval_ctr 6520 config_num 0 dirdelta 1.3279 meanEMD 2.3357
+INFO: Gen 93 eval_ctr 6530 config_num 1 dirdelta 1.3457 meanEMD 2.1571
+INFO: Gen 93 eval_ctr 6540 config_num 2 dirdelta 1.7256 meanEMD 2.3463
+INFO: Gen 93 eval_ctr 6550 config_num 3 dirdelta 1.8272 meanEMD 2.6908
+INFO: Gen 93 eval_ctr 6560 config_num 4 dirdelta 1.5454 meanEMD 1.9151
+INFO: Gen 93 eval_ctr 6570 config_num 5 dirdelta 1.5814 meanEMD 3.7022
+INFO: Gen 93 eval_ctr 6580 config_num 6 dirdelta 1.1684 meanEMD 2.7913
+INFO: Gen 94 eval_ctr 6590 config_num 0 dirdelta 1.6876 meanEMD 2.5528
+INFO: Gen 94 eval_ctr 6600 config_num 1 dirdelta 1.4616 meanEMD 2.2047
+INFO: Gen 94 eval_ctr 6610 config_num 2 dirdelta 1.5558 meanEMD 2.5097
+INFO: Gen 94 eval_ctr 6620 config_num 3 dirdelta 1.4182 meanEMD 2.4687
+INFO: Gen 94 eval_ctr 6630 config_num 4 dirdelta 1.1296 meanEMD 2.7936
+INFO: Gen 94 eval_ctr 6640 config_num 5 dirdelta 1.5534 meanEMD 3.1103
+INFO: Gen 94 eval_ctr 6650 config_num 6 dirdelta 1.5034 meanEMD 2.8787
+INFO: Gen 95 eval_ctr 6660 config_num 0 dirdelta 1.4240 meanEMD 3.0913
+INFO: Gen 95 eval_ctr 6670 config_num 1 dirdelta 1.3551 meanEMD 2.7717
+INFO: Gen 95 eval_ctr 6680 config_num 2 dirdelta 1.6616 meanEMD 2.5216
+INFO: Gen 95 eval_ctr 6690 config_num 3 dirdelta 1.4279 meanEMD 2.4307
+INFO: Gen 95 eval_ctr 6700 config_num 4 dirdelta 1.5692 meanEMD 2.3110
+INFO: Gen 95 eval_ctr 6710 config_num 5 dirdelta 1.7828 meanEMD 2.7459
+INFO: Gen 95 eval_ctr 6720 config_num 6 dirdelta 1.6092 meanEMD 2.6038
+INFO: Gen 96 eval_ctr 6730 config_num 0 dirdelta 1.5023 meanEMD 2.0511
+INFO: Gen 96 eval_ctr 6740 config_num 1 dirdelta 1.3819 meanEMD 2.3539
+INFO: Gen 96 eval_ctr 6750 config_num 2 dirdelta 1.5597 meanEMD 3.0646
+INFO: Gen 96 eval_ctr 6760 config_num 3 dirdelta 1.8013 meanEMD 2.4617
+INFO: Gen 96 eval_ctr 6770 config_num 4 dirdelta 1.6992 meanEMD 2.7155
+INFO: Gen 96 eval_ctr 6780 config_num 5 dirdelta 1.5510 meanEMD 3.0766
+INFO: Gen 96 eval_ctr 6790 config_num 6 dirdelta 1.6855 meanEMD 2.2418
+INFO: Gen 97 eval_ctr 6800 config_num 0 dirdelta 1.3235 meanEMD 2.9857
+INFO: Gen 97 eval_ctr 6810 config_num 1 dirdelta 1.5068 meanEMD 2.2210
+INFO: Gen 97 eval_ctr 6820 config_num 2 dirdelta 1.4408 meanEMD 1.8830
+INFO: Gen 97 eval_ctr 6830 config_num 3 dirdelta 1.6792 meanEMD 2.2222
+INFO: Gen 97 eval_ctr 6840 config_num 4 dirdelta 1.5325 meanEMD 2.9300
+INFO: Gen 97 eval_ctr 6850 config_num 5 dirdelta 1.3550 meanEMD 2.5131
+INFO: Gen 97 eval_ctr 6860 config_num 6 dirdelta 1.6765 meanEMD 2.8984
+INFO: Gen 98 eval_ctr 6870 config_num 0 dirdelta 1.3359 meanEMD 2.2061
+INFO: Gen 98 eval_ctr 6880 config_num 1 dirdelta 1.4235 meanEMD 2.1470
+INFO: Gen 98 eval_ctr 6890 config_num 2 dirdelta 1.8195 meanEMD 3.0769
+INFO: Gen 98 eval_ctr 6900 config_num 3 dirdelta 1.7106 meanEMD 2.7532
+INFO: Gen 98 eval_ctr 6910 config_num 4 dirdelta 1.3541 meanEMD 2.1711
+INFO: Gen 98 eval_ctr 6920 config_num 5 dirdelta 1.6940 meanEMD 3.2972
+INFO: Gen 98 eval_ctr 6930 config_num 6 dirdelta 1.8318 meanEMD 2.3679
+INFO: Gen 99 eval_ctr 6940 config_num 0 dirdelta 1.4777 meanEMD 2.1510
+INFO: Gen 99 eval_ctr 6950 config_num 1 dirdelta 1.4156 meanEMD 2.9855
+INFO: Gen 99 eval_ctr 6960 config_num 2 dirdelta 1.7758 meanEMD 2.9523
+INFO: Gen 99 eval_ctr 6970 config_num 3 dirdelta 1.3260 meanEMD 2.6833
+INFO: Gen 99 eval_ctr 6980 config_num 4 dirdelta 1.6874 meanEMD 2.4301
+INFO: Gen 99 eval_ctr 6990 config_num 5 dirdelta 1.3492 meanEMD 2.5202
+INFO: Gen 99 eval_ctr 7000 config_num 6 dirdelta 1.3816 meanEMD 2.4583
+The population: 
+Problem name: PolyBeeHeatmapOptimization
+	C++ class name: PolyBeeHeatmapOptimization
+
+	Global dimension:			1
+	Integer dimension:			0
+	Fitness dimension:			1
+	Number of objectives:			1
+	Equality constraints dimension:		0
+	Inequality constraints dimension:	0
+	Lower bounds: [0]
+	Upper bounds: [3.14159]
+	Has batch fitness evaluation: false
+
+	Has gradient: false
+	User implemented gradient sparsity: false
+	Has hessians: false
+	User implemented hessians sparsity: false
+
+	Fitness evaluations: 700
+
+	Thread safety: basic
+
+Population size: 7
+
+List of individuals: 
+#0:
+	ID:			1329108821600893482
+	Decision vector:	[1.68942]
+	Fitness vector:		[1.83495]
+#1:
+	ID:			4951825274897609608
+	Decision vector:	[1.75073]
+	Fitness vector:		[1.68903]
+#2:
+	ID:			9221204519451072486
+	Decision vector:	[1.44077]
+	Fitness vector:		[1.88296]
+#3:
+	ID:			12529581807133902256
+	Decision vector:	[1.41021]
+	Fitness vector:		[1.76734]
+#4:
+	ID:			14826368390162145671
+	Decision vector:	[1.40404]
+	Fitness vector:		[1.56602]
+#5:
+	ID:			7027123589561703936
+	Decision vector:	[1.55692]
+	Fitness vector:		[1.80212]
+#6:
+	ID:			1216310873990163255
+	Decision vector:	[1.42176]
+	Fitness vector:		[1.76044]
+
+Champion decision vector: [1.40404]
+Champion fitness: [1.56602]

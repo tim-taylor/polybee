@@ -177,7 +177,7 @@ void Bee::forage()
 }
 
 
-// Calculates the angle of the line defined by (line_dx, line_dy) in the direction along
+// Calculate the angle of the line defined by (line_dx, line_dy) in the direction along
 // the line that is closest to desiredAngle. This is used, for example, when a bee hits a
 // tunnel wall and we want to align its direction along the wall.
 //
