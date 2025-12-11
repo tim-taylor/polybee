@@ -1,0 +1,11 @@
+Box plot saved to: param-config-tests-with-energetics-75-bees-100-reps-all.png
+
+Data Statistics:
+  Count: 100
+  Min: 4.1508
+  Q1 (25th percentile): 4.3189
+  Median (50th percentile): 4.3915
+  Q3 (75th percentile): 4.5050
+  Max: 4.7056
+  Mean: 4.4047
+  Std Dev: 0.1142
