@@ -1,0 +1,13 @@
+#!/bin/bash
+#
+# Every 10 minutes copy any file in PWD that has been
+# modified in the last 10 minutes to a destination on pCloud
+#
+# By default, does this 200 times, so for about 33 hours
+
+for N in {1..200}; do
+  for F in `find . -maxdepth 1 -cmin -10 -type f`; do
+    cp $F /home/tim/pcd/monash/2025/scratch
+  done
+  sleep 10.1m
+done
