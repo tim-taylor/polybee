@@ -10,7 +10,7 @@
 #include "PolyBeeCore.h"
 #include <pagmo/population.hpp>
 #include <pagmo/algorithm.hpp>
-//#include <vector>
+#include <vector>
 #include <ostream>
 
 class PolyBeeEvolve;
@@ -30,6 +30,9 @@ struct PolyBeeHeatmapOptimization {
 
     // Define the number of integer (as opposed to continuous) decision variables
     inline pagmo::vector_double::size_type get_nix() const;
+
+    // Helper method to calculate median of a vector of doubles
+    double median(const std::vector<double>& values) const;
 
     // Pointer back to the PolyBeeEvolve instance
     PolyBeeEvolve* m_pPolyBeeEvolve;

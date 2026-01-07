@@ -50,7 +50,7 @@ int Params::beeInHiveDuration;
 float Params::beeInitialEnergy;
 float Params::beeEnergyDepletionPerStep;
 float Params::beeEnergyBoostPerFlower;
-int Params::beeNumStepsOnFlower;
+int Params::beeOnFlowerDuration;
 float Params::beeEnergyMinThreshold;
 float Params::beeEnergyMaxThreshold;
 
@@ -148,7 +148,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("bee-initial-energy", "beeInitialEnergy", ParamType::FLOAT, &beeInitialEnergy, 100.0f, "Energy a bee has when it leaves the hive to commence a foraging trip");
     REGISTRY.emplace_back("bee-energy-depletion-per-step", "beeEnergyDepletionPerStep", ParamType::FLOAT, &beeEnergyDepletionPerStep, 1.0f, "Energy a bee expends on each step when foraging");
     REGISTRY.emplace_back("bee-energy-boost-per-flower", "beeEnergyBoostPerFlower", ParamType::FLOAT, &beeEnergyBoostPerFlower, 10.0f, "Energy a bee extracts from an unvisited flower");
-    REGISTRY.emplace_back("bee-num-steps-on-flower", "beeNumStepsOnFlower", ParamType::INT, &beeNumStepsOnFlower, 5, "Number of simulation steps a bee will stay on a flower having landed on it");
+    REGISTRY.emplace_back("bee-on-flower-duration", "beeOnFlowerDuration", ParamType::INT, &beeOnFlowerDuration, 5, "Number of simulation steps a bee will stay on a flower having landed on it");
     REGISTRY.emplace_back("bee-energy-min-threshold", "beeEnergyMinThreshold", ParamType::FLOAT, &beeEnergyMinThreshold, 0.0f, "Lower threshold of bee's energy store below which it will return to hive to replenish");
     REGISTRY.emplace_back("bee-energy-max-threshold", "beeEnergyMaxThreshold", ParamType::FLOAT, &beeEnergyMaxThreshold, 100.0f, "Upper threshold of bee's energy store above which it will return to hive after successful foraging");
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");

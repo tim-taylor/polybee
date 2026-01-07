@@ -394,7 +394,7 @@ void Bee::stayOnFlower()
 {
     m_currentFlowerDuration++;
     updatePathHistory();
-    if (m_currentFlowerDuration >= Params::beeNumStepsOnFlower) {
+    if (m_currentFlowerDuration >= Params::beeOnFlowerDuration) {
         // finished resting in hive, so restart foraging
         m_state = BeeState::FORAGING;
         m_currentFlowerDuration = 0;

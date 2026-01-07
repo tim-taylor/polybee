@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Plot EMD scores from optimization run.
-Creates a scatterplot of all individual scores plus line plots for mean and min per generation,
+Creates a scatterplot of all individual scores plus line plots for mean, median, and min per generation,
 with 10-generation rolling averages.
 
 Dependencies:
@@ -51,24 +51,27 @@ with open(input_file, 'r') as f:
 generations = np.array(generations)
 emd_scores = np.array(emd_scores)
 
-# Calculate mean and min EMD score per generation
+# Calculate mean, median, and min EMD score per generation
 gen_scores = defaultdict(list)
 for gen, score in zip(generations, emd_scores):
     gen_scores[gen].append(score)
 
 unique_gens = sorted(gen_scores.keys())
 mean_scores = [np.mean(gen_scores[g]) for g in unique_gens]
+median_scores = [np.median(gen_scores[g]) for g in unique_gens]
 min_scores = [np.min(gen_scores[g]) for g in unique_gens]
 
 # Calculate 10-generation rolling averages (only if we have enough generations)
 window_size = 10
 if len(unique_gens) >= window_size:
     mean_rolling = np.convolve(mean_scores, np.ones(window_size)/window_size, mode='valid')
+    median_rolling = np.convolve(median_scores, np.ones(window_size)/window_size, mode='valid')
     min_rolling = np.convolve(min_scores, np.ones(window_size)/window_size, mode='valid')
     # Adjust generation indices for rolling averages (centered on window)
     rolling_gens = unique_gens[window_size-1:]
 else:
     mean_rolling = None
+    median_rolling = None
     min_rolling = None
     rolling_gens = None
 
@@ -84,6 +87,11 @@ ax.plot(unique_gens, mean_scores,
         color='blue', linewidth=1.5, alpha=0.5, label='Mean EMD per generation',
         marker='o', markersize=3)
 
+# Line plot of median EMD score per generation
+ax.plot(unique_gens, median_scores,
+        color='green', linewidth=1.5, alpha=0.5, label='Median EMD per generation',
+        marker='^', markersize=3)
+
 # Line plot of min EMD score per generation
 ax.plot(unique_gens, min_scores,
         color='red', linewidth=1.5, alpha=0.5, label='Min EMD per generation',
@@ -93,6 +101,10 @@ ax.plot(unique_gens, min_scores,
 if mean_rolling is not None:
     ax.plot(rolling_gens, mean_rolling,
             color='darkblue', linewidth=2.5, label='Mean EMD (10-gen rolling avg)',
+            linestyle='-')
+
+    ax.plot(rolling_gens, median_rolling,
+            color='darkgreen', linewidth=2.5, label='Median EMD (10-gen rolling avg)',
             linestyle='-')
 
     ax.plot(rolling_gens, min_rolling,
@@ -109,11 +121,13 @@ ax.grid(True, alpha=0.3, linestyle='--')
 # Add some statistics as text
 final_gen = unique_gens[-1]
 final_mean = mean_scores[-1]
+final_median = median_scores[-1]
 final_min = min_scores[-1]
 overall_min = np.min(emd_scores)
 
 stats_text = f'Final Generation: {final_gen}\n'
 stats_text += f'Final Mean: {final_mean:.3f}\n'
+stats_text += f'Final Median: {final_median:.3f}\n'
 stats_text += f'Final Min: {final_min:.3f}\n'
 stats_text += f'Overall Min: {overall_min:.3f}'
 
@@ -132,11 +146,14 @@ print(f"\nEMD Score Range:")
 print(f"  Min: {overall_min:.4f}")
 print(f"  Max: {np.max(emd_scores):.4f}")
 print(f"  Overall Mean: {np.mean(emd_scores):.4f}")
+print(f"  Overall Median: {np.median(emd_scores):.4f}")
 print(f"\nFinal Generation (Gen {final_gen}):")
 print(f"  Mean: {final_mean:.4f}")
+print(f"  Median: {final_median:.4f}")
 print(f"  Min: {final_min:.4f}")
 if mean_rolling is not None:
     print(f"  Mean (10-gen rolling avg): {mean_rolling[-1]:.4f}")
+    print(f"  Median (10-gen rolling avg): {median_rolling[-1]:.4f}")
     print(f"  Min (10-gen rolling avg): {min_rolling[-1]:.4f}")
 
 plt.show()

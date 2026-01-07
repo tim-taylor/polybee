@@ -121,22 +121,43 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
         fitnessValues.push_back(emd);
     }
 
-    double mean_emd = std::accumulate(fitnessValues.begin(), fitnessValues.end(), 0.0) / fitnessValues.size();
+    //double mean_emd = std::accumulate(fitnessValues.begin(), fitnessValues.end(), 0.0) / fitnessValues.size();
+    double median_emd = median(fitnessValues);
 
     int num_evals_per_gen = Params::numConfigsPerGen * Params::numTrialsPerConfig;
     int gen = (eval_counter-1) / num_evals_per_gen;
     int eval_in_gen = (eval_counter-1) % num_evals_per_gen;
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
-    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: entrances e1:{},{}:{} e2:{},{}:{} e3:{},{}:{} e4:{},{}:{}, meanEMD {:.4f}",
+    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: entrances e1:{},{}:{} e2:{},{}:{} e3:{},{}:{} e4:{},{}:{}, medianEMD {:.4f}",
         gen, eval_counter, config_num,
         Params::tunnelEntranceSpecs[0].e1, Params::tunnelEntranceSpecs[0].e2, Params::tunnelEntranceSpecs[0].side,
         Params::tunnelEntranceSpecs[1].e1, Params::tunnelEntranceSpecs[1].e2, Params::tunnelEntranceSpecs[1].side,
         Params::tunnelEntranceSpecs[2].e1, Params::tunnelEntranceSpecs[2].e2, Params::tunnelEntranceSpecs[2].side,
         Params::tunnelEntranceSpecs[3].e1, Params::tunnelEntranceSpecs[3].e2, Params::tunnelEntranceSpecs[3].side,
-        mean_emd));
+        median_emd));
 
-    return {mean_emd};
+    return {median_emd};
+}
+
+
+double PolyBeeHeatmapOptimization::median(const std::vector<double>& values) const
+{
+    if (values.empty()) {
+        return 0.0;
+    }
+
+    std::vector<double> sorted = values;
+    std::sort(sorted.begin(), sorted.end());
+
+    size_t n = sorted.size();
+    if (n % 2 == 0) {
+        // Even number of elements: return average of two middle values
+        return (sorted[n/2 - 1] + sorted[n/2]) / 2.0;
+    } else {
+        // Odd number of elements: return middle value
+        return sorted[n/2];
+    }
 }
 
 

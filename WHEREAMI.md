@@ -1,8 +1,6 @@
-## 10/12/25
+## 7/1/26
 
 TODO:
-
-* switch evolve code to use median EMD value rather than mean?
 
 * Get defendable real-world values for amount of nectar stored by flower, given to bee, used by bee, etc.
 * Also get defendable values of tunnel dimensions, patch dimensions, patch density, bee visual radius, bee step length, etc.
@@ -10,9 +8,15 @@ TODO:
 * Do Alan's suggested sanity check (see notepad notes from 9/12/25) of running 2 diff configs on the same env (a square env) to see how much difference there really is - i.e. how much of results is driven by crop following behaviour - try with (A)
 entrances all at bottom vs (B) entrances all at one side
 
+DONE:
+
+* switch evolve code to use median EMD value rather than mean
+
 * For consistency, do the following renaming:
 bee-num-steps-on-flower -> bee-on-flower-duration
 beeNumStepsOnFlower -> beeOnFlowerDuration
+
+## 10/12/25
 
 DONE:
 
