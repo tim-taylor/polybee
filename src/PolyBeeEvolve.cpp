@@ -7,16 +7,25 @@
 #include "PolyBeeEvolve.h"
 #include "PolyBeeCore.h"
 #include "Params.h"
+#include "utils.h"
 #include <numbers>
 #include <pagmo/types.hpp>
 #include <pagmo/problem.hpp>
 #include <pagmo/population.hpp>
+#include <pagmo/archipelago.hpp>
+#include <pagmo/topology.hpp>
+#include <pagmo/topologies/ring.hpp>
+#include <pagmo/r_policy.hpp>
+#include <pagmo/r_policies/fair_replace.hpp>
+#include <pagmo/s_policy.hpp>
+#include <pagmo/s_policies/select_best.hpp>
+#include <pagmo/island.hpp>
 #include <pagmo/algorithm.hpp>
+#include <pagmo/algorithms/sga.hpp>
 //#include <pagmo/algorithms/de1220.hpp> // not suitable for stochastic problems
 //#include <pagmo/algorithms/sade.hpp>   // not suitable for stochastic problems
 //#include <pagmo/algorithms/gaco.hpp>
 //#include <pagmo/algorithms/pso_gen.hpp>
-#include <pagmo/algorithms/sga.hpp>
 //#include <pagmo/algorithms/cmaes.hpp> // produces an error (tries to use side=5) at end of first generation
 //#include <pagmo/algorithms/xnes.hpp>  // produces an error (tries to use side=5) at end of first generation
 #include <fstream>
@@ -122,7 +131,7 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     }
 
     //double mean_emd = std::accumulate(fitnessValues.begin(), fitnessValues.end(), 0.0) / fitnessValues.size();
-    double median_emd = median(fitnessValues);
+    double median_emd = pb::median(fitnessValues);
 
     int num_evals_per_gen = Params::numConfigsPerGen * Params::numTrialsPerConfig;
     int gen = (eval_counter-1) / num_evals_per_gen;
@@ -138,26 +147,6 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
         median_emd));
 
     return {median_emd};
-}
-
-
-double PolyBeeHeatmapOptimization::median(const std::vector<double>& values) const
-{
-    if (values.empty()) {
-        return 0.0;
-    }
-
-    std::vector<double> sorted = values;
-    std::sort(sorted.begin(), sorted.end());
-
-    size_t n = sorted.size();
-    if (n % 2 == 0) {
-        // Even number of elements: return average of two middle values
-        return (sorted[n/2 - 1] + sorted[n/2]) / 2.0;
-    } else {
-        // Odd number of elements: return middle value
-        return sorted[n/2];
-    }
 }
 
 
@@ -183,6 +172,11 @@ PolyBeeEvolve::PolyBeeEvolve(PolyBeeCore& core) : m_polyBeeCore(core) {
 
 
 void PolyBeeEvolve::evolve() {
+    evolveArchipelago();
+}
+
+
+void PolyBeeEvolve::evolveSinglePop() {
     // 1 - Instantiate a pagmo problem constructing it from a UDP
     // (user defined problem).
     pagmo::problem prob{PolyBeeHeatmapOptimization{this}};
@@ -214,6 +208,95 @@ void PolyBeeEvolve::evolve() {
 
     // 5 - Output the population
     writeResultsFile(algo, pop, true);
+}
+
+
+void PolyBeeEvolve::evolveArchipelago() {
+    // 1 - Instantiate a pagmo problem constructing it from a UDP
+    // (user defined problem).
+    pagmo::problem prob{PolyBeeHeatmapOptimization{this}};
+
+    // 2. Create an archipelago with multiple islands
+    pagmo::archipelago arc;
+
+    // TEMP CODE
+    size_t numIslands = 4; // = Params::numIslands
+
+    for (size_t i = 0; i < numIslands; ++i) {
+        // 3a - Instantiate a pagmo algorithm
+        pagmo::algorithm algo {pagmo::sga(Params::numGenerations)};
+
+        // ensure that the Pagmo RNG seed is determined by our own RNG, so runs can be reproduced
+        // by just ensuring we use the same seed for our own RNG
+        unsigned int algo_seed = static_cast<unsigned int>(PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine));
+        algo.set_seed(algo_seed);
+
+        // 3b - Instantiate a population
+        // (again, taking care to seed the population RNG from our own RNG)
+        unsigned int pop_seed = static_cast<unsigned int>(PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine));
+
+        pagmo::population pop{prob, static_cast<unsigned int>(Params::numConfigsPerGen), pop_seed};
+
+        // 3c - Add the island to the archipelago
+        //
+        // Selection policy options are:
+        // * Best
+        //
+        // Replacement polict options are:
+        // * Fair
+        arc.push_back(pagmo::island{algo,
+            pop,
+            pagmo::fair_replace{1}, // one individual in a population can be replaced by a migrant
+            pagmo::select_best{1}   // one individual in a population can be selected for migration
+        });
+    }
+
+    // 4. Set up topology for migration (how islands are connected)
+    // Using a ring topology: each island connects to its neighbors
+    //
+    // Topology options are:
+    // * Unconnected
+    // * Fully connected
+    // * Base BGL (Boost Graph Libary) - requires further implementation
+    // * Ring
+    // * Free-form
+    arc.set_topology(pagmo::topology{pagmo::ring{}});
+
+    // TODO
+    // ALso look at setting:
+    // arc.set_migration_type() [p2p or broadcast]
+    // arc.set_migration_handling() [preserve or evict]
+
+    // Print connections for ring
+    if (!Params::bCommandLineQuiet) {
+        std::string msg = "Topology info:\n";
+        for (size_t i = 0; i < arc.size(); ++i) {
+            auto weights_and_destinations = arc.get_topology().get_connections(i);
+            msg += std::format("Island {} connects to:\n", i);
+            size_t num_connections = weights_and_destinations.first.size();
+            for (size_t j = 0; j < num_connections; ++j) {
+                msg += std::format(" Island {} (weight {}) ", weights_and_destinations.first[j], weights_and_destinations.second[j]);
+            }
+            msg += "\n";
+        }
+        pb::msg_info(msg);
+    }
+
+    // 5 - Evolve the population
+    //pop = algo.evolve(pop);
+    // TODO - default param value for arc.evolve is 1 - is this what we want? (look at Island::evolve() too)
+    // and we should probably have a loop here to loop through the generations? (see Claude example)
+    arc.evolve();
+
+    // 6 - Output the population
+    //writeResultsFile(algo, pop, true);
+    writeResultsFileArchipelago(arc);
+}
+
+
+void PolyBeeEvolve::writeResultsFileArchipelago(const pagmo::archipelago& arc) const
+{
+    // TODO
 }
 
 

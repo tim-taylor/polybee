@@ -10,6 +10,7 @@
 #include "PolyBeeCore.h"
 #include <pagmo/population.hpp>
 #include <pagmo/algorithm.hpp>
+#include <pagmo/archipelago.hpp>
 #include <vector>
 #include <ostream>
 
@@ -30,9 +31,6 @@ struct PolyBeeHeatmapOptimization {
 
     // Define the number of integer (as opposed to continuous) decision variables
     inline pagmo::vector_double::size_type get_nix() const;
-
-    // Helper method to calculate median of a vector of doubles
-    double median(const std::vector<double>& values) const;
 
     // Pointer back to the PolyBeeEvolve instance
     PolyBeeEvolve* m_pPolyBeeEvolve;
@@ -56,9 +54,12 @@ public:
     //const std::vector<std::vector<double>>& targetHeatmap() const { return m_targetHeatmap; }
 
 private:
+    void evolveSinglePop();
+    void evolveArchipelago();
     void loadTargetHeatmap(const std::string& filename);
     void writeResultsFile(const pagmo::algorithm& algo, const pagmo::population& pop, bool alsoToStdout) const;
     void writeResultsFileHelper(std::ostream& os, const pagmo::algorithm& algo, const pagmo::population& pop) const;
+    void writeResultsFileArchipelago(const pagmo::archipelago& arc) const;
 
     PolyBeeCore& m_polyBeeCore;
     //std::vector<std::vector<double>> m_targetHeatmap; // the target heatmap we are trying to evolve towards

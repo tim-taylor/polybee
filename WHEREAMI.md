@@ -1,12 +1,17 @@
-## 7/1/26
+## 8/1/26
 
 TODO:
 
+* Continue implementing island model
+  - Implement migration every n generaions (see Claude example code on web)
+  - Do a test run and compare results to previous ones
 * Get defendable real-world values for amount of nectar stored by flower, given to bee, used by bee, etc.
 * Also get defendable values of tunnel dimensions, patch dimensions, patch density, bee visual radius, bee step length, etc.
 
 * Do Alan's suggested sanity check (see notepad notes from 9/12/25) of running 2 diff configs on the same env (a square env) to see how much difference there really is - i.e. how much of results is driven by crop following behaviour - try with (A)
 entrances all at bottom vs (B) entrances all at one side
+
+## 7/1/26
 
 DONE:
 
