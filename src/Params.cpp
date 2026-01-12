@@ -63,6 +63,8 @@ std::string Params::strTargetHeatmapFilename;
 int Params::numConfigsPerGen;
 int Params::numTrialsPerConfig;
 int Params::numGenerations;
+int Params::numIslands;
+int Params::migrationPeriod;
 
 // Logging and output
 int Params::heatmapCellSize;
@@ -156,6 +158,8 @@ void Params::initRegistry()
     REGISTRY.emplace_back("num-trials-per-config", "numTrialsPerConfig", ParamType::INT, &numTrialsPerConfig, 1, "Number of trials to run for each configuration/individual in each generation");
     REGISTRY.emplace_back("num-configs-per-gen", "numConfigsPerGen", ParamType::INT, &numConfigsPerGen, 50, "Number of configurations/inidividuals to test during each generation");
     REGISTRY.emplace_back("num-generations", "numGenerations", ParamType::INT, &numGenerations, 50, "Number of generations to run the optimization process");
+    REGISTRY.emplace_back("num-islands", "numIslands", ParamType::INT, &numIslands, 1, "Number of islands of evolving populations (when num-islands=1, there is just a single population with no migration)");
+    REGISTRY.emplace_back("migration-period", "migrationPeriod", ParamType::INT, &migrationPeriod, 10, "Period (number of generations) between each migration event when using multiple islands");
     REGISTRY.emplace_back("target-heatmap-filename", "strTargetHeatmapFilename", ParamType::STRING, &strTargetHeatmapFilename, "", "CSV file containing target heatmap for optimization");
     REGISTRY.emplace_back("heatmap-cell-size", "heatmapCellSize", ParamType::INT, &heatmapCellSize, 10, "Size of each cell in the heatmap of bee positions");
     REGISTRY.emplace_back("visualise", "bVis", ParamType::BOOL, &bVis, true, "Determines whether graphical output is displayed");
@@ -552,6 +556,12 @@ void Params::checkConsistency()
         }
         if (numGenerations <= 0) {
             pb::msg_error_and_exit("Parameter 'num-generations' must be greater than zero if 'evolve' is true");
+        }
+        if (numIslands <= 0) {
+            pb::msg_error_and_exit("Parameter 'num-islands' must be greater than zero if 'evolve' is true");
+        }
+        if (migrationPeriod <= 0 && numIslands > 1) {
+            pb::msg_error_and_exit("Parameter 'migration-period' must be greater than zero if 'num-islands' is greater than 1");
         }
     }
 

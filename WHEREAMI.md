@@ -1,3 +1,21 @@
+## 12/1/26
+
+In process of implementing Island model. Have to think carefully about thread safety.
+Currently we initialise a single PolyBeeCore and PolyBeeEvolve object in main.cpp
+and PolyBeeHeatmapOptimization has a pointer to the sole PolyBeeEvolve object.
+
+Perhaps PolyBeeEvolve should make a new copy of PolyBeeCore for each Island?
+
+Also be careful of static members in classes. Okay if these are const, but not if they
+are counters [e.g. PolyBeeEvolve::eval_counter] (or RNG-related?). Check through
+what statics there are and how used.
+
+Re RNGs, see https://stackoverflow.com/questions/21237905/how-do-i-generate-thread-safe-uniform-random-numbers
+- so create one generator per thread (which is consistent with having one PolyBeeCore object per thread)
+- careful about the seed - don't want all cores using the same one!
+  - so, create each core with a seed derived from the master seed defined by the parameters
+
+
 ## 8/1/26
 
 TODO:

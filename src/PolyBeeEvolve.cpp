@@ -15,6 +15,7 @@
 #include <pagmo/archipelago.hpp>
 #include <pagmo/topology.hpp>
 #include <pagmo/topologies/ring.hpp>
+#include <pagmo/topologies/unconnected.hpp>
 #include <pagmo/r_policy.hpp>
 #include <pagmo/r_policies/fair_replace.hpp>
 #include <pagmo/s_policy.hpp>
@@ -33,6 +34,8 @@
 #include <stdexcept>
 #include <iostream>
 #include <format>
+#include <cassert>
+
 
 int PolyBeeHeatmapOptimization::eval_counter = 0; // initialise static member
 
@@ -211,7 +214,11 @@ void PolyBeeEvolve::evolveSinglePop() {
 }
 
 
-void PolyBeeEvolve::evolveArchipelago() {
+void PolyBeeEvolve::evolveArchipelago()
+{
+    assert(Params::numIslands > 0);
+    assert(Params::migrationPeriod > 0);
+
     // 1 - Instantiate a pagmo problem constructing it from a UDP
     // (user defined problem).
     pagmo::problem prob{PolyBeeHeatmapOptimization{this}};
@@ -219,10 +226,31 @@ void PolyBeeEvolve::evolveArchipelago() {
     // 2. Create an archipelago with multiple islands
     pagmo::archipelago arc;
 
-    // TEMP CODE
-    size_t numIslands = 4; // = Params::numIslands
 
-    for (size_t i = 0; i < numIslands; ++i) {
+    // 4. Set up topology for migration (how islands are connected)
+    // Using a ring topology: each island connects to its neighbors
+    //
+    // Topology options are:
+    // * Unconnected
+    // * Fully connected
+    // * Base BGL (Boost Graph Libary) - requires further implementation
+    // * Ring
+    // * Free-form
+    arc.set_topology(pagmo::topology{pagmo::ring{}});
+    //
+    // Migration type options are:
+    // * p2p
+    // * broadcast
+    arc.set_migration_type(pagmo::migration_type::p2p);
+    //
+    // Migration handing options are:
+    // * preserve (a single migrant can get copied to multiple other islands)
+    // * evict    (a single migrant can only get copied to one different island)
+    arc.set_migrant_handling(pagmo::migrant_handling::evict);
+
+
+
+    for (size_t i = 0; i < Params::numIslands; ++i) {
         // 3a - Instantiate a pagmo algorithm
         pagmo::algorithm algo {pagmo::sga(Params::numGenerations)};
 
@@ -251,25 +279,11 @@ void PolyBeeEvolve::evolveArchipelago() {
         });
     }
 
-    // 4. Set up topology for migration (how islands are connected)
-    // Using a ring topology: each island connects to its neighbors
-    //
-    // Topology options are:
-    // * Unconnected
-    // * Fully connected
-    // * Base BGL (Boost Graph Libary) - requires further implementation
-    // * Ring
-    // * Free-form
-    arc.set_topology(pagmo::topology{pagmo::ring{}});
-
-    // TODO
-    // ALso look at setting:
-    // arc.set_migration_type() [p2p or broadcast]
-    // arc.set_migration_handling() [preserve or evict]
-
     // Print connections for ring
     if (!Params::bCommandLineQuiet) {
         std::string msg = "Topology info:\n";
+        msg += std::format(" type = {}\n",arc.get_topology().get_name());
+        /*
         for (size_t i = 0; i < arc.size(); ++i) {
             auto weights_and_destinations = arc.get_topology().get_connections(i);
             msg += std::format("Island {} connects to:\n", i);
@@ -279,22 +293,83 @@ void PolyBeeEvolve::evolveArchipelago() {
             }
             msg += "\n";
         }
+        */
         pb::msg_info(msg);
     }
 
-    // 5 - Evolve the population
-    //pop = algo.evolve(pop);
-    // TODO - default param value for arc.evolve is 1 - is this what we want? (look at Island::evolve() too)
-    // and we should probably have a loop here to loop through the generations? (see Claude example)
-    arc.evolve();
+    // 5 - Evolve the archipelago
+    int numCycles = Params::numGenerations / Params::migrationPeriod;
+    int extraGens = Params::numGenerations - (numCycles * Params::migrationPeriod);
+
+    /*
+    for (int cycle = 0; cycle < numCycles; ++cycle) {
+        arc.evolve(Params::migrationPeriod);  // evolve each island for this number of generations, then perform one migration event
+        arc.wait_check();
+    }
+
+    // do some extra generations if numGenerations is not an exact divisor of migrationPeriod
+    if (extraGens > 0) {
+        // first set the topology to unconnected so that we don't do another migration event
+        // at the end of these final generations
+        arc.set_topology(pagmo::topology{pagmo::unconnected{}});
+        arc.evolve(extraGens);
+        arc.wait_check();
+    }
+    */
+
+    /////////////////////////////////////////////////////
+
+    int numGensBetweenMigrations = Params::migrationPeriod - 1;
+    int globalGen = 0;
+
+    for (int cycle = 0; cycle < numCycles; ++cycle) {
+        std::cout << "\nMigration cycle " << cycle + 1 << std::endl;
+
+        // Phase 1: Local evolution (no migration)
+        std::cout << "  Running " << numGensBetweenMigrations << " local generations..." << std::endl;
+        for (int gen = 0; gen < numGensBetweenMigrations; ++gen) {
+            for (size_t i = 0; i < arc.size(); ++i) {
+                std::cout << std::format("    Initiating generation {} on island {}...", gen, i) << std::endl;
+                arc[i].evolve();
+            }
+            for (size_t i = 0; i < arc.size(); ++i) {
+                arc[i].wait_check();
+            }
+            globalGen++;
+        }
+
+        // Phase 2: Migration event
+        std::cout << "  Performing a generation with migration..." << std::endl;
+        arc.evolve();
+        arc.wait_check();
+        globalGen++;
+
+        // Show best fitness
+        double best_f = std::numeric_limits<double>::max();
+        for (size_t i = 0; i < arc.size(); ++i) {
+            double island_best = arc[i].get_population().champion_f()[0];
+            if (island_best < best_f) best_f = island_best;
+        }
+        std::cout << "  Best fitness: " << best_f << std::endl;
+    }
+
+    std::cout << "\nFinal migration stats:" << std::endl;
+    auto log = arc.get_migration_log();
+    for (auto [ts, id, dv, fv, source, dest] : log) {
+        double median_fitness = pb::median(fv);
+        std::cout << std::format("  At time {:.2f} individual {} (median fitness {}) migrated from Island {} -> {}",
+            ts, id, median_fitness, source, dest) << std::endl;
+    }
+
+
+    /////////////////////////////////////////////////////
 
     // 6 - Output the population
-    //writeResultsFile(algo, pop, true);
-    writeResultsFileArchipelago(arc);
+    writeResultsFileArchipelago(arc, true);
 }
 
 
-void PolyBeeEvolve::writeResultsFileArchipelago(const pagmo::archipelago& arc) const
+void PolyBeeEvolve::writeResultsFileArchipelago(const pagmo::archipelago& arc, bool alsoToStdout) const
 {
     // TODO
 }

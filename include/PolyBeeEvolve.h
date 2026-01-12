@@ -59,7 +59,7 @@ private:
     void loadTargetHeatmap(const std::string& filename);
     void writeResultsFile(const pagmo::algorithm& algo, const pagmo::population& pop, bool alsoToStdout) const;
     void writeResultsFileHelper(std::ostream& os, const pagmo::algorithm& algo, const pagmo::population& pop) const;
-    void writeResultsFileArchipelago(const pagmo::archipelago& arc) const;
+    void writeResultsFileArchipelago(const pagmo::archipelago& arc, bool alsoToStdout) const;
 
     PolyBeeCore& m_polyBeeCore;
     //std::vector<std::vector<double>> m_targetHeatmap; // the target heatmap we are trying to evolve towards

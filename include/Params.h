@@ -148,6 +148,8 @@ public:
     static int numConfigsPerGen; // number of trials to run during each generation of optimization
     static int numTrialsPerConfig; // number of trials to run for each configuration/individual in each generation
     static int numGenerations; // number of generations to run the optimization process
+    static int numIslands; // number of islands of evolving populations (when num-islands=1, there is just a single population with no migration)
+    static int migrationPeriod; // period (number of generations) between each migration event when using multiple islands
 
     // Logging and output
     static int heatmapCellSize; // size of each cell in the heatmap of bee positions
