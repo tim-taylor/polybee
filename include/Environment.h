@@ -15,6 +15,9 @@
 #include "utils.h"
 #include <vector>
 #include <optional>
+#include <cassert>
+
+class PolyBeeCore;
 
 
 // struct to hold information about a plant near a bee
@@ -35,7 +38,7 @@ public:
     Environment();
     ~Environment() {}
 
-    void initialise();
+    void initialise(PolyBeeCore* pCore);
     void update();
     void reset(); // reset environment to initial state
 
@@ -48,6 +51,8 @@ public:
     const std::vector<Plant>& getAllPlants() const { return m_allPlants; }
     std::vector<Plant*> getNearbyPlants(float x, float y) const;
     std::optional<Plant*> selectNearbyUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const; // get nearest plant to a given position within maxDistance
+
+    PolyBeeCore* getPolyBeeCore() { assert(m_pPolyBeeCore != nullptr); return m_pPolyBeeCore; }
 
 private:
     void initialiseTunnel();
@@ -73,6 +78,8 @@ private:
     size_t m_plantGridH {1};
     Heatmap m_heatmap;
     std::vector<std::vector<double>> m_rawTargetHeatmapNormalised; // target heatmap for use in PolyBeeEvolve, and for calculating EMD in one-off runs
+
+    PolyBeeCore* m_pPolyBeeCore { nullptr };
 };
 
 #endif /* _ENVIRONMENT_H */

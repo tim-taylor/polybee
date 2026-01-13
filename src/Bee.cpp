@@ -26,10 +26,12 @@ Bee::Bee(Hive* pHive, Environment* pEnv) :
 {
     assert(Params::initialised());
 
+    m_pPolyBeeCore = m_pEnv->getPolyBeeCore();
+
     m_x = m_pHive->x();
     m_y = m_pHive->y();
     m_distDir.param(std::uniform_real_distribution<float>::param_type(-Params::beeMaxDirDelta, Params::beeMaxDirDelta));
-    m_colorHue = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine) * 360.0f;
+    m_colorHue = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine) * 360.0f;
     m_inTunnel = m_pEnv->inTunnel(m_x, m_y);
     m_currentBoutDuration = 0;
     m_currentHiveDuration = 0;
@@ -47,7 +49,7 @@ void Bee::setDirAccordingToHive()
     case 1: m_angle = 0.0f; break; // East
     case 2: m_angle = std::numbers::pi_v<float> / 2.0f; break; // South
     case 3: m_angle = std::numbers::pi_v<float>; break; // West
-    case 4: m_angle = PolyBeeCore::m_sAngle2PiDistrib(PolyBeeCore::m_sRngEngine);; break; // Random
+    case 4: m_angle = m_pPolyBeeCore->m_angle2PiDistrib(m_pPolyBeeCore->m_rngEngine); break; // Random
     default:
         pb::msg_error_and_exit(std::format("Invalid hive direction {} specified for hive at ({},{}). Must be 0=North, 1=East, 2=South, 3=West, or 4=Random.",
             m_pHive->direction(), m_pHive->x(), m_pHive->y()));
@@ -89,7 +91,7 @@ void Bee::forage()
     // or step in random direction if no nearby flowers found
     auto desiredMoveOpt = forageNearestFlower();
     if (desiredMoveOpt.has_value()) {
-        float rnd = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine);
+        float rnd = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine);
         if (rnd < Params::beeProbVisitNearestFlower) {
             // move towards nearest unvisited flower
             desiredMove = desiredMoveOpt.value();
@@ -348,7 +350,7 @@ pb::PosAndDir2D Bee::moveInRandomDirection()
 {
     pb::PosAndDir2D result;
 
-    result.angle = m_angle + m_distDir(PolyBeeCore::m_sRngEngine);
+    result.angle = m_angle + m_distDir(m_pPolyBeeCore->m_rngEngine);
     result.x = m_x + Params::beeStepLength * std::cos(result.angle);
     result.y = m_y + Params::beeStepLength * std::sin(result.angle);
 
@@ -511,8 +513,8 @@ bool Bee::headToNextWaypoint()
 
     if (!reachedWaypoint) {
         std::normal_distribution<float> distJitter(0.0f, 0.1f * stepLength);
-        moveVector.x += distJitter(PolyBeeCore::m_sRngEngine);
-        moveVector.y += distJitter(PolyBeeCore::m_sRngEngine);
+        moveVector.x += distJitter(m_pPolyBeeCore->m_rngEngine);
+        moveVector.y += distJitter(m_pPolyBeeCore->m_rngEngine);
     }
 
     m_x += moveVector.x;

@@ -13,10 +13,12 @@
 #include <random>
 #include <memory>
 #include <vector>
+#include <string>
+#include "Environment.h"
 #include "Params.h"
 #include "LocalVis.h"
 #include "Bee.h"
-#include "Environment.h"
+#include "Tunnel.h"
 #include "Heatmap.h"
 
 using State = unsigned char;
@@ -30,6 +32,8 @@ public:
     //////////////////////////////////////////////////////////////
     // constructors and destructors
     PolyBeeCore(int argc, char* argv[]);
+    PolyBeeCore(const PolyBeeCore& other) = delete; // disable copy constructor
+    PolyBeeCore(const PolyBeeCore& other, const std::string& rngSeedStr);
     ~PolyBeeCore() {}
 
     //////////////////////////////////////////////////////////////
@@ -50,17 +54,26 @@ public:
 
     const std::string& getTimestampStr() const { return m_timestampStr; }
 
+    std::size_t getIslandNum() const { return m_islandNum; }
+    bool isMasterCore() const { return m_islandNum == 0; }
+    std::size_t evaluationCount() const { return m_evaluationCount; }
+    void incrementEvaluationCount() { ++m_evaluationCount; }
+
+    //////////////////////////////////////////////////////////////
+    // public members
+    std::mt19937 m_rngEngine;
+    std::uniform_real_distribution<float> m_uniformProbDistrib; ///< Uniform distrib 0.0--1.0
+    std::uniform_real_distribution<float> m_angle2PiDistrib;    ///< Uniform distrib 0.0--2π
+    std::uniform_int_distribution<int> m_uniformIntDistrib;     ///< Uniform distrib of unsigned ints
+
     //////////////////////////////////////////////////////////////
     // public static methods
 
-    static void seedRng(); ///< Seed the model's RNG from the seed specified in ModelParams
+    void seedRng(const std::string* pRngSeedStr = nullptr);      ///< Seed the model's RNG from the seed specified in ModelParams
 
     //////////////////////////////////////////////////////////////
     // public static members
-    static std::mt19937 m_sRngEngine;
-    static std::uniform_real_distribution<float> m_sUniformProbDistrib; ///< Uniform distrib 0.0--1.0
-    static std::uniform_real_distribution<float> m_sAngle2PiDistrib;   ///< Uniform distrib 0.0--2π
-    static std::uniform_int_distribution<int> m_sUniformIntDistrib; ///< Uniform distrib of unsigned ints
+
 
 private:
     //////////////////////////////////////////////////////////////
@@ -74,6 +87,8 @@ private:
     // private members
     Environment m_env;
 
+    bool m_bRngInitialised;
+
     std::string m_timestampStr {}; // timestamp string for this run, used in output filenames
 
     int m_iIteration {-1};
@@ -82,9 +97,15 @@ private:
     bool m_bEarlyExitRequested {false};
     bool m_bPaused {false};
 
+    std::size_t m_islandNum {0};        // island number for this PolyBeeCore instance (used in pagmo archipelago runs)
+
+    std::size_t m_evaluationCount {0};  // count of number of fitness evaluations performed for this PolyBeeCore instance
+                                        // (only used when running PolyBeeEvolve)
+
     //////////////////////////////////////////////////////////////
     // private static members
-    static bool m_sbRngInitialised;
+
+    static std::size_t m_sNextIslandNum; // static counter to assign island numbers when copying PolyBeeCore instances
 
     //////////////////////////////////////////////////////////////
     // friends

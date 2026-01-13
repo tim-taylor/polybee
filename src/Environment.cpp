@@ -20,7 +20,9 @@ Environment::Environment() {
 }
 
 
-void Environment::initialise() {
+void Environment::initialise(PolyBeeCore* pCore)
+{
+    m_pPolyBeeCore = pCore;
     m_width = Params::envW;
     m_height = Params::envH;
     initialiseTunnel();
@@ -75,8 +77,8 @@ void Environment::initialisePlants()
                 float y = this_patch_topleft_plant_y;
                 for (int b = 0; b < spec.numY; ++b) {
                     // add jitter to the individual plant position
-                    float plantX = x + distJitter(PolyBeeCore::m_sRngEngine);
-                    float plantY = y + distJitter(PolyBeeCore::m_sRngEngine);
+                    float plantX = x + distJitter(m_pPolyBeeCore->m_rngEngine);
+                    float plantY = y + distJitter(m_pPolyBeeCore->m_rngEngine);
 
                     // create a plant at x,y and add to m_allPlants
                     m_allPlants.emplace_back(plantX, plantY, spec.speciesID);
@@ -354,7 +356,7 @@ Plant* Environment::pickRandomPlantWeightedByDistance(const std::vector<NearbyPl
     }
 
     // Generate a random value between 0 and totalWeight
-    float randValue = PolyBeeCore::m_sUniformProbDistrib(PolyBeeCore::m_sRngEngine) * totalWeight;
+    float randValue = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine) * totalWeight;
 
     // Select a plant based on the random value
     float cumulativeWeight = 0.0f;

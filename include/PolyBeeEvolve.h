@@ -12,6 +12,7 @@
 #include <pagmo/algorithm.hpp>
 #include <pagmo/archipelago.hpp>
 #include <vector>
+#include <memory>
 #include <ostream>
 
 class PolyBeeEvolve;
@@ -19,9 +20,9 @@ class PolyBeeEvolve;
 // User Defined Problem struct for pagmo (must be copyable)
 struct PolyBeeHeatmapOptimization {
 
-    PolyBeeHeatmapOptimization() : m_pPolyBeeEvolve{nullptr} {}
-    PolyBeeHeatmapOptimization(PolyBeeEvolve* ptr) : m_pPolyBeeEvolve(ptr) {}
-    PolyBeeHeatmapOptimization(const PolyBeeHeatmapOptimization& other) : m_pPolyBeeEvolve(other.m_pPolyBeeEvolve) {}
+    PolyBeeHeatmapOptimization(std::size_t islandNum = 0) : m_pPolyBeeEvolve{nullptr}, m_islandNum(islandNum) {}
+    PolyBeeHeatmapOptimization(PolyBeeEvolve* ptr, std::size_t islandNum = 0) : m_pPolyBeeEvolve(ptr), m_islandNum(islandNum) {}
+    PolyBeeHeatmapOptimization(const PolyBeeHeatmapOptimization& other) : m_pPolyBeeEvolve(other.m_pPolyBeeEvolve), m_islandNum(other.m_islandNum) {}
 
     // Implementation of the objective function.
     pagmo::vector_double fitness(const pagmo::vector_double &dv) const;
@@ -32,10 +33,11 @@ struct PolyBeeHeatmapOptimization {
     // Define the number of integer (as opposed to continuous) decision variables
     inline pagmo::vector_double::size_type get_nix() const;
 
-    // Pointer back to the PolyBeeEvolve instance
+    // Pointer back to the PolyBeeEvolve object
     PolyBeeEvolve* m_pPolyBeeEvolve;
 
-    static int eval_counter; // static counter of number of evaluations performed
+    // Island number for this problem instance
+    std::size_t m_islandNum;
 };
 
 
@@ -50,8 +52,7 @@ public:
 
     void evolve(); // run optimization
 
-    PolyBeeCore& polyBeeCore() { return m_polyBeeCore; }
-    //const std::vector<std::vector<double>>& targetHeatmap() const { return m_targetHeatmap; }
+    PolyBeeCore& polyBeeCore(std::size_t islandNum = 0);
 
 private:
     void evolveSinglePop();
@@ -61,8 +62,8 @@ private:
     void writeResultsFileHelper(std::ostream& os, const pagmo::algorithm& algo, const pagmo::population& pop) const;
     void writeResultsFileArchipelago(const pagmo::archipelago& arc, bool alsoToStdout) const;
 
-    PolyBeeCore& m_polyBeeCore;
-    //std::vector<std::vector<double>> m_targetHeatmap; // the target heatmap we are trying to evolve towards
+    PolyBeeCore& m_masterPolyBeeCore;
+    std::vector<std::unique_ptr<PolyBeeCore>> m_islandPolyBeeCores; // one per island
 };
 
 #endif /* _POLYBEEEVOLVE_H */

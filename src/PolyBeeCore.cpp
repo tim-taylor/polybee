@@ -19,20 +19,17 @@
 #include <chrono>
 #include <fstream>
 
-
 // Initialise static members
-bool PolyBeeCore::m_sbRngInitialised = false;
-// - create our static random number generator engine
-std::mt19937 PolyBeeCore::m_sRngEngine;
-// - and define commonly used distributions
-std::uniform_real_distribution<float> PolyBeeCore::m_sUniformProbDistrib(0.0, 1.0);
-std::uniform_real_distribution<float> PolyBeeCore::m_sAngle2PiDistrib(0.0f, 2.0f * std::numbers::pi_v<float>);
-std::uniform_int_distribution<int> PolyBeeCore::m_sUniformIntDistrib(0, std::numeric_limits<int>::max());
+std::size_t PolyBeeCore::m_sNextIslandNum = 0;
 
 
-
+// Constructor
 PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
-    m_pLocalVis{nullptr}
+    m_pLocalVis {nullptr},
+    m_islandNum {m_sNextIslandNum++},
+    m_uniformProbDistrib(0.0, 1.0),
+    m_angle2PiDistrib(0.0f, 2.0f * std::numbers::pi_v<float>),
+    m_uniformIntDistrib(0, std::numeric_limits<int>::max())
 {
     Params::initialise(argc, argv);
 
@@ -52,11 +49,30 @@ PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
     generateTimestampString();
 
     // initialise environment
-    m_env.initialise();
+    m_env.initialise(this);
 
     if (Params::bVis) {
         m_pLocalVis = std::unique_ptr<LocalVis>(new LocalVis(this));
     }
+}
+
+
+// Copy constructor to create a new PolyBeeCore instance as a copy of an existing one
+//
+PolyBeeCore::PolyBeeCore(const PolyBeeCore& other, const std::string& rngSeedStr) :
+    m_pLocalVis {nullptr},
+    m_islandNum {m_sNextIslandNum++}
+{
+    assert(Params::initialised); // Params must have been initialised before copying PolyBeeCore
+
+    seedRng(&rngSeedStr);
+
+    m_timestampStr = std::format("{}-island-{}", other.m_timestampStr, m_islandNum);
+
+    // initialise environment
+    m_env.initialise(this);
+
+    // Note: LocalVis is not initialised when running in island mode
 }
 
 
@@ -71,7 +87,7 @@ void PolyBeeCore::generateTimestampString()
     m_timestampStr = std::format("{:%Y%m%d-%H%M%S-}", truncated);
     std::uniform_int_distribution<int> distrib(0, 15);
     for (int i = 0; i < 6; ++i) {
-        m_timestampStr += std::format("{:x}", distrib(PolyBeeCore::m_sRngEngine));
+        m_timestampStr += std::format("{:x}", distrib(m_rngEngine));
     }
 }
 
@@ -90,8 +106,9 @@ void PolyBeeCore::run(bool logIfRequested)
         }
     }
 
-    // log output files if the user has requested it AND the caller of the method has requested it
-    if (logIfRequested && Params::logging) {
+    // log output files if the user has requested it AND the caller of the method has requested it,
+    // AND this is the master island (islandNum == 0) [don't repeat output files for every island]
+    if (logIfRequested && Params::logging && m_islandNum == 0) {
         writeOutputFiles();
     }
 
@@ -228,6 +245,7 @@ void PolyBeeCore::printRunInfo(std::ostream& os, const std::string& filename) co
 /**
  * Static method to seed the RNG generator from the seed in Params, or
  * with a random seed if no seed is defined in Params.
+ * Alternatively, a seed string can be provided directly to this method.
  *
  * If it is desired to use the seed in Params, the Params::initialise()
  * method should be called before this method is called.
@@ -235,12 +253,19 @@ void PolyBeeCore::printRunInfo(std::ostream& os, const std::string& filename) co
  * If no seed was defined in Params, the randomly generated seed created
  * in this method is then stored in the Params class for later inspection.
  */
-void PolyBeeCore::seedRng()
+void PolyBeeCore::seedRng(const std::string* pRngSeedStr)
 {
     assert(Params::initialised());
-    assert(!m_sbRngInitialised);
+    assert(!m_bRngInitialised);
 
-    if (Params::strRngSeed.empty()) {
+    if (pRngSeedStr != nullptr) {
+        // seed string has been provided directly to this method
+        std::seed_seq seed(pRngSeedStr->begin(), pRngSeedStr->end());
+        m_rngEngine.seed(seed);
+        // we don't store the seed string back in Params in this case, as we assume
+        // the caller has derived the given seed string from the seed specified in Params
+    }
+    else if (Params::strRngSeed.empty()) {
         // if no seed string has been supplied, we generate a seed here
         // We keep it consistent with the format of user-supplied seeds by creating
         // a random string of alphanumeric characters (of length 20).
@@ -253,7 +278,7 @@ void PolyBeeCore::seedRng()
 
         // having generated a seed string, now use it to seed the RNG!
         std::seed_seq seed1(newSeedStr.begin(), newSeedStr.end());
-        m_sRngEngine.seed(seed1);
+        m_rngEngine.seed(seed1);
 
         // and store the generated seed string back in ModelParams
         Params::strRngSeed = newSeedStr;
@@ -261,10 +286,10 @@ void PolyBeeCore::seedRng()
     else
     {
         std::seed_seq seed2(Params::strRngSeed.begin(), Params::strRngSeed.end());
-        m_sRngEngine.seed(seed2);
+        m_rngEngine.seed(seed2);
     }
 
-    m_sbRngInitialised = true;
+    m_bRngInitialised = true;
 }
 
 

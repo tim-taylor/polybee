@@ -14,6 +14,7 @@
 #include <deque>
 #include <optional>
 
+class PolyBeeCore;
 class Environment;
 class Hive;
 class TunnelEntranceInfo;
@@ -91,13 +92,14 @@ private:
     BeeState m_state { BeeState::FORAGING };
 
     std::vector<Plant*> m_recentlyVisitedPlants; // the last N plants visited by the bee
-    std::vector<pb::Pos2D> m_path; // record of the path taken by the bee
+    std::vector<pb::Pos2D> m_path;               // record of the path taken by the bee
 
-    Hive* m_pHive;       // pointer to the hive the bee belongs to
-    Environment* m_pEnv;
+    Hive* m_pHive { nullptr };                  // pointer to the hive the bee belongs to
+    Environment* m_pEnv { nullptr };            // pointer to the environment the bee is in
+    PolyBeeCore* m_pPolyBeeCore { nullptr };    // pointer to the PolyBeeCore instance
     std::uniform_real_distribution<float> m_distDir;
 
-    static const float m_sTunnelWallBuffer; // minimum distance to keep from tunnel walls
+    static const float m_sTunnelWallBuffer;     // minimum distance to keep from tunnel walls
 };
 
 #endif /* _BEE_H */

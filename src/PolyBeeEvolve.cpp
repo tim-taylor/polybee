@@ -37,62 +37,11 @@
 #include <cassert>
 
 
-int PolyBeeHeatmapOptimization::eval_counter = 0; // initialise static member
-
-
-/*
-pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_double &dv) const
-{
-    std::vector<double> fitnessValues;
-    PolyBeeCore& core = m_pPolyBeeEvolve->polyBeeCore();
-
-    //assert(dv.size() == 2); // we expect 1 decision variables
-    //Params::beeMaxDirDelta = static_cast<float>(dv[0]);
-    //Params::numBees = static_cast<int>(dv[1]);
-    assert(dv.size() == 1); // we expect 1 decision variables
-    Params::beeStepLength = static_cast<float>(dv[0]);
-
-    //if (Params::numBees < 1) { // ensure at least one bee after rounding
-    //    Params::numBees = 1;
-    //}
-
-    for (int i = 0; i < Params::numTrialsPerConfig; ++i) {
-        ++eval_counter;
-        core.resetForNewRun();
-        core.run(false); // false = do not log output files during the run
-        const Heatmap& runHeatmap = core.getHeatmap();
-        double emd = runHeatmap.emd(m_pPolyBeeEvolve->targetHeatmap());
-        fitnessValues.push_back(emd);
-    }
-
-    double mean_emd = std::accumulate(fitnessValues.begin(), fitnessValues.end(), 0.0) / fitnessValues.size();
-
-    int num_evals_per_gen = Params::numConfigsPerGen * Params::numTrialsPerConfig;
-    int gen = (eval_counter-1) / num_evals_per_gen;
-    int eval_in_gen = (eval_counter-1) % num_evals_per_gen;
-    int config_num = eval_in_gen / Params::numTrialsPerConfig;
-
-    //pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: dirdelta {:.4f}, numBees {}, meanEMD {:.4f}",
-    //    gen, eval_counter, config_num, Params::beeMaxDirDelta, Params::numBees, mean_emd));
-    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: beeStepLength {:.4f}, meanEMD {:.4f}",
-        gen, eval_counter, config_num, Params::beeStepLength, mean_emd));
-
-    return {mean_emd};
-}
-
-std::pair<pagmo::vector_double, pagmo::vector_double> PolyBeeHeatmapOptimization::get_bounds() const
-{
-    //return {{0., 1.}, {std::numbers::pi_v<double>, 20.}}; // beeMaxDirDelta range, numBees range
-    return {{0.0}, {30.0}}; // beeStepLength range
-}
-*/
-
-
 // Implementation of the objective function.
 pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_double &dv) const
 {
     std::vector<double> fitnessValues;
-    PolyBeeCore& core = m_pPolyBeeEvolve->polyBeeCore();
+    PolyBeeCore& core = m_pPolyBeeEvolve->polyBeeCore(m_islandNum);
     const Environment& env = core.getEnvironment();
 
     float entranceWidth = 100.0f; // fixed entrance width of 100 units
@@ -118,31 +67,30 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     core.getTunnel().initialiseEntrances();
 
     // Write config file for this configuration once at the start of the run
-    if (eval_counter == 0) {
+    if (core.isMasterCore()  && core.evaluationCount() == 0) {
         core.writeConfigFile();
         std::cout << "~~~~~~~~~~" << std::endl;
     }
 
     for (int i = 0; i < Params::numTrialsPerConfig; ++i) {
-        ++eval_counter;
+        core.incrementEvaluationCount();
         core.resetForNewRun();
         core.run(false); // false = do not log output files during the run
         const Heatmap& runHeatmap = core.getHeatmap();
-        //double emd = runHeatmap.emd(m_pPolyBeeEvolve->targetHeatmap());
         double emd = runHeatmap.emd(env.getRawTargetHeatmapNormalised());
         fitnessValues.push_back(emd);
     }
 
     //double mean_emd = std::accumulate(fitnessValues.begin(), fitnessValues.end(), 0.0) / fitnessValues.size();
-    double median_emd = pb::median(fitnessValues);
+    const double median_emd = pb::median(fitnessValues);
 
     int num_evals_per_gen = Params::numConfigsPerGen * Params::numTrialsPerConfig;
-    int gen = (eval_counter-1) / num_evals_per_gen;
-    int eval_in_gen = (eval_counter-1) % num_evals_per_gen;
+    int gen = (core.evaluationCount()-1) / num_evals_per_gen;
+    int eval_in_gen = (core.evaluationCount()-1) % num_evals_per_gen;
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
-    pb::msg_info(std::format("Gen {} eval_ctr {} config_num {}: entrances e1:{},{}:{} e2:{},{}:{} e3:{},{}:{} e4:{},{}:{}, medianEMD {:.4f}",
-        gen, eval_counter, config_num,
+    pb::msg_info(std::format("Island {} gen {} evals {} config_num {}: entrances e1:{},{}:{} e2:{},{}:{} e3:{},{}:{} e4:{},{}:{}, medianEMD {:.4f}",
+        core.getIslandNum(), gen, core.evaluationCount(), config_num,
         Params::tunnelEntranceSpecs[0].e1, Params::tunnelEntranceSpecs[0].e2, Params::tunnelEntranceSpecs[0].side,
         Params::tunnelEntranceSpecs[1].e1, Params::tunnelEntranceSpecs[1].e2, Params::tunnelEntranceSpecs[1].side,
         Params::tunnelEntranceSpecs[2].e1, Params::tunnelEntranceSpecs[2].e2, Params::tunnelEntranceSpecs[2].side,
@@ -166,7 +114,7 @@ pagmo::vector_double::size_type PolyBeeHeatmapOptimization::get_nix() const {
 }
 
 
-PolyBeeEvolve::PolyBeeEvolve(PolyBeeCore& core) : m_polyBeeCore(core) {
+PolyBeeEvolve::PolyBeeEvolve(PolyBeeCore& core) : m_masterPolyBeeCore(core) {
     /*
     // Read in the target heatmap and store it in m_targetHeatmap
     loadTargetHeatmap(Params::strTargetHeatmapFilename);
@@ -174,8 +122,25 @@ PolyBeeEvolve::PolyBeeEvolve(PolyBeeCore& core) : m_polyBeeCore(core) {
 };
 
 
-void PolyBeeEvolve::evolve() {
-    evolveArchipelago();
+void PolyBeeEvolve::evolve()
+{
+    if (Params::numIslands <= 1) {
+        evolveSinglePop();
+    } else {
+        evolveArchipelago();
+    }
+}
+
+
+PolyBeeCore& PolyBeeEvolve::polyBeeCore(std::size_t islandNum)
+{
+    if (islandNum == 0) {
+        return m_masterPolyBeeCore;
+    } else {
+        // NB Indices in this vector are offset by 1 compared to island number (island 0 is the master PolyBeeCore)!
+        assert(islandNum - 1 < m_islandPolyBeeCores.size());
+        return *m_islandPolyBeeCores[islandNum - 1];
+    }
 }
 
 
@@ -197,12 +162,12 @@ void PolyBeeEvolve::evolveSinglePop() {
 
     // ensure that the Pagmo RNG seed is determined by our own RNG, so runs can be reproduced
     // by just ensuring we use the same seed for our own RNG
-    unsigned int algo_seed = static_cast<unsigned int>(PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine));
+    unsigned int algo_seed = static_cast<unsigned int>(m_masterPolyBeeCore.m_uniformIntDistrib(m_masterPolyBeeCore.m_rngEngine));
     algo.set_seed(algo_seed);
 
     // 3 - Instantiate a population
     // (again, taking care to seed the population RNG from our own RNG)
-    unsigned int pop_seed = static_cast<unsigned int>(PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine));
+    unsigned int pop_seed = static_cast<unsigned int>(m_masterPolyBeeCore.m_uniformIntDistrib(m_masterPolyBeeCore.m_rngEngine));
 
     pagmo::population pop{prob, static_cast<unsigned int>(Params::numConfigsPerGen), pop_seed};
 
@@ -219,13 +184,8 @@ void PolyBeeEvolve::evolveArchipelago()
     assert(Params::numIslands > 0);
     assert(Params::migrationPeriod > 0);
 
-    // 1 - Instantiate a pagmo problem constructing it from a UDP
-    // (user defined problem).
-    pagmo::problem prob{PolyBeeHeatmapOptimization{this}};
-
     // 2. Create an archipelago with multiple islands
     pagmo::archipelago arc;
-
 
     // 4. Set up topology for migration (how islands are connected)
     // Using a ring topology: each island connects to its neighbors
@@ -249,19 +209,31 @@ void PolyBeeEvolve::evolveArchipelago()
     arc.set_migrant_handling(pagmo::migrant_handling::evict);
 
 
+    for (size_t i = 0; i < Params::numIslands; ++i)
+    {
+        if (i > 0){
+            // Create a copy of the master PolyBeeCore for this island
+            // First, create a unique seed string for this island, but derived from the master RNG seed string
+            std::string islandSeedStr = Params::strRngSeed + std::to_string(i);
+            // NB Indices in this vector are offset by 1 compared to island number (island 0 is the master PolyBeeCore)!
+            m_islandPolyBeeCores.push_back(std::make_unique<PolyBeeCore>(m_masterPolyBeeCore, islandSeedStr));
+        }
 
-    for (size_t i = 0; i < Params::numIslands; ++i) {
+        // 1 - Instantiate a pagmo problem constructing it from a UDP
+        // (user defined problem).
+        pagmo::problem prob{PolyBeeHeatmapOptimization{this, i}};
+
         // 3a - Instantiate a pagmo algorithm
         pagmo::algorithm algo {pagmo::sga(Params::numGenerations)};
 
         // ensure that the Pagmo RNG seed is determined by our own RNG, so runs can be reproduced
         // by just ensuring we use the same seed for our own RNG
-        unsigned int algo_seed = static_cast<unsigned int>(PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine));
+        unsigned int algo_seed = static_cast<unsigned int>(m_masterPolyBeeCore.m_uniformIntDistrib(m_masterPolyBeeCore.m_rngEngine));
         algo.set_seed(algo_seed);
 
         // 3b - Instantiate a population
         // (again, taking care to seed the population RNG from our own RNG)
-        unsigned int pop_seed = static_cast<unsigned int>(PolyBeeCore::m_sUniformIntDistrib(PolyBeeCore::m_sRngEngine));
+        unsigned int pop_seed = static_cast<unsigned int>(m_masterPolyBeeCore.m_uniformIntDistrib(m_masterPolyBeeCore.m_rngEngine));
 
         pagmo::population pop{prob, static_cast<unsigned int>(Params::numConfigsPerGen), pop_seed};
 
@@ -346,11 +318,15 @@ void PolyBeeEvolve::evolveArchipelago()
 
         // Show best fitness
         double best_f = std::numeric_limits<double>::max();
+        size_t best_i = 0;
         for (size_t i = 0; i < arc.size(); ++i) {
             double island_best = arc[i].get_population().champion_f()[0];
-            if (island_best < best_f) best_f = island_best;
+            if (island_best < best_f) {
+                best_f = island_best;
+                best_i = i;
+            }
         }
-        std::cout << "  Best fitness: " << best_f << std::endl;
+        std::cout << std::format("  Best fitness: {} (island {})", best_f, best_i) << std::endl;
     }
 
     std::cout << "\nFinal migration stats:" << std::endl;
@@ -381,7 +357,7 @@ void PolyBeeEvolve::writeResultsFile(const pagmo::algorithm& algo, const pagmo::
     std::string resultsFilename = std::format("{0}/{1}evo-results-{2}.cfg",
         Params::logDir,
         Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
-        m_polyBeeCore.getTimestampStr());
+        m_masterPolyBeeCore.getTimestampStr());
 
     std::ofstream resultsFile(resultsFilename);
 
@@ -421,78 +397,3 @@ void PolyBeeEvolve::writeResultsFileHelper(std::ostream& os, const pagmo::algori
     os << "\n";
     os << "Champion fitness: " << pop.champion_f()[0] << std::endl;
 }
-
-
-/*
-void PolyBeeEvolve::loadTargetHeatmap(const std::string& filename) {
-    // Check if file exists and can be opened
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        pb::msg_error_and_exit("Cannot open target heatmap file: " + filename);
-    }
-
-    // Get expected dimensions from the core heatmap
-    const Heatmap& coreHeatmap = m_polyBeeCore.getHeatmap();
-    int expectedWidth = coreHeatmap.size_x();
-    int expectedHeight = coreHeatmap.size_y();
-
-    // Read CSV data
-    std::vector<std::vector<double>> targetData;
-    std::string line;
-
-    while (std::getline(file, line)) {
-        if (line.empty()) continue; // Skip empty lines
-
-        std::vector<double> row;
-        std::stringstream ss(line);
-        std::string cell;
-
-        while (std::getline(ss, cell, ',')) {
-            try {
-                double value = std::stod(cell);
-                row.push_back(value);
-            } catch (const std::exception& e) {
-                pb::msg_error_and_exit("Invalid numeric value in target heatmap CSV file: " + cell);
-            }
-        }
-
-        if (!row.empty()) {
-            targetData.push_back(row);
-        }
-    }
-
-    file.close();
-
-    // Check dimensions match
-    if (targetData.empty()) {
-        pb::msg_error_and_exit("Target heatmap file is empty: " + filename);
-    }
-
-    int actualHeight = static_cast<int>(targetData.size());
-    int actualWidth = static_cast<int>(targetData[0].size());
-
-    if (actualHeight != expectedHeight || actualWidth != expectedWidth) {
-        pb::msg_error_and_exit(
-            std::format("Target heatmap dimensions ({}x{} do not match core heatmap dimensions ({}x{})",
-                actualWidth, actualHeight, expectedWidth, expectedHeight));
-    }
-
-    // Check all rows have the same width
-    for (size_t i = 0; i < targetData.size(); ++i) {
-        if (static_cast<int>(targetData[i].size()) != expectedWidth) {
-            pb::msg_error_and_exit(std::format("Inconsistent row width in CSV file at row {}", i + 1));
-        }
-    }
-
-    // Transpose the matrix before storing, because we access these matrices as [x][y] elsewhere
-    std::vector<std::vector<double>> transposed(expectedWidth, std::vector<double>(expectedHeight));
-    for (int i = 0; i < expectedHeight; ++i) {
-        for (int j = 0; j < expectedWidth; ++j) {
-            transposed[j][i] = targetData[i][j];
-        }
-    }
-
-    // Store the transposed data
-    m_targetHeatmap = std::move(transposed);
-}
-*/
