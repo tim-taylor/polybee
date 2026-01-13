@@ -44,6 +44,8 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     PolyBeeCore& core = m_pPolyBeeEvolve->polyBeeCore(m_islandNum);
     const Environment& env = core.getEnvironment();
 
+    bool firstCall = (core.isMasterCore() && core.evaluationCount() == 0);
+
     float entranceWidth = 100.0f; // fixed entrance width of 100 units
 
     assert(dv.size() == 8); // we expect 8 decision variables
@@ -65,9 +67,17 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
         Params::tunnelEntranceSpecs.emplace_back(e1, e2, side);
     }
     core.getTunnel().initialiseEntrances();
+    // TODO
+    // Carefull!!! We can't store these tunnel entrance specs in the global Params object
+    // when using multiple islands, as it's not thread safe.
+    // Instead, changed Tunnel::initialiseEntrances() to take an optional parameter of specs to use,
+    // if specified, it uses these specs, but if not specified, it uses the global Params object as before.
+    // And change the code above to create a local vector of specs to pass to pass to the method
+    // rather than modifying the global Params::tunnelEntranceSpecs.
+
 
     // Write config file for this configuration once at the start of the run
-    if (core.isMasterCore()  && core.evaluationCount() == 0) {
+    if (firstCall) {
         core.writeConfigFile();
         std::cout << "~~~~~~~~~~" << std::endl;
     }
@@ -224,7 +234,8 @@ void PolyBeeEvolve::evolveArchipelago()
         pagmo::problem prob{PolyBeeHeatmapOptimization{this, i}};
 
         // 3a - Instantiate a pagmo algorithm
-        pagmo::algorithm algo {pagmo::sga(Params::numGenerations)};
+        //pagmo::algorithm algo {pagmo::sga(Params::numGenerations)};
+        pagmo::algorithm algo {pagmo::sga(1)}; // we will be evolving one generation at a time in the main loop below
 
         // ensure that the Pagmo RNG seed is determined by our own RNG, so runs can be reproduced
         // by just ensuring we use the same seed for our own RNG
@@ -255,7 +266,7 @@ void PolyBeeEvolve::evolveArchipelago()
     if (!Params::bCommandLineQuiet) {
         std::string msg = "Topology info:\n";
         msg += std::format(" type = {}\n",arc.get_topology().get_name());
-        /*
+        //
         for (size_t i = 0; i < arc.size(); ++i) {
             auto weights_and_destinations = arc.get_topology().get_connections(i);
             msg += std::format("Island {} connects to:\n", i);
@@ -265,7 +276,7 @@ void PolyBeeEvolve::evolveArchipelago()
             }
             msg += "\n";
         }
-        */
+        //
         pb::msg_info(msg);
     }
 
@@ -295,7 +306,7 @@ void PolyBeeEvolve::evolveArchipelago()
     int globalGen = 0;
 
     for (int cycle = 0; cycle < numCycles; ++cycle) {
-        std::cout << "\nMigration cycle " << cycle + 1 << std::endl;
+        std::cout << "Achipelago evolution cycle " << cycle + 1 << std::endl;
 
         // Phase 1: Local evolution (no migration)
         std::cout << "  Running " << numGensBetweenMigrations << " local generations..." << std::endl;
