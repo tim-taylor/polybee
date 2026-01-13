@@ -1,3 +1,17 @@
+## 13/1/26
+
+TODO:
+
+The archipelago/island code is now implemented and compiling, but some problems
+are encountered when running the code (e.g. using the test script do-island-test).
+Need to look into this.
+
+DONE:
+
+* now have to change PolyBeeEvolve constructor and evolveArchipelago so that PBE creates
+  and stores a new PBC object for each island (using the new PBC copy constructor to create
+  all but the first one - Island 0 can use the original PBC)
+
 ## 12/1/26
 
 In process of implementing Island model. Have to think carefully about thread safety.
@@ -14,7 +28,6 @@ Re RNGs, see https://stackoverflow.com/questions/21237905/how-do-i-generate-thre
 - so create one generator per thread (which is consistent with having one PolyBeeCore object per thread)
 - careful about the seed - don't want all cores using the same one!
   - so, create each core with a seed derived from the master seed defined by the parameters
-
 
 ## 8/1/26
 
