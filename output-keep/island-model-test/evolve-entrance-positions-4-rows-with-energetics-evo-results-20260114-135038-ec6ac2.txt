@@ -1,0 +1,620 @@
+*** Island 0 ***
+Using algorithm: SGA: Genetic Algorithm
+The population: 
+Problem name: PolyBeeHeatmapOptimization
+	C++ class name: PolyBeeHeatmapOptimization
+
+	Global dimension:			8
+	Integer dimension:			4
+	Fitness dimension:			1
+	Number of objectives:			1
+	Equality constraints dimension:		0
+	Inequality constraints dimension:	0
+	Lower bounds: [0, 0, 0, 0, 0, ... ]
+	Upper bounds: [1, 1, 1, 1, 3, ... ]
+	Has batch fitness evaluation: false
+
+	Has gradient: false
+	User implemented gradient sparsity: false
+	Has hessians: false
+	User implemented hessians sparsity: false
+
+	Fitness evaluations: 1530
+
+	Thread safety: basic
+
+Population size: 30
+
+List of individuals: 
+#0:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#1:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#2:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#3:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#4:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#5:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#6:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#7:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#8:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#9:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#10:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#11:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#12:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#13:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#14:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#15:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#16:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#17:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#18:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#19:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#20:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#21:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#22:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#23:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#24:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#25:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#26:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#27:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#28:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#29:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+
+Champion decision vector: [0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+Champion fitness: [2.95154]
+
+Island 0 champion individual: 0.343411, 0.592843, 0.250588, 0.504331, 1, 0, 3, 3
+Island 0 champion fitness: 2.95154
+*** Island 1 ***
+Using algorithm: SGA: Genetic Algorithm
+The population: 
+Problem name: PolyBeeHeatmapOptimization
+	C++ class name: PolyBeeHeatmapOptimization
+
+	Global dimension:			8
+	Integer dimension:			4
+	Fitness dimension:			1
+	Number of objectives:			1
+	Equality constraints dimension:		0
+	Inequality constraints dimension:	0
+	Lower bounds: [0, 0, 0, 0, 0, ... ]
+	Upper bounds: [1, 1, 1, 1, 3, ... ]
+	Has batch fitness evaluation: false
+
+	Has gradient: false
+	User implemented gradient sparsity: false
+	Has hessians: false
+	User implemented hessians sparsity: false
+
+	Fitness evaluations: 1530
+
+	Thread safety: basic
+
+Population size: 30
+
+List of individuals: 
+#0:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#1:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#2:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#3:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#4:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#5:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#6:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#7:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#8:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#9:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#10:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#11:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#12:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#13:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#14:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#15:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#16:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#17:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#18:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#19:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#20:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#21:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#22:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#23:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#24:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#25:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#26:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#27:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#28:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#29:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+
+Champion decision vector: [0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+Champion fitness: [2.95154]
+
+Island 1 champion individual: 0.343411, 0.592843, 0.250588, 0.504331, 1, 0, 3, 3
+Island 1 champion fitness: 2.95154
+*** Island 2 ***
+Using algorithm: SGA: Genetic Algorithm
+The population: 
+Problem name: PolyBeeHeatmapOptimization
+	C++ class name: PolyBeeHeatmapOptimization
+
+	Global dimension:			8
+	Integer dimension:			4
+	Fitness dimension:			1
+	Number of objectives:			1
+	Equality constraints dimension:		0
+	Inequality constraints dimension:	0
+	Lower bounds: [0, 0, 0, 0, 0, ... ]
+	Upper bounds: [1, 1, 1, 1, 3, ... ]
+	Has batch fitness evaluation: false
+
+	Has gradient: false
+	User implemented gradient sparsity: false
+	Has hessians: false
+	User implemented hessians sparsity: false
+
+	Fitness evaluations: 1530
+
+	Thread safety: basic
+
+Population size: 30
+
+List of individuals: 
+#0:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#1:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#2:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#3:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#4:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#5:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#6:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#7:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#8:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#9:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#10:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#11:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#12:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#13:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#14:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#15:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#16:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#17:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#18:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#19:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#20:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#21:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#22:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#23:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#24:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#25:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#26:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#27:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#28:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#29:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+
+Champion decision vector: [0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+Champion fitness: [2.95154]
+
+Island 2 champion individual: 0.343411, 0.592843, 0.250588, 0.504331, 1, 0, 3, 3
+Island 2 champion fitness: 2.95154
+*** Island 3 ***
+Using algorithm: SGA: Genetic Algorithm
+The population: 
+Problem name: PolyBeeHeatmapOptimization
+	C++ class name: PolyBeeHeatmapOptimization
+
+	Global dimension:			8
+	Integer dimension:			4
+	Fitness dimension:			1
+	Number of objectives:			1
+	Equality constraints dimension:		0
+	Inequality constraints dimension:	0
+	Lower bounds: [0, 0, 0, 0, 0, ... ]
+	Upper bounds: [1, 1, 1, 1, 3, ... ]
+	Has batch fitness evaluation: false
+
+	Has gradient: false
+	User implemented gradient sparsity: false
+	Has hessians: false
+	User implemented hessians sparsity: false
+
+	Fitness evaluations: 1530
+
+	Thread safety: basic
+
+Population size: 30
+
+List of individuals: 
+#0:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#1:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#2:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#3:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#4:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#5:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#6:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#7:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#8:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#9:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#10:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#11:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#12:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#13:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#14:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#15:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#16:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#17:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#18:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#19:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#20:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#21:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95154]
+#22:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#23:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#24:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#25:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#26:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#27:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#28:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+#29:
+	ID:			11292128361023808469
+	Decision vector:	[0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+	Fitness vector:		[2.95178]
+
+Champion decision vector: [0.343411, 0.592843, 0.250588, 0.504331, 1, ... ]
+Champion fitness: [2.95154]
+
+Island 3 champion individual: 0.343411, 0.592843, 0.250588, 0.504331, 1, 0, 3, 3
+Island 3 champion fitness: 2.95154
+~~~~~~~~~~ Overall Results ~~~~~~~~~~
+Overall best champion individual: 0.343411, 0.592843, 0.250588, 0.504331, 1, 0, 3, 3
+
+Overall best champion fitness: 2.95154

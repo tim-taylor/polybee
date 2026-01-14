@@ -348,7 +348,7 @@ void PolyBeeEvolve::evolveArchipelago()
 void PolyBeeEvolve::writeResultsFileArchipelago(const pagmo::archipelago& arc, bool alsoToStdout) const
 {
     // write evolution results to file
-    std::string resultsFilename = std::format("{0}/{1}evo-results-{2}.cfg",
+    std::string resultsFilename = std::format("{0}/{1}evo-results-{2}.txt",
         Params::logDir,
         Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
         m_masterPolyBeeCore.getTimestampStr());
@@ -383,14 +383,13 @@ void PolyBeeEvolve::writeResultsFileArchipelagoHelper(std::ostream& os, const pa
     pagmo::vector_double best_champ;
 
     for (std::size_t i = 0; i < arc.size(); ++i) {
-        os << "*** Island " << i << " ***" << std::endl;
+        os << "\n*** Island " << i << " ***" << std::endl;
         auto algo = arc[i].get_algorithm();
         auto pop = arc[i].get_population();
 
         os << "Using algorithm: " << algo.get_name() << std::endl;
         os << "The population: \n" << pop;
-        os << "\n";
-        os << "Island " << i << " champion individual: ";
+        os << "\nIsland " << i << " champion individual: ";
         auto island_champ = pop.champion_x();
         auto island_champ_fitness = pop.champion_f()[0];
         if (island_champ_fitness < best_champ_fitness) {
@@ -405,21 +404,20 @@ void PolyBeeEvolve::writeResultsFileArchipelagoHelper(std::ostream& os, const pa
         os << "Island " << i << " champion fitness: " << island_champ_fitness << std::endl;
     }
 
-    os << "~~~~~~~~~~ Overall Results ~~~~~~~~~~" << std::endl;
+    os << "\n~~~~~~~~~~ Overall Results ~~~~~~~~~~" << std::endl;
     os << "Overall best champion individual: ";
     for (size_t i = 0; i < best_champ.size(); ++i) {
         if (i > 0) { os << ", "; }
         os << best_champ[i];
     }
-    os << "\n";
-    os << "\nOverall best champion fitness: " << best_champ_fitness << std::endl;
+    os << "Overall best champion fitness: " << best_champ_fitness << std::endl;
 }
 
 
 void PolyBeeEvolve::writeResultsFile(const pagmo::algorithm& algo, const pagmo::population& pop, bool alsoToStdout) const
 {
     // write evolution results to file
-    std::string resultsFilename = std::format("{0}/{1}evo-results-{2}.cfg",
+    std::string resultsFilename = std::format("{0}/{1}evo-results-{2}.txt",
         Params::logDir,
         Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
         m_masterPolyBeeCore.getTimestampStr());
