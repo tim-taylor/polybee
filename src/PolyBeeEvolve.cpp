@@ -51,8 +51,6 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     assert(dv.size() == 8); // we expect 8 decision variables
     assert(entranceWidth < Params::tunnelW && entranceWidth < Params::tunnelH);
 
-    Params::tunnelEntranceSpecs.clear();
-
     std::vector<float> tunnelLengths = {
         Params::tunnelW - entranceWidth, // North
         Params::tunnelH - entranceWidth, // East
@@ -60,21 +58,15 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
         Params::tunnelH - entranceWidth  // West
     };
 
+    std::vector<TunnelEntranceSpec> localSpecs;
+
     for (int i = 0; i < 4; ++i) {
         int side = static_cast<int>(dv[4+i]);
         float e1 = static_cast<float>(dv[i]) * tunnelLengths[side];
         float e2 = e1 + entranceWidth;
-        Params::tunnelEntranceSpecs.emplace_back(e1, e2, side);
+        localSpecs.emplace_back(e1, e2, side);
     }
-    core.getTunnel().initialiseEntrances();
-    // TODO
-    // Carefull!!! We can't store these tunnel entrance specs in the global Params object
-    // when using multiple islands, as it's not thread safe.
-    // Instead, changed Tunnel::initialiseEntrances() to take an optional parameter of specs to use,
-    // if specified, it uses these specs, but if not specified, it uses the global Params object as before.
-    // And change the code above to create a local vector of specs to pass to pass to the method
-    // rather than modifying the global Params::tunnelEntranceSpecs.
-
+    core.getTunnel().initialiseEntrances(localSpecs);
 
     // Write config file for this configuration once at the start of the run
     if (firstCall) {
@@ -101,10 +93,10 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
 
     pb::msg_info(std::format("Island {} gen {} evals {} config_num {}: entrances e1:{},{}:{} e2:{},{}:{} e3:{},{}:{} e4:{},{}:{}, medianEMD {:.4f}",
         core.getIslandNum(), gen, core.evaluationCount(), config_num,
-        Params::tunnelEntranceSpecs[0].e1, Params::tunnelEntranceSpecs[0].e2, Params::tunnelEntranceSpecs[0].side,
-        Params::tunnelEntranceSpecs[1].e1, Params::tunnelEntranceSpecs[1].e2, Params::tunnelEntranceSpecs[1].side,
-        Params::tunnelEntranceSpecs[2].e1, Params::tunnelEntranceSpecs[2].e2, Params::tunnelEntranceSpecs[2].side,
-        Params::tunnelEntranceSpecs[3].e1, Params::tunnelEntranceSpecs[3].e2, Params::tunnelEntranceSpecs[3].side,
+        localSpecs[0].e1, localSpecs[0].e2, localSpecs[0].side,
+        localSpecs[1].e1, localSpecs[1].e2, localSpecs[1].side,
+        localSpecs[2].e1, localSpecs[2].e2, localSpecs[2].side,
+        localSpecs[3].e1, localSpecs[3].e2, localSpecs[3].side,
         median_emd));
 
     return {median_emd};
@@ -124,12 +116,8 @@ pagmo::vector_double::size_type PolyBeeHeatmapOptimization::get_nix() const {
 }
 
 
-PolyBeeEvolve::PolyBeeEvolve(PolyBeeCore& core) : m_masterPolyBeeCore(core) {
-    /*
-    // Read in the target heatmap and store it in m_targetHeatmap
-    loadTargetHeatmap(Params::strTargetHeatmapFilename);
-    */
-};
+PolyBeeEvolve::PolyBeeEvolve(PolyBeeCore& core) : m_masterPolyBeeCore(core)
+{}
 
 
 void PolyBeeEvolve::evolve()
@@ -194,10 +182,10 @@ void PolyBeeEvolve::evolveArchipelago()
     assert(Params::numIslands > 0);
     assert(Params::migrationPeriod > 0);
 
-    // 2. Create an archipelago with multiple islands
+    // 1. Create an archipelago with multiple islands
     pagmo::archipelago arc;
 
-    // 4. Set up topology for migration (how islands are connected)
+    // 2. Set up topology for migration (how islands are connected)
     // Using a ring topology: each island connects to its neighbors
     //
     // Topology options are:
@@ -218,22 +206,22 @@ void PolyBeeEvolve::evolveArchipelago()
     // * evict    (a single migrant can only get copied to one different island)
     arc.set_migrant_handling(pagmo::migrant_handling::evict);
 
-
+    // 3. Create islands and add them to the archipelago
     for (size_t i = 0; i < Params::numIslands; ++i)
     {
-        if (i > 0){
+        if (i > 0) {
             // Create a copy of the master PolyBeeCore for this island
             // First, create a unique seed string for this island, but derived from the master RNG seed string
             std::string islandSeedStr = Params::strRngSeed + std::to_string(i);
-            // NB Indices in this vector are offset by 1 compared to island number (island 0 is the master PolyBeeCore)!
+            // NB Indices in this vector are offset by 1 compared to island number (island 0 is the master PolyBeeCore) -
+            // this is handled by the polyBeeCore() method
             m_islandPolyBeeCores.push_back(std::make_unique<PolyBeeCore>(m_masterPolyBeeCore, islandSeedStr));
         }
 
-        // 1 - Instantiate a pagmo problem constructing it from a UDP
-        // (user defined problem).
+        // 3a - Instantiate a pagmo problem constructing it from a UDP (user defined problem).
         pagmo::problem prob{PolyBeeHeatmapOptimization{this, i}};
 
-        // 3a - Instantiate a pagmo algorithm
+        // 3b - Instantiate a pagmo algorithm
         //pagmo::algorithm algo {pagmo::sga(Params::numGenerations)};
         pagmo::algorithm algo {pagmo::sga(1)}; // we will be evolving one generation at a time in the main loop below
 
@@ -242,13 +230,13 @@ void PolyBeeEvolve::evolveArchipelago()
         unsigned int algo_seed = static_cast<unsigned int>(m_masterPolyBeeCore.m_uniformIntDistrib(m_masterPolyBeeCore.m_rngEngine));
         algo.set_seed(algo_seed);
 
-        // 3b - Instantiate a population
+        // 3c - Instantiate a population
         // (again, taking care to seed the population RNG from our own RNG)
         unsigned int pop_seed = static_cast<unsigned int>(m_masterPolyBeeCore.m_uniformIntDistrib(m_masterPolyBeeCore.m_rngEngine));
 
         pagmo::population pop{prob, static_cast<unsigned int>(Params::numConfigsPerGen), pop_seed};
 
-        // 3c - Add the island to the archipelago
+        // 3d - Add the island to the archipelago
         //
         // Selection policy options are:
         // * Best
@@ -257,8 +245,8 @@ void PolyBeeEvolve::evolveArchipelago()
         // * Fair
         arc.push_back(pagmo::island{algo,
             pop,
-            pagmo::fair_replace{1}, // one individual in a population can be replaced by a migrant
-            pagmo::select_best{1}   // one individual in a population can be selected for migration
+            pagmo::fair_replace{Params::migrationNumReplace}, // one individual in a population can be replaced by a migrant
+            pagmo::select_best{Params::migrationNumSelect}   // one individual in a population can be selected for migration
         });
     }
 
@@ -280,85 +268,151 @@ void PolyBeeEvolve::evolveArchipelago()
         pb::msg_info(msg);
     }
 
-    // 5 - Evolve the archipelago
+    // 4 - Evolve the archipelago
     int numCycles = Params::numGenerations / Params::migrationPeriod;
     int extraGens = Params::numGenerations - (numCycles * Params::migrationPeriod);
-
-    /*
-    for (int cycle = 0; cycle < numCycles; ++cycle) {
-        arc.evolve(Params::migrationPeriod);  // evolve each island for this number of generations, then perform one migration event
-        arc.wait_check();
-    }
-
-    // do some extra generations if numGenerations is not an exact divisor of migrationPeriod
-    if (extraGens > 0) {
-        // first set the topology to unconnected so that we don't do another migration event
-        // at the end of these final generations
-        arc.set_topology(pagmo::topology{pagmo::unconnected{}});
-        arc.evolve(extraGens);
-        arc.wait_check();
-    }
-    */
-
-    /////////////////////////////////////////////////////
-
     int numGensBetweenMigrations = Params::migrationPeriod - 1;
-    int globalGen = 0;
 
-    for (int cycle = 0; cycle < numCycles; ++cycle) {
-        std::cout << "Achipelago evolution cycle " << cycle + 1 << std::endl;
+    if (extraGens > 0) {
+        numCycles += 1;
+    }
+
+    int globalGen = 0;
+    bool allDone = false;
+
+    for (int cycle = 0; cycle < numCycles && !allDone; ++cycle) {
+        pb::msg_info(std::format("Achipelago evolution cycle {}", cycle + 1));
 
         // Phase 1: Local evolution (no migration)
-        std::cout << "  Running " << numGensBetweenMigrations << " local generations..." << std::endl;
-        for (int gen = 0; gen < numGensBetweenMigrations; ++gen) {
+        pb::msg_info(std::format("  Running {} local generations...", numGensBetweenMigrations));
+        for (int localGen = 0; localGen < numGensBetweenMigrations; ++localGen) {
             for (size_t i = 0; i < arc.size(); ++i) {
-                std::cout << std::format("    Initiating generation {} on island {}...", gen, i) << std::endl;
+                pb::msg_info(std::format("    Initiating generation {} on island {}...", globalGen, i));
                 arc[i].evolve();
             }
             for (size_t i = 0; i < arc.size(); ++i) {
                 arc[i].wait_check();
             }
-            globalGen++;
+
+            if (++globalGen >= Params::numGenerations) {
+                allDone = true;
+                break;
+            }
         }
 
         // Phase 2: Migration event
-        std::cout << "  Performing a generation with migration..." << std::endl;
-        arc.evolve();
-        arc.wait_check();
-        globalGen++;
+        if (!allDone) {
+            pb::msg_info("  Performing a generation with migration...");
+            arc.evolve();
+            arc.wait_check();
+            globalGen++;
+
+            pb::msg_info("Migration stats:");
+            auto log = arc.get_migration_log();
+            std::size_t num_entries = log.size();
+            std::size_t num_migrations_to_show = std::min(static_cast<std::size_t>(Params::numIslands * Params::migrationNumReplace), num_entries);
+            for (std::size_t entry_idx = num_entries - num_migrations_to_show; entry_idx < num_entries; ++entry_idx) {
+                auto [ts, id, dv, fv, source, dest] = log[entry_idx];
+                double median_fitness = pb::median(fv);
+                pb::msg_info(std::format("  At time {:.2f} individual {} (median fitness {}) migrated from Island {} -> {}",
+                    ts, id, median_fitness, source, dest));
+            }
+        }
 
         // Show best fitness
         double best_f = std::numeric_limits<double>::max();
         size_t best_i = 0;
+        pagmo::vector_double champ;
         for (size_t i = 0; i < arc.size(); ++i) {
             double island_best = arc[i].get_population().champion_f()[0];
             if (island_best < best_f) {
                 best_f = island_best;
                 best_i = i;
+                champ = arc[i].get_population().champion_x();
             }
         }
-        std::cout << std::format("  Best fitness: {} (island {})", best_f, best_i) << std::endl;
+        pb::msg_info(std::format("  Best fitness: {} (island {})", best_f, best_i));
+        std::string best_indiv;
+        for (size_t i = 0; i < champ.size(); ++i) {
+            if (i > 0) { best_indiv += ", "; }
+            best_indiv += std::format("{}", champ[i]);
+        }
+        pb::msg_info(std::format("  Best individual: {}", best_indiv));
     }
 
-    std::cout << "\nFinal migration stats:" << std::endl;
-    auto log = arc.get_migration_log();
-    for (auto [ts, id, dv, fv, source, dest] : log) {
-        double median_fitness = pb::median(fv);
-        std::cout << std::format("  At time {:.2f} individual {} (median fitness {}) migrated from Island {} -> {}",
-            ts, id, median_fitness, source, dest) << std::endl;
-    }
-
-
-    /////////////////////////////////////////////////////
-
-    // 6 - Output the population
+    // 5 - Output the population
     writeResultsFileArchipelago(arc, true);
 }
 
 
 void PolyBeeEvolve::writeResultsFileArchipelago(const pagmo::archipelago& arc, bool alsoToStdout) const
 {
-    // TODO
+    // write evolution results to file
+    std::string resultsFilename = std::format("{0}/{1}evo-results-{2}.cfg",
+        Params::logDir,
+        Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
+        m_masterPolyBeeCore.getTimestampStr());
+
+    std::ofstream resultsFile(resultsFilename);
+
+    if (!resultsFile) {
+        if (!resultsFile) {
+            pb::msg_warning(
+                std::format("Unable to open evol-results output file {} for writing. Results will not be saved to file, printing to stdout instead.",
+                    resultsFilename));
+        }
+        std::cout << "~~~~~~~~~~ EVOLUTION RESULTS ~~~~~~~~~~" << std::endl;
+        writeResultsFileArchipelagoHelper(std::cout, arc);
+    }
+    else {
+        writeResultsFileArchipelagoHelper(resultsFile, arc);
+        resultsFile.close();
+        pb::msg_info(std::format("Evolution results written to file: {}", resultsFilename));
+        if (alsoToStdout) {
+            std::cout << "~~~~~~~~~~ EVOLUTION RESULTS ~~~~~~~~~~" << std::endl;
+            writeResultsFileArchipelagoHelper(std::cout, arc);
+        }
+    }
+}
+
+
+// Helper method to write results to a given output stream
+void PolyBeeEvolve::writeResultsFileArchipelagoHelper(std::ostream& os, const pagmo::archipelago& arc) const
+{
+    double best_champ_fitness = std::numeric_limits<double>::max();
+    pagmo::vector_double best_champ;
+
+    for (std::size_t i = 0; i < arc.size(); ++i) {
+        os << "*** Island " << i << " ***" << std::endl;
+        auto algo = arc[i].get_algorithm();
+        auto pop = arc[i].get_population();
+
+        os << "Using algorithm: " << algo.get_name() << std::endl;
+        os << "The population: \n" << pop;
+        os << "\n";
+        os << "Island " << i << " champion individual: ";
+        auto island_champ = pop.champion_x();
+        auto island_champ_fitness = pop.champion_f()[0];
+        if (island_champ_fitness < best_champ_fitness) {
+            best_champ_fitness = island_champ_fitness;
+            best_champ = island_champ;
+        }
+        for (size_t i = 0; i < island_champ.size(); ++i) {
+            if (i > 0) { os << ", "; }
+            os << island_champ[i];
+        }
+        os << "\n";
+        os << "Island " << i << " champion fitness: " << island_champ_fitness << std::endl;
+    }
+
+    os << "~~~~~~~~~~ Overall Results ~~~~~~~~~~" << std::endl;
+    os << "Overall best champion individual: ";
+    for (size_t i = 0; i < best_champ.size(); ++i) {
+        if (i > 0) { os << ", "; }
+        os << best_champ[i];
+    }
+    os << "\n";
+    os << "\nOverall best champion fitness: " << best_champ_fitness << std::endl;
 }
 
 

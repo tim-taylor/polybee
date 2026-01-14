@@ -150,6 +150,8 @@ public:
     static int numGenerations; // number of generations to run the optimization process
     static int numIslands; // number of islands of evolving populations (when num-islands=1, there is just a single population with no migration)
     static int migrationPeriod; // period (number of generations) between each migration event when using multiple islands
+    static int migrationNumReplace; // number of individuals on an Island that can be replaced by migrants at each migration event
+    static int migrationNumSelect; // number of individuals on an Island that can be selected for migration at each migration event
 
     // Logging and output
     static int heatmapCellSize; // size of each cell in the heatmap of bee positions

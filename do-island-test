@@ -1,2 +1,2 @@
 #!/bin/bash
-./run-debug -c config-files/evolve-entrance-positions-4-rows-with-energetics.cfg --num-bees 100 --num-trials-per-config 5 --num-configs-per-gen 10 --num-generations=16 --num-islands 4 --migration-period 4 | tee out-island-test.txt
+./run-debug -c config-files/evolve-entrance-positions-4-rows-with-energetics.cfg --num-bees 100 --num-trials-per-config 5 --num-configs-per-gen 10 --num-generations=16 --num-islands 4 --migration-period 4 --migration-num-select 3 | tee out-island-test.txt

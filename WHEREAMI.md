@@ -1,3 +1,17 @@
+## 14/1/26
+
+TODO:
+
+DONE:
+
+* Improve output of run. Show migrations at each migration step rather than
+  all at end. Also, be sure to output full details of champion vector
+  at end (and best from each island). Do this periodically throughout
+  run as well.
+
+* Fixed problems with Tunnel::initialiseEntrances in fitness method. This now
+  creates a local specs object rather than using Params, for thread safety.
+
 ## 13/1/26
 
 TODO:

@@ -90,13 +90,18 @@ void Tunnel::addEntrance(const TunnelEntranceSpec& spec) {
 }
 
 
-void Tunnel::initialiseEntrances() {
+void Tunnel::initialiseEntrances(const std::vector<TunnelEntranceSpec>& specs) {
     m_entrances.clear();
-    auto numEntrances = Params::tunnelEntranceSpecs.size();
+    auto numEntrances = specs.size();
     for (int i = 0; i < numEntrances; ++i) {
-        const TunnelEntranceSpec& spec = Params::tunnelEntranceSpecs[i];
+        const TunnelEntranceSpec& spec = specs[i];
         addEntrance(spec);
     }
+}
+
+
+void Tunnel::initialiseEntrances() {
+    initialiseEntrances(Params::tunnelEntranceSpecs);
 }
 
 

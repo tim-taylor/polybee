@@ -67,6 +67,7 @@ public:
 
     // initialise entrances only (for resetting between simulation runs)
     void initialiseEntrances();
+    void initialiseEntrances(const std::vector<TunnelEntranceSpec>& specs);
 
     /// @brief Check if the line from point (x1, y1) to point (x2, y2) intersects any tunnel entrance
     /// @param x1 x position of point 1 in environment coordinates

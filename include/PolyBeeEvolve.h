@@ -57,10 +57,10 @@ public:
 private:
     void evolveSinglePop();
     void evolveArchipelago();
-    void loadTargetHeatmap(const std::string& filename);
     void writeResultsFile(const pagmo::algorithm& algo, const pagmo::population& pop, bool alsoToStdout) const;
     void writeResultsFileHelper(std::ostream& os, const pagmo::algorithm& algo, const pagmo::population& pop) const;
     void writeResultsFileArchipelago(const pagmo::archipelago& arc, bool alsoToStdout) const;
+    void writeResultsFileArchipelagoHelper(std::ostream& os, const pagmo::archipelago& arc) const;
 
     PolyBeeCore& m_masterPolyBeeCore;
     std::vector<std::unique_ptr<PolyBeeCore>> m_islandPolyBeeCores; // one per island

@@ -65,6 +65,8 @@ int Params::numTrialsPerConfig;
 int Params::numGenerations;
 int Params::numIslands;
 int Params::migrationPeriod;
+int Params::migrationNumReplace;
+int Params::migrationNumSelect;
 
 // Logging and output
 int Params::heatmapCellSize;
@@ -160,6 +162,8 @@ void Params::initRegistry()
     REGISTRY.emplace_back("num-generations", "numGenerations", ParamType::INT, &numGenerations, 50, "Number of generations to run the optimization process");
     REGISTRY.emplace_back("num-islands", "numIslands", ParamType::INT, &numIslands, 1, "Number of islands of evolving populations (when num-islands=1, there is just a single population with no migration)");
     REGISTRY.emplace_back("migration-period", "migrationPeriod", ParamType::INT, &migrationPeriod, 10, "Period (number of generations) between each migration event when using multiple islands");
+    REGISTRY.emplace_back("migration-num-replace", "migrationNumReplace", ParamType::INT, &migrationNumReplace, 1, "Number of individuals on an Island that can be replaced by migrants at each migration event");
+    REGISTRY.emplace_back("migration-num-select", "migrationNumSelect", ParamType::INT, &migrationNumSelect, 1, "Number of individuals on an Island that can be selected for migration at each migration event");
     REGISTRY.emplace_back("target-heatmap-filename", "strTargetHeatmapFilename", ParamType::STRING, &strTargetHeatmapFilename, "", "CSV file containing target heatmap for optimization");
     REGISTRY.emplace_back("heatmap-cell-size", "heatmapCellSize", ParamType::INT, &heatmapCellSize, 10, "Size of each cell in the heatmap of bee positions");
     REGISTRY.emplace_back("visualise", "bVis", ParamType::BOOL, &bVis, true, "Determines whether graphical output is displayed");
