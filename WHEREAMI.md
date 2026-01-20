@@ -18,10 +18,7 @@ TODO:
 
 The archipelago/island code is now implemented and compiling, but some problems
 are encountered when running the code (e.g. using the test script do-island-test).
-Need to look into this.
-
-* Need to fix problems with Tunnel::initialiseEntrances in fitness method. See
-  comments in PBE.cpp
+Need to look into this. (Now done)
 
 DONE:
 

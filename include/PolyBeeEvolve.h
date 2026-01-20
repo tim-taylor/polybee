@@ -11,6 +11,8 @@
 #include <pagmo/population.hpp>
 #include <pagmo/algorithm.hpp>
 #include <pagmo/archipelago.hpp>
+#include <pagmo/rng.hpp>
+
 #include <vector>
 #include <memory>
 #include <ostream>
@@ -61,6 +63,7 @@ private:
     void writeResultsFileHelper(std::ostream& os, const pagmo::algorithm& algo, const pagmo::population& pop) const;
     void writeResultsFileArchipelago(const pagmo::archipelago& arc, bool alsoToStdout) const;
     void writeResultsFileArchipelagoHelper(std::ostream& os, const pagmo::archipelago& arc) const;
+    void showBestIndividuals(const pagmo::archipelago& arc, int gen) const;
 
     PolyBeeCore& m_masterPolyBeeCore;
     std::vector<std::unique_ptr<PolyBeeCore>> m_islandPolyBeeCores; // one per island

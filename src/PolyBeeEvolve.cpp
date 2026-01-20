@@ -91,7 +91,7 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     int eval_in_gen = (core.evaluationCount()-1) % num_evals_per_gen;
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
-    pb::msg_info(std::format("Island {} gen {} evals {} config_num {}: entrances e1:{},{}:{} e2:{},{}:{} e3:{},{}:{} e4:{},{}:{}, medianEMD {:.4f}",
+    pb::msg_info(std::format("isle {} gen {} evals {} conf {}: ents e1:{:.1f},{:.1f}:{} e2:{:.1f},{:.1f}:{} e3:{:.1f},{:.1f}:{} e4:{:.1f},{:.1f}:{}, medEMD {:.4f}",
         core.getIslandNum(), gen, core.evaluationCount(), config_num,
         localSpecs[0].e1, localSpecs[0].e2, localSpecs[0].side,
         localSpecs[1].e1, localSpecs[1].e2, localSpecs[1].side,
@@ -234,6 +234,8 @@ void PolyBeeEvolve::evolveArchipelago()
         // (again, taking care to seed the population RNG from our own RNG)
         unsigned int pop_seed = static_cast<unsigned int>(m_masterPolyBeeCore.m_uniformIntDistrib(m_masterPolyBeeCore.m_rngEngine));
 
+        // Note - when we create the population in the following line, an initial round of fitness evaluations
+        // will be performed for all individuals in the population. We'll refer to this as generation 0
         pagmo::population pop{prob, static_cast<unsigned int>(Params::numConfigsPerGen), pop_seed};
 
         // 3d - Add the island to the archipelago
@@ -246,6 +248,7 @@ void PolyBeeEvolve::evolveArchipelago()
         arc.push_back(pagmo::island{algo,
             pop,
             pagmo::fair_replace{Params::migrationNumReplace}, // one individual in a population can be replaced by a migrant
+            //replace_random{m_masterPolyBeeCore, Params::migrationNumReplace}, // one individual in a population can be replaced by a migrant
             pagmo::select_best{Params::migrationNumSelect}   // one individual in a population can be selected for migration
         });
     }
@@ -277,8 +280,9 @@ void PolyBeeEvolve::evolveArchipelago()
         numCycles += 1;
     }
 
-    int globalGen = 0;
+    int globalGen = 1; // start at generation 1 (generation 0 is the initial population evaluation)
     bool allDone = false;
+    std::size_t firstNewMigration = 0;
 
     for (int cycle = 0; cycle < numCycles && !allDone; ++cycle) {
         pb::msg_info(std::format("Achipelago evolution cycle {}", cycle + 1));
@@ -294,6 +298,8 @@ void PolyBeeEvolve::evolveArchipelago()
                 arc[i].wait_check();
             }
 
+            showBestIndividuals(arc, globalGen);
+
             if (++globalGen >= Params::numGenerations) {
                 allDone = true;
                 break;
@@ -305,43 +311,56 @@ void PolyBeeEvolve::evolveArchipelago()
             pb::msg_info("  Performing a generation with migration...");
             arc.evolve();
             arc.wait_check();
-            globalGen++;
+            showBestIndividuals(arc, globalGen);
+            ++globalGen;
 
             pb::msg_info("Migration stats:");
             auto log = arc.get_migration_log();
             std::size_t num_entries = log.size();
-            std::size_t num_migrations_to_show = std::min(static_cast<std::size_t>(Params::numIslands * Params::migrationNumReplace), num_entries);
-            for (std::size_t entry_idx = num_entries - num_migrations_to_show; entry_idx < num_entries; ++entry_idx) {
+
+            for (std::size_t entry_idx = firstNewMigration; entry_idx < num_entries; ++entry_idx) {
                 auto [ts, id, dv, fv, source, dest] = log[entry_idx];
                 double median_fitness = pb::median(fv);
                 pb::msg_info(std::format("  At time {:.2f} individual {} (median fitness {}) migrated from Island {} -> {}",
                     ts, id, median_fitness, source, dest));
             }
+            firstNewMigration = num_entries;
         }
+    }
 
-        // Show best fitness
-        double best_f = std::numeric_limits<double>::max();
-        size_t best_i = 0;
-        pagmo::vector_double champ;
-        for (size_t i = 0; i < arc.size(); ++i) {
-            double island_best = arc[i].get_population().champion_f()[0];
-            if (island_best < best_f) {
-                best_f = island_best;
-                best_i = i;
-                champ = arc[i].get_population().champion_x();
-            }
-        }
-        pb::msg_info(std::format("  Best fitness: {} (island {})", best_f, best_i));
+    // 5 - Output the population
+    writeResultsFileArchipelago(arc, false);
+}
+
+
+void PolyBeeEvolve::showBestIndividuals(const pagmo::archipelago& arc, int gen) const
+{
+    double best_f = std::numeric_limits<double>::max();
+    size_t best_i = 0;
+
+    pb::msg_info(std::format("Generation {} best individuals:", gen));
+
+    for (size_t i = 0; i < arc.size(); ++i)
+    {
+        double island_best = arc[i].get_population().champion_f()[0];
+        pb::msg_info(std::format("  Best fitness for island {}: {}", i, island_best));
+
+        auto champ = arc[i].get_population().champion_x();
         std::string best_indiv;
         for (size_t i = 0; i < champ.size(); ++i) {
             if (i > 0) { best_indiv += ", "; }
             best_indiv += std::format("{}", champ[i]);
         }
-        pb::msg_info(std::format("  Best individual: {}", best_indiv));
+        pb::msg_info(std::format("  Best individual for island {}: {}", i, best_indiv));
+
+        if (island_best < best_f) {
+            best_f = island_best;
+            best_i = i;
+            champ = arc[i].get_population().champion_x();
+        }
     }
 
-    // 5 - Output the population
-    writeResultsFileArchipelago(arc, true);
+    pb::msg_info(std::format("  Overall best fitness: {} (island {})", best_f, best_i));
 }
 
 
@@ -410,7 +429,7 @@ void PolyBeeEvolve::writeResultsFileArchipelagoHelper(std::ostream& os, const pa
         if (i > 0) { os << ", "; }
         os << best_champ[i];
     }
-    os << "Overall best champion fitness: " << best_champ_fitness << std::endl;
+    os << "\nOverall best champion fitness: " << best_champ_fitness << std::endl;
 }
 
 
