@@ -1,0 +1,2 @@
+#!/bin/bash
+./run-release -c config-files/evolve-entrance-positions-4-rows-with-energetics.cfg --num-bees 50 --num-trials-per-config 50 --num-configs-per-gen 50 --num-generations=50 --num-islands 10 --migration-period 10 --migration-num-select 1 --migration-num-replace 1 | tee out-island-test.txt

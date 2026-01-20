@@ -43,6 +43,71 @@ struct PolyBeeHeatmapOptimization {
 };
 
 
+// User Defined Replacement Policy (UDRP) for pagmo - random replacement
+// Replaces randomly selected individuals with migrants regardless of fitness
+struct replace_random {
+    // Default constructor (required by Pagmo)
+    replace_random() : m_pCore(nullptr), m_rate(1) {}
+
+    // Constructor with PolyBeeCore reference and number of individuals to replace
+    replace_random(PolyBeeCore& core, pagmo::pop_size_t rate) : m_pCore(&core), m_rate(rate) {}
+
+    // The replace method - core of the replacement policy
+    pagmo::individuals_group_t replace(
+        const pagmo::individuals_group_t &inds,
+        const pagmo::vector_double::size_type &nx,
+        const pagmo::vector_double::size_type &nix,
+        const pagmo::vector_double::size_type &nobj,
+        const pagmo::vector_double::size_type &nec,
+        const pagmo::vector_double::size_type &nic,
+        const pagmo::vector_double &tol,
+        const pagmo::individuals_group_t &mig
+    ) const;
+
+    // Get the name of the policy
+    std::string get_name() const { return "Random replacement"; }
+
+    // Human-readable extra info
+    std::string get_extra_info() const;
+
+private:
+    PolyBeeCore* m_pCore; // pointer to PolyBeeCore for RNG access
+    pagmo::pop_size_t m_rate; // max number of individuals that can be replaced
+};
+
+
+// User Defined Selection Policy (UDSP) for pagmo - random selection
+// Selects individuals at random for migration rather than selecting the best
+struct select_random {
+    // Default constructor (required by Pagmo)
+    select_random() : m_pCore(nullptr), m_rate(1) {}
+
+    // Constructor with PolyBeeCore reference and number of individuals to select
+    select_random(PolyBeeCore& core, pagmo::pop_size_t rate) : m_pCore(&core), m_rate(rate) {}
+
+    // The select method - core of the selection policy
+    pagmo::individuals_group_t select(
+        const pagmo::individuals_group_t &inds,
+        const pagmo::vector_double::size_type &nx,
+        const pagmo::vector_double::size_type &nix,
+        const pagmo::vector_double::size_type &nobj,
+        const pagmo::vector_double::size_type &nec,
+        const pagmo::vector_double::size_type &nic,
+        const pagmo::vector_double &tol
+    ) const;
+
+    // Get the name of the policy
+    std::string get_name() const { return "Random selection"; }
+
+    // Human-readable extra info
+    std::string get_extra_info() const;
+
+private:
+    PolyBeeCore* m_pCore; // pointer to PolyBeeCore for RNG access
+    pagmo::pop_size_t m_rate; // max number of individuals that can be selected
+};
+
+
 /**
  * The PolyBeeEvolve class ...
  */

@@ -35,6 +35,9 @@
 #include <iostream>
 #include <format>
 #include <cassert>
+#include <numeric>
+#include <algorithm>
+#include <random>
 
 
 // Implementation of the objective function.
@@ -113,6 +116,127 @@ std::pair<pagmo::vector_double, pagmo::vector_double> PolyBeeHeatmapOptimization
 // Define the number of integer (as opposed to continuous) decision variables
 pagmo::vector_double::size_type PolyBeeHeatmapOptimization::get_nix() const {
     return 4; // last 4 decision variables are integers
+}
+
+
+// Implementation of replace_random replacement policy
+pagmo::individuals_group_t replace_random::replace(
+    const pagmo::individuals_group_t &inds,
+    const pagmo::vector_double::size_type &/*nx*/,
+    const pagmo::vector_double::size_type &/*nix*/,
+    const pagmo::vector_double::size_type &/*nobj*/,
+    const pagmo::vector_double::size_type &/*nec*/,
+    const pagmo::vector_double::size_type &/*nic*/,
+    const pagmo::vector_double &/*tol*/,
+    const pagmo::individuals_group_t &mig
+) const
+{
+    // inds is a tuple of (IDs, decision vectors, fitness vectors) for current population
+    // mig is the same structure for incoming migrants
+
+    const auto &[ids, dvs, fvs] = inds;
+    const auto &[mig_ids, mig_dvs, mig_fvs] = mig;
+
+    // If no migrants or empty population, return unchanged
+    if (mig_ids.empty() || ids.empty()) {
+        return inds;
+    }
+
+    // Determine how many replacements to make
+    const auto pop_size = ids.size();
+    const auto n_mig = mig_ids.size();
+    const auto n_replace = std::min({static_cast<std::size_t>(m_rate), n_mig, pop_size});
+
+    if (n_replace == 0) {
+        return inds;
+    }
+
+    // Make a copy of the population to modify
+    pagmo::individuals_group_t result = inds;
+    auto &[res_ids, res_dvs, res_fvs] = result;
+
+    // Create indices for random selection without replacement
+    std::vector<std::size_t> pop_indices(pop_size);
+    std::iota(pop_indices.begin(), pop_indices.end(), 0);
+
+    // Shuffle using PolyBeeCore's RNG engine
+    std::shuffle(pop_indices.begin(), pop_indices.end(), m_pCore->m_rngEngine);
+
+    // Replace n_replace randomly selected individuals with migrants
+    for (std::size_t i = 0; i < n_replace; ++i) {
+        std::size_t replace_idx = pop_indices[i];
+        res_ids[replace_idx] = mig_ids[i];
+        res_dvs[replace_idx] = mig_dvs[i];
+        res_fvs[replace_idx] = mig_fvs[i];
+    }
+
+    return result;
+}
+
+
+std::string replace_random::get_extra_info() const
+{
+    return "Max replacement rate: " + std::to_string(m_rate);
+}
+
+
+// Implementation of select_random selection policy
+pagmo::individuals_group_t select_random::select(
+    const pagmo::individuals_group_t &inds,
+    const pagmo::vector_double::size_type &/*nx*/,
+    const pagmo::vector_double::size_type &/*nix*/,
+    const pagmo::vector_double::size_type &/*nobj*/,
+    const pagmo::vector_double::size_type &/*nec*/,
+    const pagmo::vector_double::size_type &/*nic*/,
+    const pagmo::vector_double &/*tol*/
+) const
+{
+    // inds is a tuple of (IDs, decision vectors, fitness vectors) for current population
+
+    const auto &[ids, dvs, fvs] = inds;
+
+    // If empty population, return empty result
+    if (ids.empty()) {
+        return inds;
+    }
+
+    // Determine how many individuals to select
+    const auto pop_size = ids.size();
+    const auto n_select = std::min(static_cast<std::size_t>(m_rate), pop_size);
+
+    if (n_select == 0) {
+        return {{}, {}, {}};
+    }
+
+    // Create indices for random selection without replacement
+    std::vector<std::size_t> pop_indices(pop_size);
+    std::iota(pop_indices.begin(), pop_indices.end(), 0);
+
+    // Shuffle using PolyBeeCore's RNG engine
+    std::shuffle(pop_indices.begin(), pop_indices.end(), m_pCore->m_rngEngine);
+
+    // Build result with n_select randomly chosen individuals
+    pagmo::individuals_group_t result;
+    auto &[res_ids, res_dvs, res_fvs] = result;
+
+    res_ids.reserve(n_select);
+    res_dvs.reserve(n_select);
+    res_fvs.reserve(n_select);
+
+    for (std::size_t i = 0; i < n_select; ++i) {
+        std::size_t idx = pop_indices[i];
+        res_ids.push_back(ids[idx]);
+        res_dvs.push_back(dvs[idx]);
+        res_fvs.push_back(fvs[idx]);
+    }
+
+    return result;
+}
+
+
+std::string select_random::get_extra_info() const
+{
+    return "Max selection rate: " + std::to_string(m_rate);
 }
 
 
@@ -241,15 +365,16 @@ void PolyBeeEvolve::evolveArchipelago()
         // 3d - Add the island to the archipelago
         //
         // Selection policy options are:
-        // * Best
+        // * Best (pagmo::select_best) - selects best individuals for migration
+        // * Random (select_random) - selects random individuals for migration regardless of fitness
         //
-        // Replacement polict options are:
-        // * Fair
+        // Replacement policy options are:
+        // * Fair (pagmo::fair_replace) - replaces worst individuals only if migrant is better
+        // * Random (replace_random) - replaces randomly selected individuals regardless of fitness
         arc.push_back(pagmo::island{algo,
             pop,
-            pagmo::fair_replace{Params::migrationNumReplace}, // one individual in a population can be replaced by a migrant
-            //replace_random{m_masterPolyBeeCore, Params::migrationNumReplace}, // one individual in a population can be replaced by a migrant
-            pagmo::select_best{Params::migrationNumSelect}   // one individual in a population can be selected for migration
+            replace_random{m_masterPolyBeeCore, static_cast<pagmo::pop_size_t>(Params::migrationNumReplace)}, // randomly selected individuals can be replaced by migrants
+            select_random{m_masterPolyBeeCore, static_cast<pagmo::pop_size_t>(Params::migrationNumSelect)}   // randomly selected individuals can be selected for migration
         });
     }
 
