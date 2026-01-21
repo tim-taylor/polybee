@@ -158,7 +158,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");
     REGISTRY.emplace_back("num-trials-per-config", "numTrialsPerConfig", ParamType::INT, &numTrialsPerConfig, 1, "Number of trials to run for each configuration/individual in each generation");
-    REGISTRY.emplace_back("num-configs-per-gen", "numConfigsPerGen", ParamType::INT, &numConfigsPerGen, 50, "Number of configurations/inidividuals to test during each generation");
+    REGISTRY.emplace_back("num-configs-per-gen", "numConfigsPerGen", ParamType::INT, &numConfigsPerGen, 50, "Number of configurations/inidividuals to test during each generation (if using multiple islands, this is the number per island)");
     REGISTRY.emplace_back("num-generations", "numGenerations", ParamType::INT, &numGenerations, 50, "Number of generations to run the optimization process");
     REGISTRY.emplace_back("num-islands", "numIslands", ParamType::INT, &numIslands, 1, "Number of islands of evolving populations (when num-islands=1, there is just a single population with no migration)");
     REGISTRY.emplace_back("migration-period", "migrationPeriod", ParamType::INT, &migrationPeriod, 10, "Period (number of generations) between each migration event when using multiple islands");

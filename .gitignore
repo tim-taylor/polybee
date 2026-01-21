@@ -48,3 +48,4 @@
 /evolution-output
 old
 *.old
+__pycache__

@@ -1,3 +1,11 @@
+## 21/1/26
+
+do-evol-with-energetics used 100 bees, 150 trials per config, 100 configs per gen, 50 gens
+
+try a test of island model with 100 bees, 150 trials per config, 50 configs per island, 5 islands, 10 migration period, 40 gens
+
+## 20/1/26
+
 ## 14/1/26
 
 TODO:
