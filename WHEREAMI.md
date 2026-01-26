@@ -1,3 +1,13 @@
+## 26/1/26
+
+TODO:
+
+Add parameters to allow user to select which algorithms run on which islands
+
+DONE:
+
+Implemented different algorithms on different islands and ran experiments (do-island-test-4 and -4b)
+
 ## 21/1/26
 
 DONE:

@@ -25,8 +25,8 @@
 #include <pagmo/algorithms/sga.hpp>
 //#include <pagmo/algorithms/de1220.hpp> // not suitable for stochastic problems
 //#include <pagmo/algorithms/sade.hpp>   // not suitable for stochastic problems
-//#include <pagmo/algorithms/gaco.hpp>
-//#include <pagmo/algorithms/pso_gen.hpp>
+#include <pagmo/algorithms/gaco.hpp>
+#include <pagmo/algorithms/pso_gen.hpp>
 //#include <pagmo/algorithms/cmaes.hpp> // produces an error (tries to use side=5) at end of first generation
 //#include <pagmo/algorithms/xnes.hpp>  // produces an error (tries to use side=5) at end of first generation
 #include <fstream>
@@ -347,7 +347,22 @@ void PolyBeeEvolve::evolveArchipelago()
 
         // 3b - Instantiate a pagmo algorithm
         //pagmo::algorithm algo {pagmo::sga(Params::numGenerations)};
-        pagmo::algorithm algo {pagmo::sga(1)}; // we will be evolving one generation at a time in the main loop below
+        //pagmo::algorithm algo {pagmo::sga(1)}; // we will be evolving one generation at a time in the main loop below
+        // TODO - add parameters to allow user to select algorithm types
+        pagmo::algorithm algo;
+        switch (i%3) {
+            case 0:
+                algo = pagmo::algorithm{pagmo::sga(1)}; // we will be evolving one generation at a time in the main loop below
+                break;
+            case 1:
+                algo = pagmo::algorithm{pagmo::pso_gen(1)};
+                break;
+            case 2:
+                algo = pagmo::algorithm{pagmo::gaco(1, static_cast<unsigned int>(Params::numConfigsPerGen / 5))}; // smaller population for gaco
+                break;
+            default:
+                pb::msg_error_and_exit("PolyBeeEvolve::evolveArchipelago - unexpected algorithm selection case");
+        }
 
         // ensure that the Pagmo RNG seed is determined by our own RNG, so runs can be reproduced
         // by just ensuring we use the same seed for our own RNG
@@ -385,7 +400,7 @@ void PolyBeeEvolve::evolveArchipelago()
         //
         for (size_t i = 0; i < arc.size(); ++i) {
             auto weights_and_destinations = arc.get_topology().get_connections(i);
-            msg += std::format("Island {} connects to:\n", i);
+            msg += std::format("Island {} [using alg: {}] connects to:\n", i, arc[i].get_algorithm().get_name());
             size_t num_connections = weights_and_destinations.first.size();
             for (size_t j = 0; j < num_connections; ++j) {
                 msg += std::format(" Island {} (weight {}) ", weights_and_destinations.first[j], weights_and_destinations.second[j]);
