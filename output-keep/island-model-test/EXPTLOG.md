@@ -2,6 +2,9 @@
 
 To plot results of an evolutionary run with island model enabled, such as that run by the `do-island-test` script
 
+4 islands all running sga alg, with migration period 10,
+150 trials per config, 30 configs per gen, 50 gens
+
 # Code
 
 Let's assume we've run the `do-island-test` script, which looks like this:

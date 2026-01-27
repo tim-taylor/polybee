@@ -346,22 +346,27 @@ void PolyBeeEvolve::evolveArchipelago()
         pagmo::problem prob{PolyBeeHeatmapOptimization{this, i}};
 
         // 3b - Instantiate a pagmo algorithm
-        //pagmo::algorithm algo {pagmo::sga(Params::numGenerations)};
-        //pagmo::algorithm algo {pagmo::sga(1)}; // we will be evolving one generation at a time in the main loop below
-        // TODO - add parameters to allow user to select algorithm types
         pagmo::algorithm algo;
-        switch (i%3) {
+
+        // TODO - allow user to select whether to use diverse algorithms or not via Params
+        bool useDiverseAlgos = true;
+        if (!useDiverseAlgos) {
+            algo = pagmo::algorithm{ pagmo::sga(1) }; // we will be evolving one generation at a time in the main loop below
+        }
+        else {
+            switch (i % 3) {
             case 0:
-                algo = pagmo::algorithm{pagmo::sga(1)}; // we will be evolving one generation at a time in the main loop below
+                algo = pagmo::algorithm{ pagmo::sga(1) }; // we will be evolving one generation at a time in the main loop below
                 break;
             case 1:
-                algo = pagmo::algorithm{pagmo::pso_gen(1)};
+                algo = pagmo::algorithm{ pagmo::pso_gen(1) };
                 break;
             case 2:
-                algo = pagmo::algorithm{pagmo::gaco(1, static_cast<unsigned int>(Params::numConfigsPerGen / 5))}; // smaller population for gaco
+                algo = pagmo::algorithm{ pagmo::gaco(1, static_cast<unsigned int>(Params::numConfigsPerGen / 5)) }; // smaller population for gaco
                 break;
             default:
                 pb::msg_error_and_exit("PolyBeeEvolve::evolveArchipelago - unexpected algorithm selection case");
+            }
         }
 
         // ensure that the Pagmo RNG seed is determined by our own RNG, so runs can be reproduced
