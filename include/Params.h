@@ -169,6 +169,7 @@ public:
     static int migrationPeriod; // period (number of generations) between each migration event when using multiple islands
     static int migrationNumReplace; // number of individuals on an Island that can be replaced by migrants at each migration event
     static int migrationNumSelect; // number of individuals on an Island that can be selected for migration at each migration event
+    static bool useDiverseAlgorithms; // use diverse optimisation algorithms on each island (when num-islands > 1)
 
     // Logging and output
     static int heatmapCellSize; // size of each cell in the heatmap of bee positions

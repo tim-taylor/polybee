@@ -348,9 +348,7 @@ void PolyBeeEvolve::evolveArchipelago()
         // 3b - Instantiate a pagmo algorithm
         pagmo::algorithm algo;
 
-        // TODO - allow user to select whether to use diverse algorithms or not via Params
-        bool useDiverseAlgos = true;
-        if (!useDiverseAlgos) {
+        if (!Params::useDiverseAlgorithms) {
             algo = pagmo::algorithm{ pagmo::sga(1) }; // we will be evolving one generation at a time in the main loop below
         }
         else {

@@ -1,3 +1,15 @@
+## 30/1/26
+Added new param useDiverseAlgorithms for use in PolyBeeEvolve.
+
+Implementing net exit probablilities based upon net type, and new optional specification of net type in input parameters.
+
+TODO:
+* new exit prob parameters are added, but rest of code now has to make use of them
+
+## 27/1/26
+Zoom call with Alan and Hazel. Planning extension of code to use antibird and antihail net parameters as found in
+Sonter, Rader et al paper ("Protective covers impact honey bee colong performance...")
+
 ## 26/1/26
 
 TODO:
