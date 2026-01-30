@@ -10,6 +10,7 @@
 #include <cassert>
 #include <format>
 #include <cmath>
+#include <algorithm>
 
 TunnelEntranceInfo::TunnelEntranceInfo(const TunnelEntranceSpec& spec, const Tunnel* pTunnel) :
     side(spec.side)
@@ -82,11 +83,9 @@ void Tunnel::addEntrance(const TunnelEntranceSpec& spec) {
     TunnelEntranceSpec specCopy = spec;
     // ensure e1 <= e2
     if (specCopy.e2 < specCopy.e1) {
-        float tmp = specCopy.e1;
-        specCopy.e1 = specCopy.e2;
-        specCopy.e2 = tmp;
+        std::swap(specCopy.e1, specCopy.e2);
     }
-    m_entrances.push_back({specCopy, this});
+    m_entrances.emplace_back(specCopy, this);
 }
 
 

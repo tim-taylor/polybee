@@ -31,6 +31,14 @@ float Params::tunnelX;
 float Params::tunnelY;
 std::vector<TunnelEntranceSpec> Params::tunnelEntranceSpecs;
 
+// Tunnel exit net properties
+float Params::netAntibirdExitProb;
+float Params::netAntihailExitProb;
+//int Params::netAntibirdReboundTimeCost;
+//int Params::netAntihailReboundTimeCost;
+//int Params::netAntibirdMaxExitAttempts;
+//int Params::netAntihailMaxExitAttempts;
+
 // Patch configuration
 std::vector<PatchSpec> Params::patchSpecs;
 
@@ -139,6 +147,12 @@ void Params::initRegistry()
     REGISTRY.emplace_back("tunnel-height", "tunnelH", ParamType::FLOAT, &tunnelH, 50.0f, "Height (number of cells) of tunnel");
     REGISTRY.emplace_back("tunnel-x", "tunnelX", ParamType::FLOAT, &tunnelX, 200.0f, "X position of left edge of tunnel");
     REGISTRY.emplace_back("tunnel-y", "tunnelY", ParamType::FLOAT, &tunnelY, 100.0f, "Y position of top edge of tunnel");
+    REGISTRY.emplace_back("net-antibird-exit-prob", "netAntibirdExitProb", ParamType::FLOAT, &netAntibirdExitProb, 0.5073f, "Probability of bee exiting through antibird net");
+    REGISTRY.emplace_back("net-antihail-exit-prob", "netAntihailExitProb", ParamType::FLOAT, &netAntihailExitProb, 0.3146f, "Probability of bee exiting through antihail net");
+    //REGISTRY.emplace_back("net-antibird-rebound-time-cost", "netAntibirdReboundTimeCost", ParamType::INT, &netAntibirdReboundTimeCost, 1, "Time cost (simulation steps) for rebounding off antibird net");
+    //REGISTRY.emplace_back("net-antihail-rebound-time-cost", "netAntihailReboundTimeCost", ParamType::INT, &netAntihailReboundTimeCost, 1, "Time cost (simulation steps) for rebounding off antihail net");
+    //REGISTRY.emplace_back("net-antibird-max-exit-attempts", "netAntibirdMaxExitAttempts", ParamType::INT, &netAntibirdMaxExitAttempts, 1, "Maximum exit attempts through antibird net before giving up");
+    //REGISTRY.emplace_back("net-antihail-max-exit-attempts", "netAntihailMaxExitAttempts", ParamType::INT, &netAntihailMaxExitAttempts, 1, "Maximum exit attempts through antihail net before giving up");
     REGISTRY.emplace_back("flower-initial-nectar", "flowerInitialNectar", ParamType::FLOAT, &flowerInitialNectar, 100.0f, "Initial nectar amount for each flower");
     REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
     REGISTRY.emplace_back("bee-max-dir-delta", "beeMaxDirDelta", ParamType::FLOAT, &beeMaxDirDelta, 0.4f, "Maximum change in direction (radians) per step");
@@ -194,14 +208,22 @@ std::vector<HiveSpec> parse_hive_positions(const std::vector<std::string>& hive_
     return hives;
 }
 
-// Helper function to parse hive positions from strings of the form "x,y:s" (x and y are floats, s in int)
+// Helper function to parse tunnel entrance positions from strings of the form "e1,e2:s[:t]"
+// (e1 and e2 are floats, s is side int 0-3, t is optional net type int 0=NONE, 1=ANTIBIRD, 2=ANTIHAIL)
 std::vector<TunnelEntranceSpec> parse_tunnel_entrance_positions(const std::vector<std::string>& tunnel_strings) {
     std::vector<TunnelEntranceSpec> entrances;
-    std::regex pos_regex(R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):([0-3]))");
+    std::string regex_str_p1 = R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):([0-3]))";  // e1,e2:s
+    std::string regex_str_p2 = R"(:([0-2]))";                                // :t (net type)
+
+    std::regex pos_regex_basic(regex_str_p1);
+    std::regex pos_regex_with_net(regex_str_p1 + regex_str_p2);
 
     for (const auto& tunnel_str : tunnel_strings) {
         std::smatch match;
-        if (std::regex_match(tunnel_str, match, pos_regex)) {
+        if (std::regex_match(tunnel_str, match, pos_regex_with_net)) {
+            NetType netType = static_cast<NetType>(std::stoi(match[4]));
+            entrances.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stoi(match[3]), netType);
+        } else if (std::regex_match(tunnel_str, match, pos_regex_basic)) {
             entrances.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stoi(match[3]));
         } else {
             throw std::invalid_argument("Invalid tunnel entrance specification: " + tunnel_str);

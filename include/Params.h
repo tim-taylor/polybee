@@ -56,12 +56,21 @@ struct HiveSpec {
 };
 
 
-struct TunnelEntranceSpec {
-    float e1; // position of first edge of entrance along the specified side of tunnel, in tunnel coordinates
-    float e2; // position of second edge of entrance along the specified side of tunnel, in tunnel coordinates
-    int side; // 0=North, 1=East, 2=South, 3=West
+enum class NetType {
+    NONE,
+    ANTIBIRD,
+    ANTIHAIL
+};
 
-    TunnelEntranceSpec(float e1, float e2, int side) : e1(e1), e2(e2), side(side) {}
+
+struct TunnelEntranceSpec {
+    float e1;           // position of first edge of entrance along the specified side of tunnel, in tunnel coordinates
+    float e2;           // position of second edge of entrance along the specified side of tunnel, in tunnel coordinates
+    int side;           // 0=North, 1=East, 2=South, 3=West
+    NetType netType;
+
+    TunnelEntranceSpec(float e1, float e2, int side) : e1(e1), e2(e2), side(side), netType(NetType::NONE) {}
+    TunnelEntranceSpec(float e1, float e2, int side, NetType netType) : e1(e1), e2(e2), side(side), netType(netType) {}
 };
 
 
@@ -115,6 +124,14 @@ public:
     static float tunnelX; // top-left x position of tunnel in environment coordinates
     static float tunnelY; // top-left y position of tunnel in environment coordinates
     static std::vector<TunnelEntranceSpec> tunnelEntranceSpecs;
+
+    // Tunnel exit net properties
+    static float netAntibirdExitProb;       // probability of bee exiting through antibird net
+    static float netAntihailExitProb;       // probability of bee exiting through antihail net
+    //static int netAntibirdReboundTimeCost;  // time cost for rebounding off antibird net
+    //static int netAntihailReboundTimeCost;  // time cost for rebounding off antihail net
+    //static int netAntibirdMaxExitAttempts;  // max exit attempts through antibird net
+    //static int netAntihailMaxExitAttempts;  // max exit attempts through antihail net
 
     // Patch configuration
     static std::vector<PatchSpec> patchSpecs;

@@ -9,6 +9,7 @@
 
 #include "Params.h"
 #include "utils.h"
+#include <format>
 #include <vector>
 #include <optional>
 #include <tuple>
@@ -18,12 +19,14 @@ class Tunnel;
 
 
 struct TunnelEntranceInfo {
-    float x1; // x position of first edge of entrance (in environment coordinates)
-    float y1; // y position of first edge of entrance (in environment coordinates)
-    float x2; // x position of second edge of entrance (in environment coordinates)
-    float y2; // y position of second edge of entrance (in environment coordinates)
-    int side; // 0=North, 1=East, 2=South, 3=West
+    float x1;   // x position of first edge of entrance (in environment coordinates)
+    float y1;   // y position of first edge of entrance (in environment coordinates)
+    float x2;   // x position of second edge of entrance (in environment coordinates)
+    float y2;   // y position of second edge of entrance (in environment coordinates)
+    int side;   // 0=North, 1=East, 2=South, 3=West
+    NetType netType { NetType::NONE };  // type of net at this entrance
 
+    /*
     TunnelEntranceInfo(float x1, float y1, float x2, float y2, int side)
         : x1(x1), y1(y1), x2(x2), y2(y2), side(side) {}
 
@@ -31,8 +34,59 @@ struct TunnelEntranceInfo {
 
     TunnelEntranceInfo(const TunnelEntranceInfo& other)
         : x1(other.x1), y1(other.y1), x2(other.x2), y2(other.y2), side(other.side) {}
+    */
 
     TunnelEntranceInfo(const TunnelEntranceSpec& spec, const Tunnel* pTunnel);
+
+    // probability of a bee exiting the tunnel when reaching this entrance
+    float probExit() const {
+        switch (netType) {
+        case NetType::NONE:
+            return 1.0f;
+        case NetType::ANTIBIRD:
+            return Params::netAntibirdExitProb;
+        case NetType::ANTIHAIL:
+            return Params::netAntihailExitProb;
+        default: {
+            pb::msg_error_and_exit(std::format("Unknown net type {} encountered in TunnelEntranceInfo::probExit()", static_cast<int>(netType)));
+            return 0.0f;
+        }
+        }
+    }
+
+    /*
+    // time cost (in simulation steps) for bee of rebounding off this entrance if exit attempt fails
+    int timeCostRebound() const {
+        switch (netType) {
+        case NetType::NONE:
+            return 0;
+        case NetType::ANTIBIRD:
+            return Params::netAntibirdReboundTimeCost;
+        case NetType::ANTIHAIL:
+            return Params::netAntihailReboundTimeCost;
+        default: {
+            pb::msg_error_and_exit(std::format("Unknown net type {} encountered in TunnelEntranceInfo::timeCostRebound()", static_cast<int>(netType)));
+            return 0;
+        }
+        }
+    }
+
+    // maximum number of attempts to exit via this entrance before a bee gives up
+    int maxAttempts() const {
+        switch (netType) {
+        case NetType::NONE:
+            return 1000; // effectively unlimited
+        case NetType::ANTIBIRD:
+            return Params::netAntibirdMaxExitAttempts;
+        case NetType::ANTIHAIL:
+            return Params::netAntihailMaxExitAttempts;
+        default: {
+            pb::msg_error_and_exit(std::format("Unknown net type {} encountered in TunnelEntranceInfo::maxAttempts()", static_cast<int>(netType)));
+            return 0;
+        }
+        }
+    }
+    */
 };
 
 
