@@ -72,6 +72,7 @@ private:
     void calculateWaypointsAroundTunnel();
     void calculateWaypointsInsideTunnel();
     bool headToNextWaypoint();
+    bool nextWaypointIsTunnelEntrance() const;
     void updatePathHistory();
     void setDirAccordingToHive();
 

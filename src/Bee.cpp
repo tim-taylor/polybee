@@ -87,6 +87,7 @@ void Bee::forage()
     updatePathHistory();
 
     pb::PosAndDir2D desiredMove;
+
     // work out where bee would like to go next, following "forage nearest flower" strategy
     // or step in random direction if no nearby flowers found
     auto desiredMoveOpt = forageNearestFlower();
@@ -97,12 +98,14 @@ void Bee::forage()
             desiredMove = desiredMoveOpt.value();
         }
         else {
-            // move in random direction
+            // move in random direction with a fixed step length
+            // (N.B. we are not yet considering Levy flights here)
             desiredMove = moveInRandomDirection();
         }
     }
     else {
-        // no nearby unvisited flowers found, so move in random direction
+        // no nearby unvisited flowers found, so move in random direction with a fixed step length
+        // (N.B. we are not yet considering Levy flights here)
         desiredMove = moveInRandomDirection();
     }
 
@@ -118,12 +121,16 @@ void Bee::forage()
         m_y = desiredMove.y;
         if (m_state == BeeState::ON_FLOWER) {
             // bee has just landed on its target flower. Its state has already been updated in forageNearestFlower(),
-            // so our work here is done
+            // so its bout has successfully finished and our work here is done
             return;
         }
     }
     else {
-        // bee has crossed tunnel boundary, so we need to figure out if it can enter/exit the tunnel at this point
+        // desired move crosses tunnel boundary, so we need to figure out if bee can enter/exit the tunnel at this point
+
+        // TODO - we need to consider TunnelEntranceInfo::probExit() here
+        // Also, we should break this long method into smaller methods for clarity
+
         auto intersectInfo = m_pEnv->getTunnel().intersectsTunnelBoundary(m_x, m_y, desiredMove.x, desiredMove.y);
 
         if (!intersectInfo.intersects) {
@@ -132,16 +139,27 @@ void Bee::forage()
                     m_x, m_y, desiredMove.x, desiredMove.y));
         }
         else if (intersectInfo.crossesEntrance) {
-            // the bee passed through an entrance, so it can move to the new position
-            m_angle = desiredMove.angle;
-            m_x = desiredMove.x;
-            m_y = desiredMove.y;
-            m_inTunnel = !m_inTunnel;
+            // bee wants to enter/exit via a tunnel entrance, so we need to determine whether it can
+            // successfullly do so based on the net type at this entrance
 
-            // NB store pointer to last tunnel entrance used. Alternatively, we might want to record the
-            // FIRST entrance used when entering the tunnel, so that the bee can try to exit via the same entrance later?
-            // TODO - discuss with Alan and Hazel
-            m_pLastTunnelEntrance = intersectInfo.pEntranceUsed;
+            float rnd = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine);
+            float probExit = intersectInfo.pEntranceUsed->probExit();
+            if (rnd < probExit) {
+                // the bee passed through an entrance, so it can move to the new position
+                m_angle = desiredMove.angle;
+                m_x = desiredMove.x;
+                m_y = desiredMove.y;
+                m_inTunnel = !m_inTunnel;
+                // NB store pointer to last tunnel entrance used. Alternatively, we might want to record the
+                // FIRST entrance used when entering the tunnel, so that the bee can try to exit via the same entrance later?
+                // TODO - discuss with Alan and Hazel
+                m_pLastTunnelEntrance = intersectInfo.pEntranceUsed;
+            }
+            else {
+                // the bee failed to exit through the net, so we assume it rebounded to its current
+                // position (i.e. it remains at its current position)
+                // (we could consider adding a time cost here for the failed exit attempt)
+            }
         }
         else {
             // the bee collided with the tunnel wall, so it cannot move where it wanted to go.
@@ -162,18 +180,20 @@ void Bee::forage()
 
     m_currentBoutDuration++;
 
+    /*
     // TODO - is this bit now obsolete?
     // do we still want a fixed max foraging bout duration, or just have bees return to hive when they run out of energy?
     if (m_currentBoutDuration >= Params::beeForageDuration) {
         // maximum foraging bout duration reached, so return to hive
         switchToReturnToHive();
     }
+    */
 
     // deplete bee's energy level
     m_energy -= Params::beeEnergyDepletionPerStep;
 
     if (m_energy <= Params::beeEnergyMinThreshold || m_energy >= Params::beeEnergyMaxThreshold) {
-        // bee has run out of energy, so return to hive
+        // bee has either run out of energy, or collected as much as it wants. Either way, return to hive!
         switchToReturnToHive();
     }
 }
@@ -492,8 +512,13 @@ void Bee::returnToHiveOutsideTunnel()
 // Head to next waypoint in m_homingWaypoints (the front of the deque).
 // If we're not at the final waypoint in the list, then add a little bit of jitter to each step.
 // Returns true if the waypoint has been reached, false otherwise.
+// Does NOT remove the waypoint from the list even if it is reached - that is the caller's
+// responsibility if this method returned true.
+//
 bool Bee::headToNextWaypoint()
 {
+    assert(!m_homingWaypoints.empty());
+
     bool reachedWaypoint = false;
     float stepLength = 1.0f;
 
@@ -502,16 +527,44 @@ bool Bee::headToNextWaypoint()
     float distToWaypoint = moveVector.length();
 
     if (distToWaypoint <= Params::beeStepLength) {
-        reachedWaypoint = true;
-        stepLength = distToWaypoint;
+        // We've reached a waypoint.
+        // We need to figure out it it's a tunnel entrance waypoint - if it is, we need to consider
+        // the probability that the bee can pass through the net
+        if (nextWaypointIsTunnelEntrance())
+        {
+            assert(m_pLastTunnelEntrance != nullptr);
+            float rnd = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine);
+            // NB we assume that m_pLastTunnelEntrance refers to the same entrance as the waypoint being
+            // targeted - this is ensured by the logic in calculateWaypointsAroundTunnel() and
+            // calculateWaypointsInsideTunnel()
+            float probExit = m_pLastTunnelEntrance->probExit();
+            if (rnd < probExit) {
+                // the bee passed through an entrance, so it can move to the waypoint
+                reachedWaypoint = true;
+                stepLength = distToWaypoint;
+            }
+            else {
+                // the bee failed to exit through the net, so we assume it rebounded to its current
+                // position (i.e. it remains at its current position)
+                // (we could consider adding a time cost here for the failed exit attempt)
+                stepLength = 0.0f;
+            }
+        }
+        else {
+            // The waypoint that we have reached is not a tunnel entrance, so we can just move
+            // directly to it without jitter
+            reachedWaypoint = true;
+            stepLength = distToWaypoint;
+        }
     }
     else {
+        // We are not at a waypoint yet, so move towards the next one with full step length
         stepLength = Params::beeStepLength;
     }
 
     moveVector.resize(stepLength);
 
-    if (!reachedWaypoint) {
+    if ((!reachedWaypoint) && (stepLength > FLOAT_COMPARISON_EPSILON)) {
         std::normal_distribution<float> distJitter(0.0f, 0.1f * stepLength);
         moveVector.x += distJitter(m_pPolyBeeCore->m_rngEngine);
         moveVector.y += distJitter(m_pPolyBeeCore->m_rngEngine);
@@ -521,6 +574,32 @@ bool Bee::headToNextWaypoint()
     m_y += moveVector.y;
 
     return reachedWaypoint;
+}
+
+
+// Check whether the next waypoint in m_homingWaypoints is a tunnel entrance.
+// Assumptions:
+// - a tunnel entrance waypoint can only be the last waypoint in the list
+// - if bee if in tunnel and hive is outside tunnel, the last waypoint in the current list
+//   is always a tunnel entrance
+// - if bee is outside tunnel and hive is inside tunnel, the last waypoint in the current list
+//   is always a tunnel entrance
+// - otherwise, the last waypoint is never a tunnel entrance
+//
+bool Bee::nextWaypointIsTunnelEntrance() const
+{
+    // Are we at the last waypoint in the list? If not, it can't be a tunnel entrance
+    if (m_homingWaypoints.size() != 1) {
+        return false;
+    }
+
+    // If bee is in tunnel and hive is outside, or vice versa, last waypoint must be tunnel entrance
+    if (m_inTunnel != m_pHive->inTunnel()) {
+        return true;
+    }
+
+    // Otherwise, last waypoint is not a tunnel entrance
+    return false;
 }
 
 
@@ -552,7 +631,7 @@ void Bee::calculateWaypointsInsideTunnel()
         return;
     }
 
-    // If e get to this point, the hive is outside the tunnel.
+    // If we get to this point, the hive is outside the tunnel.
     // Set a single waypoint at the last tunnel entrance used to exit the tunnel
     assert(m_pLastTunnelEntrance != nullptr);
 

@@ -215,7 +215,7 @@ std::vector<HiveSpec> parse_hive_positions(const std::vector<std::string>& hive_
 std::vector<TunnelEntranceSpec> parse_tunnel_entrance_positions(const std::vector<std::string>& tunnel_strings) {
     std::vector<TunnelEntranceSpec> entrances;
     std::string regex_str_p1 = R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):([0-3]))";  // e1,e2:s
-    std::string regex_str_p2 = R"(:([0-2]))";                                // :t (net type)
+    std::string regex_str_p2 = R"(:([0-2]))";                               // :t (net type)
 
     std::regex pos_regex_basic(regex_str_p1);
     std::regex pos_regex_with_net(regex_str_p1 + regex_str_p2);
@@ -487,7 +487,9 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
             if (!bGenerateForConfigFile) {
                 os << (i+1);
             }
-            os << valsep << coordOpen << tunnelEntranceSpecs[i].e1 << "," << tunnelEntranceSpecs[i].e2 << coordClose << ":" << tunnelEntranceSpecs[i].side << linesep;
+            os << valsep << coordOpen << tunnelEntranceSpecs[i].e1 << "," << tunnelEntranceSpecs[i].e2 << coordClose
+                << ":" << tunnelEntranceSpecs[i].side
+                << ":" << static_cast<int>(tunnelEntranceSpecs[i].netType) << linesep;
         }
     }
     else {

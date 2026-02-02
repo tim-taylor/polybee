@@ -1,10 +1,17 @@
+## 2/2/26
+
+DONE
+
+* Implemented and testing net transit probability code in Bee::forage and associated methods
+* ALso added net transit probability logic to the waypoint code when bees return to hive
+
 ## 30/1/26
 Added new param useDiverseAlgorithms for use in PolyBeeEvolve.
 
 Implementing net exit probablilities based upon net type, and new optional specification of net type in input parameters.
 
 TODO:
-* new exit prob parameters are added, but rest of code now has to make use of them
+* new exit prob parameters are added, but rest of code now has to make use of them specifically, we need to consider this in Bee::forage() - see the TODO comment in that method
 
 ## 27/1/26
 Zoom call with Alan and Hazel. Planning extension of code to use antibird and antihail net parameters as found in

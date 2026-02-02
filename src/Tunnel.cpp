@@ -13,7 +13,7 @@
 #include <algorithm>
 
 TunnelEntranceInfo::TunnelEntranceInfo(const TunnelEntranceSpec& spec, const Tunnel* pTunnel) :
-    side(spec.side)
+    side(spec.side), netType(spec.netType)
 {
     // calculate entrance positions in environment coordinates based on tunnel position, tunnel size, and
     // relative entrance positions specified in spec

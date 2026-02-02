@@ -97,7 +97,7 @@ struct IntersectInfo {
     pb::Line2D intersectedLine;                         // the line that was intersected (if intersects is true)
                                                         // (this will be either a tunnel wall or an entrance line,
                                                         // depending on whether crossesEntrance is true)
-    const TunnelEntranceInfo* pEntranceUsed {nullptr};  // pointer to the entrance that was used (if applicable)
+    const TunnelEntranceInfo* pEntranceUsed { nullptr };// pointer to the entrance that was used (if applicable)
 
     IntersectInfo(bool intersects, bool crossesEntrance, const pb::Pos2D& point, const pb::Line2D& intersectedLine)
         : intersects(intersects), crossesEntrance(crossesEntrance), point(point), intersectedLine(intersectedLine) {}
