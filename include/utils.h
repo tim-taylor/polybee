@@ -41,6 +41,8 @@ namespace Polybee {
 
         float length() const;
         void resize(float newLength);
+        void set(float newX, float newY) { x = newX; y = newY; }
+        void setToZero() { x = 0.0f; y = 0.0f; }
     };
 
     struct PosAndDir2D {
@@ -48,6 +50,8 @@ namespace Polybee {
         float angle; // direction in radians
 
         PosAndDir2D(float x = 0.0f, float y = 0.0f, float angle = 0.0f) : x(x), y(y), angle(angle) {}
+
+        void setToZero() { x = 0.0f; y = 0.0f; angle = 0.0f; }
     };
 
     struct Line2D {

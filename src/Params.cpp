@@ -34,10 +34,8 @@ std::vector<TunnelEntranceSpec> Params::tunnelEntranceSpecs;
 // Tunnel exit net properties
 float Params::netAntibirdExitProb;
 float Params::netAntihailExitProb;
-//int Params::netAntibirdReboundTimeCost;
-//int Params::netAntihailReboundTimeCost;
-//int Params::netAntibirdMaxExitAttempts;
-//int Params::netAntihailMaxExitAttempts;
+int Params::netAntibirdMaxExitAttempts;
+int Params::netAntihailMaxExitAttempts;
 
 // Patch configuration
 std::vector<PatchSpec> Params::patchSpecs;
@@ -53,7 +51,7 @@ int Params::beePathRecordLen;
 float Params::beeVisualRange;
 int Params::beeVisitMemoryLength;
 float Params::beeProbVisitNearestFlower;
-int Params::beeForageDuration;  // Is this now obsolete?
+//int Params::beeForageDuration;  // Is this now obsolete?
 int Params::beeInHiveDuration;
 float Params::beeInitialEnergy;
 float Params::beeEnergyDepletionPerStep;
@@ -148,12 +146,10 @@ void Params::initRegistry()
     REGISTRY.emplace_back("tunnel-height", "tunnelH", ParamType::FLOAT, &tunnelH, 50.0f, "Height (number of cells) of tunnel");
     REGISTRY.emplace_back("tunnel-x", "tunnelX", ParamType::FLOAT, &tunnelX, 200.0f, "X position of left edge of tunnel");
     REGISTRY.emplace_back("tunnel-y", "tunnelY", ParamType::FLOAT, &tunnelY, 100.0f, "Y position of top edge of tunnel");
-    REGISTRY.emplace_back("net-antibird-exit-prob", "netAntibirdExitProb", ParamType::FLOAT, &netAntibirdExitProb, 0.5073f, "Probability of bee exiting through antibird net");
-    REGISTRY.emplace_back("net-antihail-exit-prob", "netAntihailExitProb", ParamType::FLOAT, &netAntihailExitProb, 0.3146f, "Probability of bee exiting through antihail net");
-    //REGISTRY.emplace_back("net-antibird-rebound-time-cost", "netAntibirdReboundTimeCost", ParamType::INT, &netAntibirdReboundTimeCost, 1, "Time cost (simulation steps) for rebounding off antibird net");
-    //REGISTRY.emplace_back("net-antihail-rebound-time-cost", "netAntihailReboundTimeCost", ParamType::INT, &netAntihailReboundTimeCost, 1, "Time cost (simulation steps) for rebounding off antihail net");
-    //REGISTRY.emplace_back("net-antibird-max-exit-attempts", "netAntibirdMaxExitAttempts", ParamType::INT, &netAntibirdMaxExitAttempts, 1, "Maximum exit attempts through antibird net before giving up");
-    //REGISTRY.emplace_back("net-antihail-max-exit-attempts", "netAntihailMaxExitAttempts", ParamType::INT, &netAntihailMaxExitAttempts, 1, "Maximum exit attempts through antihail net before giving up");
+    REGISTRY.emplace_back("net-antibird-exit-prob", "netAntibirdExitProb", ParamType::FLOAT, &netAntibirdExitProb, 0.1187f, "Per-attempt probability of bee exiting through antibird net");
+    REGISTRY.emplace_back("net-antihail-exit-prob", "netAntihailExitProb", ParamType::FLOAT, &netAntihailExitProb, 0.0371f, "Per-attempt probability of bee exiting through antihail net");
+    REGISTRY.emplace_back("net-antibird-max-exit-attempts", "netAntibirdMaxExitAttempts", ParamType::INT, &netAntibirdMaxExitAttempts, 7, "Maximum exit attempts through antibird net before giving up");
+    REGISTRY.emplace_back("net-antihail-max-exit-attempts", "netAntihailMaxExitAttempts", ParamType::INT, &netAntihailMaxExitAttempts, 11, "Maximum exit attempts through antihail net before giving up");
     REGISTRY.emplace_back("flower-initial-nectar", "flowerInitialNectar", ParamType::FLOAT, &flowerInitialNectar, 100.0f, "Initial nectar amount for each flower");
     REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
     REGISTRY.emplace_back("bee-max-dir-delta", "beeMaxDirDelta", ParamType::FLOAT, &beeMaxDirDelta, 0.4f, "Maximum change in direction (radians) per step");
@@ -162,7 +158,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("bee-visual-range", "beeVisualRange", ParamType::FLOAT, &beeVisualRange, 1.0f, "Maximum distance over which a bee can detect a flower");
     REGISTRY.emplace_back("bee-visit-memory-length", "beeVisitMemoryLength", ParamType::INT, &beeVisitMemoryLength, 5, "How many recently visited plants a bee remembers");
     REGISTRY.emplace_back("bee-prob-visit-nearest-flower", "beeProbVisitNearestFlower", ParamType::FLOAT, &beeProbVisitNearestFlower, 0.9f, "Probability that a bee visits a nearby flower rather than a move in a random direction");
-    REGISTRY.emplace_back("bee-forage-duration", "beeForageDuration", ParamType::INT, &beeForageDuration, 1000, "Duration (number of iterations) of a bee's foraging bout");
+    //REGISTRY.emplace_back("bee-forage-duration", "beeForageDuration", ParamType::INT, &beeForageDuration, 1000, "Duration (number of iterations) of a bee's foraging bout");
     REGISTRY.emplace_back("bee-in-hive-duration", "beeInHiveDuration", ParamType::INT, &beeInHiveDuration, 200, "Duration (number of iterations) of a bee's stay in the hive between foraging bouts");
     REGISTRY.emplace_back("bee-initial-energy", "beeInitialEnergy", ParamType::FLOAT, &beeInitialEnergy, 100.0f, "Energy a bee has when it leaves the hive to commence a foraging trip");
     REGISTRY.emplace_back("bee-energy-depletion-per-step", "beeEnergyDepletionPerStep", ParamType::FLOAT, &beeEnergyDepletionPerStep, 1.0f, "Energy a bee expends on each step when foraging");
@@ -334,7 +330,7 @@ void Params::initialise(int argc, char* argv[])
         // Special case for tunnel entrance positions (multiple allowed)
         config.add_options()
             ("tunnel-entrance", po::value<std::vector<std::string>>()->multitoken(),
-             "Tunnel entrance specification in format e1,e2:s where e1 and e2 are positions of edges of entrance along the specified side of tunnel (position being the distance measured from one end of that side), and s is the side (0=North, 1=East, 2=South, 3=West), e.g., --tunnel-entrance 5.5,10.0:0 --tunnel-entrance 3.0,6.0:2");
+             "Tunnel entrance specification in format e1,e2:s[:t] where e1 and e2 are positions of edges of entrance along the specified side of tunnel (position being the distance measured from one end of that side), and s is the side (0=North, 1=East, 2=South, 3=West), e.g., --tunnel-entrance 5.5,10.0:0 --tunnel-entrance 3.0,6.0:2. The optional t specifies the net type (0=NONE, 1=ANTIBIRD, 2=ANTIHAIL), e.g., --tunnel-entrance 5.5,10.0:0:1. Default value if not specified is 0 (NONE)");
 
         // Special case for plant patch defintions (multiple allowed)
         config.add_options()

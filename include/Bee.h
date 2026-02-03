@@ -7,6 +7,7 @@
 #ifndef _BEE_H
 #define _BEE_H
 
+#include "Tunnel.h"
 #include "utils.h"
 #include "Params.h"
 #include <random>
@@ -56,6 +57,9 @@ public:
 
 private:
     void forage();
+    bool normalForagingUpdate();
+    void continueTryingToCrossEntrance();
+    void attemptToCrossTunnelBoundaryWhileForaging(pb::PosAndDir2D& desiredMove);
     void switchToReturnToHive();
     void switchToOnFlower(Plant* pPlant);
     void returnToHiveInsideTunnel();
@@ -75,6 +79,7 @@ private:
     bool nextWaypointIsTunnelEntrance() const;
     void updatePathHistory();
     void setDirAccordingToHive();
+    void resetTryingToCrossEntranceState();
 
     float m_x;          // position of bee in environment coordinates
     float m_y;          // position of bee in environment coordinates
@@ -91,6 +96,12 @@ private:
     int   m_currentFlowerDuration { 0 };// duration (number of iterations) on current flower
 
     BeeState m_state { BeeState::FORAGING };
+
+    bool m_tryingToCrossEntrance { false };
+    int m_tryingToCrossEntranceFailCount { 0 };
+    pb::Pos2D m_tryingToCrossEntranceInitialPos;
+    IntersectInfo m_tryingToCrossEntranceIntersectInfo;
+    pb::PosAndDir2D m_tryingToCrossEntranceDesiredMove;
 
     std::vector<Plant*> m_recentlyVisitedPlants; // the last N plants visited by the bee
     std::vector<pb::Pos2D> m_path;               // record of the path taken by the bee

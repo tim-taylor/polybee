@@ -86,11 +86,52 @@ void Bee::forage()
     // update bee's path record with current position
     updatePathHistory();
 
+    if (m_tryingToCrossEntrance) {
+        // bee is in processes of trying to cross a tunnel entrance and will keep trying until
+        // it either succeeds or gives up
+        continueTryingToCrossEntrance();
+    }
+    else {
+        // normal foraging update
+        bool stillForaging = normalForagingUpdate();
+        if (!stillForaging) {
+            return; // bee's state has changed, so we can exit right now
+        }
+    }
+
+    m_currentBoutDuration++;
+
+    /*
+    // TODO - is this bit now obsolete?
+    // do we still want a fixed max foraging bout duration, or just have bees return to hive when they run out of energy?
+    if (m_currentBoutDuration >= Params::beeForageDuration) {
+        // maximum foraging bout duration reached, so return to hive
+        switchToReturnToHive();
+    }
+    */
+
+    // deplete bee's energy level
+    m_energy -= Params::beeEnergyDepletionPerStep;
+
+    if (m_energy <= Params::beeEnergyMinThreshold || m_energy >= Params::beeEnergyMaxThreshold) {
+        // bee has either run out of energy, or collected as much as it wants. Either way, return to hive!
+        switchToReturnToHive();
+    }
+}
+
+
+// Normal foraging update when not trying to cross tunnel entrance.
+// Returns true if bee is still foraging, false if its state has changed (e.g. it has landed on a flower).
+//
+bool Bee::normalForagingUpdate()
+{
+    // Normal foraging update when not trying to cross tunnel entrance
     pb::PosAndDir2D desiredMove;
 
     // work out where bee would like to go next, following "forage nearest flower" strategy
     // or step in random direction if no nearby flowers found
     auto desiredMoveOpt = forageNearestFlower();
+
     if (desiredMoveOpt.has_value()) {
         float rnd = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine);
         if (rnd < Params::beeProbVisitNearestFlower) {
@@ -122,79 +163,132 @@ void Bee::forage()
         if (m_state == BeeState::ON_FLOWER) {
             // bee has just landed on its target flower. Its state has already been updated in forageNearestFlower(),
             // so its bout has successfully finished and our work here is done
-            return;
+            return false; // bee is no longer foraging
         }
     }
     else {
         // desired move crosses tunnel boundary, so we need to figure out if bee can enter/exit the tunnel at this point
-
-        // TODO - we need to consider TunnelEntranceInfo::probExit() here
-        // Also, we should break this long method into smaller methods for clarity
-
-        auto intersectInfo = m_pEnv->getTunnel().intersectsTunnelBoundary(m_x, m_y, desiredMove.x, desiredMove.y);
-
-        if (!intersectInfo.intersects) {
-            pb::msg_error_and_exit(
-                std::format("Bee::move(): logic error: expected intersection when crossing tunnel boundary, from ({}, {}) to ({}, {})",
-                    m_x, m_y, desiredMove.x, desiredMove.y));
-        }
-        else if (intersectInfo.crossesEntrance) {
-            // bee wants to enter/exit via a tunnel entrance, so we need to determine whether it can
-            // successfullly do so based on the net type at this entrance
-
-            float rnd = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine);
-            float probExit = intersectInfo.pEntranceUsed->probExit();
-            if (rnd < probExit) {
-                // the bee passed through an entrance, so it can move to the new position
-                m_angle = desiredMove.angle;
-                m_x = desiredMove.x;
-                m_y = desiredMove.y;
-                m_inTunnel = !m_inTunnel;
-                // NB store pointer to last tunnel entrance used. Alternatively, we might want to record the
-                // FIRST entrance used when entering the tunnel, so that the bee can try to exit via the same entrance later?
-                // TODO - discuss with Alan and Hazel
-                m_pLastTunnelEntrance = intersectInfo.pEntranceUsed;
-            }
-            else {
-                // the bee failed to exit through the net, so we assume it rebounded to its current
-                // position (i.e. it remains at its current position)
-                // (we could consider adding a time cost here for the failed exit attempt)
-            }
-        }
-        else {
-            // the bee collided with the tunnel wall, so it cannot move where it wanted to go.
-            // Instead, set its position to the point where it hit the wall
-
-            m_x = intersectInfo.point.x;
-            m_y = intersectInfo.point.y;
-
-            // and align its direction to be along the wall, in the direction closest to its desired movement direction
-            float dx = intersectInfo.intersectedLine.end.x - intersectInfo.intersectedLine.start.x;
-            float dy = intersectInfo.intersectedLine.end.y - intersectInfo.intersectedLine.start.y;
-            m_angle = alignAngleWithLine(desiredMove.angle, dx, dy);
-        }
+        attemptToCrossTunnelBoundaryWhileForaging(desiredMove);
     }
 
     // nudge bee away from tunnel walls if too close, to avoid any numerical issues
     nudgeAwayFromTunnelWalls();
 
-    m_currentBoutDuration++;
+    return true; // bee is still foraging
+}
 
-    /*
-    // TODO - is this bit now obsolete?
-    // do we still want a fixed max foraging bout duration, or just have bees return to hive when they run out of energy?
-    if (m_currentBoutDuration >= Params::beeForageDuration) {
-        // maximum foraging bout duration reached, so return to hive
-        switchToReturnToHive();
+
+void Bee::continueTryingToCrossEntrance()
+{
+    assert(m_tryingToCrossEntrance);
+
+    // bee wants to enter/exit via a tunnel entrance, so we need to determine whether it can
+    // successfullly do so based on the net type at this entrance
+    float rnd = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine);
+    float probExit = m_tryingToCrossEntranceIntersectInfo.pEntranceUsed->probExit();
+
+    if (rnd < probExit) {
+        // the bee successfully passed through the entrance, so it can move to the new position!
+        m_angle = m_tryingToCrossEntranceDesiredMove.angle;
+        m_x = m_tryingToCrossEntranceDesiredMove.x;
+        m_y = m_tryingToCrossEntranceDesiredMove.y;
+        m_inTunnel = !m_inTunnel;
+        m_pLastTunnelEntrance = m_tryingToCrossEntranceIntersectInfo.pEntranceUsed;
+
+        // reset trying to cross entrance state
+        resetTryingToCrossEntranceState();
     }
-    */
+    else {
+        // the bee failed to exit through the net, so update the fail count and
+        // adjust its position accordingly
 
-    // deplete bee's energy level
-    m_energy -= Params::beeEnergyDepletionPerStep;
+        m_tryingToCrossEntranceFailCount++;
 
-    if (m_energy <= Params::beeEnergyMinThreshold || m_energy >= Params::beeEnergyMaxThreshold) {
-        // bee has either run out of energy, or collected as much as it wants. Either way, return to hive!
-        switchToReturnToHive();
+        // bee alternates between its original position and the intersection point on the net
+        // each time it makes a failed attempt to cross the entrance
+        if (m_tryingToCrossEntranceFailCount % 2 == 0) {
+            m_x = m_tryingToCrossEntranceInitialPos.x;
+            m_y = m_tryingToCrossEntranceInitialPos.y;
+        }
+        else {
+            m_x = m_tryingToCrossEntranceIntersectInfo.point.x;
+            m_y = m_tryingToCrossEntranceIntersectInfo.point.y;
+        }
+
+        // check if bee has exceeded maximum number of attempts to cross this entrance
+        int maxAttempts = m_tryingToCrossEntranceIntersectInfo.pEntranceUsed->maxAttempts();
+        if (m_tryingToCrossEntranceFailCount >= maxAttempts) {
+            // bee has given up trying to cross the entrance, so reset its state
+            resetTryingToCrossEntranceState();
+        }
+    }
+}
+
+
+// Called when a bee's desired move while foraging crosses tunnel boundary. In this situation, we need to figure out
+// if the bee can enter/exit the tunnel at this location and at this time, based upon whether there is a tunnel entrance
+// at this location, and the net type at that entrance.
+//
+// * If it is trying to cross a tunnel entrance and is successful, we update its position and state accordingly.
+//
+// * If it is trying to cross a tunnel entrance but fails (due to net), it remains at its current position and we
+//   set m_tryingToCrossEntrance to true and m_tryingToCrossEntranceFailCount to 1. This will cause the bee
+//   to continue trying to cross the entrance in subsequent updates until it either succeeds or gives up after
+//   a maximum number of attempts. The logic for this is handled in the forage() method.
+//
+// * If the bee collides with a tunnel wall, it cannot move to the desired position so we ajust its position
+//   to be at the point of intersection with the tunnel boundary, and align its direction along the wall.
+//
+void Bee::attemptToCrossTunnelBoundaryWhileForaging(pb::PosAndDir2D& desiredMove)
+{
+    assert(m_state == BeeState::FORAGING);
+
+    auto intersectInfo = m_pEnv->getTunnel().intersectsTunnelBoundary(m_x, m_y, desiredMove.x, desiredMove.y);
+
+    if (!intersectInfo.intersects) {
+        pb::msg_error_and_exit(
+            std::format("Bee::move(): logic error: expected intersection when crossing tunnel boundary, from ({}, {}) to ({}, {})",
+                m_x, m_y, desiredMove.x, desiredMove.y));
+    }
+    else if (intersectInfo.crossesEntrance) {
+        // bee wants to enter/exit via a tunnel entrance, so we need to determine whether it can
+        // successfullly do so based on the net type at this entrance
+
+        float rnd = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine);
+        float probExit = intersectInfo.pEntranceUsed->probExit();
+        if (rnd < probExit) {
+            // the bee passed through an entrance, so it can move to the new position
+            m_angle = desiredMove.angle;
+            m_x = desiredMove.x;
+            m_y = desiredMove.y;
+            m_inTunnel = !m_inTunnel;
+            // NB store pointer to last tunnel entrance used. Alternatively, we might want to record the
+            // FIRST entrance used when entering the tunnel, so that the bee can try to exit via the same entrance later?
+            // TODO - discuss with Alan and Hazel
+            m_pLastTunnelEntrance = intersectInfo.pEntranceUsed;
+        }
+        else {
+            // the bee failed to exit through the net, so we assume it rebounded to its current
+            // position (i.e. it remains at its current position)
+            // (we could consider adding a time cost here for the failed exit attempt)
+            m_tryingToCrossEntrance = true;
+            m_tryingToCrossEntranceFailCount = 1;
+            m_tryingToCrossEntranceInitialPos = pb::Pos2D(m_x, m_y);
+            m_tryingToCrossEntranceIntersectInfo = intersectInfo;
+            m_tryingToCrossEntranceDesiredMove = desiredMove;
+        }
+    }
+    else {
+        // the bee collided with the tunnel wall, so it cannot move where it wanted to go.
+        // Instead, set its position to the point where it hit the wall
+
+        m_x = intersectInfo.point.x;
+        m_y = intersectInfo.point.y;
+
+        // and align its direction to be along the wall, in the direction closest to its desired movement direction
+        float dx = intersectInfo.intersectedLine.end.x - intersectInfo.intersectedLine.start.x;
+        float dy = intersectInfo.intersectedLine.end.y - intersectInfo.intersectedLine.start.y;
+        m_angle = alignAngleWithLine(desiredMove.angle, dx, dy);
     }
 }
 
@@ -429,6 +523,7 @@ void Bee::switchToReturnToHive()
     // clear recently visited plants list so bee can visit them again on next foraging bout
     m_recentlyVisitedPlants.clear();
     m_currentBoutDuration = 0;
+    resetTryingToCrossEntranceState();
 
     if (m_inTunnel) {
         // bee is inside tunnel, so set state to return to hive inside tunnel
@@ -440,6 +535,16 @@ void Bee::switchToReturnToHive()
         m_state = BeeState::RETURN_TO_HIVE_OUTSIDE_TUNNEL;
         calculateWaypointsAroundTunnel();
     }
+}
+
+
+void Bee::resetTryingToCrossEntranceState()
+{
+    m_tryingToCrossEntrance = false;
+    m_tryingToCrossEntranceFailCount = 0;
+    m_tryingToCrossEntranceInitialPos.setToZero();
+    m_tryingToCrossEntranceIntersectInfo.reset();
+    m_tryingToCrossEntranceDesiredMove.setToZero();
 }
 
 

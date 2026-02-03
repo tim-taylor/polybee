@@ -128,10 +128,8 @@ public:
     // Tunnel exit net properties
     static float netAntibirdExitProb;       // probability of bee exiting through antibird net
     static float netAntihailExitProb;       // probability of bee exiting through antihail net
-    //static int netAntibirdReboundTimeCost;  // time cost for rebounding off antibird net
-    //static int netAntihailReboundTimeCost;  // time cost for rebounding off antihail net
-    //static int netAntibirdMaxExitAttempts;  // max exit attempts through antibird net
-    //static int netAntihailMaxExitAttempts;  // max exit attempts through antihail net
+    static int netAntibirdMaxExitAttempts;  // max exit attempts through antibird net
+    static int netAntihailMaxExitAttempts;  // max exit attempts through antihail net
 
     // Patch configuration
     static std::vector<PatchSpec> patchSpecs;
@@ -147,7 +145,7 @@ public:
     static float beeVisualRange; // maximum distance over which a bee can detect a flower
     static int beeVisitMemoryLength; // how many recently visited plants a bee remembers
     static float beeProbVisitNearestFlower; // probability that a bee visits the nearest flower rather than a random visible flower
-    static int beeForageDuration; // duration (number of iterations) of a bee's foraging bout
+    //static int beeForageDuration; // duration (number of iterations) of a bee's foraging bout
     static int beeInHiveDuration; // duration (number of iterations) of a bee's stay in the hive between foraging bouts
     static float beeInitialEnergy; // energy a bee has when it leaves the hive to commence a foraging trip
     static float beeEnergyDepletionPerStep; // energy a bee expends on each step when foraging

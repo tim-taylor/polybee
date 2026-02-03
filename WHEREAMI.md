@@ -1,3 +1,15 @@
+## 3/2/26
+
+DONE
+
+* have calculated "per attempt" probabilities of exiting bird and hail nets
+* finished coding code in Bee class to have it in a "trying to cross entrance" pseudo-state
+when foraging
+
+TODO
+
+* check that the "new trying to cross entrance" code is working properly, e.g. in void Bee::continueTryingToCrossEntrance()
+
 ## 2/2/26
 
 DONE

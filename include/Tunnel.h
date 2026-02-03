@@ -54,23 +54,6 @@ struct TunnelEntranceInfo {
         }
     }
 
-    /*
-    // time cost (in simulation steps) for bee of rebounding off this entrance if exit attempt fails
-    int timeCostRebound() const {
-        switch (netType) {
-        case NetType::NONE:
-            return 0;
-        case NetType::ANTIBIRD:
-            return Params::netAntibirdReboundTimeCost;
-        case NetType::ANTIHAIL:
-            return Params::netAntihailReboundTimeCost;
-        default: {
-            pb::msg_error_and_exit(std::format("Unknown net type {} encountered in TunnelEntranceInfo::timeCostRebound()", static_cast<int>(netType)));
-            return 0;
-        }
-        }
-    }
-
     // maximum number of attempts to exit via this entrance before a bee gives up
     int maxAttempts() const {
         switch (netType) {
@@ -86,24 +69,33 @@ struct TunnelEntranceInfo {
         }
         }
     }
-    */
 };
 
 
 struct IntersectInfo {
-    bool intersects;                                    // do the lines intersect at all
-    bool crossesEntrance;                               // is the intersection point within the entrance limits (if applicable)
+    bool intersects { false };                          // do the lines intersect at all
+    bool crossesEntrance { false };                     // is the intersection point within the entrance limits (if applicable)
     pb::Pos2D point;                                    // intersection point (if intersects is true)
     pb::Line2D intersectedLine;                         // the line that was intersected (if intersects is true)
                                                         // (this will be either a tunnel wall or an entrance line,
                                                         // depending on whether crossesEntrance is true)
     const TunnelEntranceInfo* pEntranceUsed { nullptr };// pointer to the entrance that was used (if applicable)
 
+    IntersectInfo() : intersects(false), crossesEntrance(false), point(), intersectedLine() {}
+
     IntersectInfo(bool intersects, bool crossesEntrance, const pb::Pos2D& point, const pb::Line2D& intersectedLine)
         : intersects(intersects), crossesEntrance(crossesEntrance), point(point), intersectedLine(intersectedLine) {}
 
     IntersectInfo(bool intersects, bool crossesEntrance)
         : intersects(intersects), crossesEntrance(crossesEntrance) {}
+
+    void reset() {
+        intersects = false;
+        crossesEntrance = false;
+        point.setToZero();
+        intersectedLine = pb::Line2D();
+        pEntranceUsed = nullptr;
+    }
 };
 
 
