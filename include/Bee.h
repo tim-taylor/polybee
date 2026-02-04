@@ -30,6 +30,34 @@ enum class BeeState
     IN_HIVE
 };
 
+
+struct TryingToCrossEntranceState
+{
+    void set(int failCount_, float x, float y, const IntersectInfo& intersectInfo_, const pb::PosAndDir2D& desiredMove_) {
+        failCount = failCount_;
+        initialPos = pb::Pos2D(x, y);
+        intersectInfo = intersectInfo_;
+        desiredMove = desiredMove_;
+        atNetPos.x = x + 0.9 * (intersectInfo_.point.x - x);
+        atNetPos.y = y + 0.9 * (intersectInfo_.point.y - y);
+    }
+
+    void reset() {
+        failCount = 0;
+        initialPos.setToZero();
+        intersectInfo.reset();
+        desiredMove.setToZero();
+        atNetPos.setToZero();
+    }
+
+    int failCount { 0 };
+    pb::Pos2D initialPos;
+    pb::Pos2D atNetPos;
+    IntersectInfo intersectInfo;
+    pb::PosAndDir2D desiredMove;
+};
+
+
 /**
  * The Bee class ...
  */
@@ -98,10 +126,7 @@ private:
     BeeState m_state { BeeState::FORAGING };
 
     bool m_tryingToCrossEntrance { false };
-    int m_tryingToCrossEntranceFailCount { 0 };
-    pb::Pos2D m_tryingToCrossEntranceInitialPos;
-    IntersectInfo m_tryingToCrossEntranceIntersectInfo;
-    pb::PosAndDir2D m_tryingToCrossEntranceDesiredMove;
+    TryingToCrossEntranceState m_tryCrossState;
 
     std::vector<Plant*> m_recentlyVisitedPlants; // the last N plants visited by the bee
     std::vector<pb::Pos2D> m_path;               // record of the path taken by the bee

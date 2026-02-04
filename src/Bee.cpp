@@ -178,6 +178,10 @@ bool Bee::normalForagingUpdate()
 }
 
 
+// This method is called when a bee has previously attempted to cross a tunnel entrance but failed
+// (due to net), and is continuing to try to cross the entrance in subsequent updates until
+// it either succeeds or gives up after a maximum number of attempts.
+//
 void Bee::continueTryingToCrossEntrance()
 {
     assert(m_tryingToCrossEntrance);
@@ -185,15 +189,15 @@ void Bee::continueTryingToCrossEntrance()
     // bee wants to enter/exit via a tunnel entrance, so we need to determine whether it can
     // successfullly do so based on the net type at this entrance
     float rnd = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine);
-    float probExit = m_tryingToCrossEntranceIntersectInfo.pEntranceUsed->probExit();
+    float probExit = m_tryCrossState.intersectInfo.pEntranceUsed->probExit();
 
     if (rnd < probExit) {
         // the bee successfully passed through the entrance, so it can move to the new position!
-        m_angle = m_tryingToCrossEntranceDesiredMove.angle;
-        m_x = m_tryingToCrossEntranceDesiredMove.x;
-        m_y = m_tryingToCrossEntranceDesiredMove.y;
+        m_angle = m_tryCrossState.desiredMove.angle;
+        m_x = m_tryCrossState.desiredMove.x;
+        m_y = m_tryCrossState.desiredMove.y;
         m_inTunnel = !m_inTunnel;
-        m_pLastTunnelEntrance = m_tryingToCrossEntranceIntersectInfo.pEntranceUsed;
+        m_pLastTunnelEntrance = m_tryCrossState.intersectInfo.pEntranceUsed;
 
         // reset trying to cross entrance state
         resetTryingToCrossEntranceState();
@@ -202,42 +206,50 @@ void Bee::continueTryingToCrossEntrance()
         // the bee failed to exit through the net, so update the fail count and
         // adjust its position accordingly
 
-        m_tryingToCrossEntranceFailCount++;
+        m_tryCrossState.failCount++;
 
         // bee alternates between its original position and the intersection point on the net
         // each time it makes a failed attempt to cross the entrance
-        if (m_tryingToCrossEntranceFailCount % 2 == 0) {
-            m_x = m_tryingToCrossEntranceInitialPos.x;
-            m_y = m_tryingToCrossEntranceInitialPos.y;
+        if (m_tryCrossState.failCount % 2 == 0) {
+            m_x = m_tryCrossState.initialPos.x;
+            m_y = m_tryCrossState.initialPos.y;
         }
         else {
-            m_x = m_tryingToCrossEntranceIntersectInfo.point.x;
-            m_y = m_tryingToCrossEntranceIntersectInfo.point.y;
+            m_x = m_tryCrossState.atNetPos.x;
+            m_y = m_tryCrossState.atNetPos.y;
         }
 
         // check if bee has exceeded maximum number of attempts to cross this entrance
-        int maxAttempts = m_tryingToCrossEntranceIntersectInfo.pEntranceUsed->maxAttempts();
-        if (m_tryingToCrossEntranceFailCount >= maxAttempts) {
+        int maxAttempts = m_tryCrossState.intersectInfo.pEntranceUsed->maxAttempts();
+        if (m_tryCrossState.failCount >= maxAttempts) {
             // bee has given up trying to cross the entrance, so reset its state
+            // and place it at the position it was at when it first tried to cross
+            m_x = m_tryCrossState.initialPos.x;
+            m_y = m_tryCrossState.initialPos.y;
             resetTryingToCrossEntranceState();
         }
     }
 }
 
 
-// Called when a bee's desired move while foraging crosses tunnel boundary. In this situation, we need to figure out
-// if the bee can enter/exit the tunnel at this location and at this time, based upon whether there is a tunnel entrance
-// at this location, and the net type at that entrance.
+// Called when a bee's desired move while foraging crosses tunnel boundary. In this
+// situation, we need to figure out if the bee can enter/exit the tunnel at this
+// location and at this time, based upon whether there is a tunnel entrance at this
+// location, and the net type at that entrance.
 //
-// * If it is trying to cross a tunnel entrance and is successful, we update its position and state accordingly.
+// * If it is trying to cross a tunnel entrance and is successful, we update its
+//   position and state accordingly.
 //
-// * If it is trying to cross a tunnel entrance but fails (due to net), it remains at its current position and we
-//   set m_tryingToCrossEntrance to true and m_tryingToCrossEntranceFailCount to 1. This will cause the bee
-//   to continue trying to cross the entrance in subsequent updates until it either succeeds or gives up after
-//   a maximum number of attempts. The logic for this is handled in the forage() method.
+// * If it is trying to cross a tunnel entrance but fails (due to net), it remains
+//   at its current position and we set m_tryingToCrossEntrance to true and
+//   m_tryingToCrossEntranceFailCount to 1. This will cause the bee to continue
+//   trying to cross the entrance in subsequent updates until it either succeeds
+//   or gives up after a maximum number of attempts. The logic for this is handled
+//   in the forage() method.
 //
-// * If the bee collides with a tunnel wall, it cannot move to the desired position so we ajust its position
-//   to be at the point of intersection with the tunnel boundary, and align its direction along the wall.
+// * If the bee collides with a tunnel wall, it cannot move to the desired position
+//   so we ajust its position to be at the point of intersection with the tunnel
+//   boundary, and align its direction along the wall.
 //
 void Bee::attemptToCrossTunnelBoundaryWhileForaging(pb::PosAndDir2D& desiredMove)
 {
@@ -269,13 +281,11 @@ void Bee::attemptToCrossTunnelBoundaryWhileForaging(pb::PosAndDir2D& desiredMove
         }
         else {
             // the bee failed to exit through the net, so we assume it rebounded to its current
-            // position (i.e. it remains at its current position)
-            // (we could consider adding a time cost here for the failed exit attempt)
+            // position (i.e. it remains at its current position). We set m_tryingToCrossEntrance to true and
+            // m_tryingToCrossEntranceFailCount to 1, so that it will continue trying to cross the entrance
+            // in subsequent updates until it either succeeds or gives up after a maximum number of attempts.
             m_tryingToCrossEntrance = true;
-            m_tryingToCrossEntranceFailCount = 1;
-            m_tryingToCrossEntranceInitialPos = pb::Pos2D(m_x, m_y);
-            m_tryingToCrossEntranceIntersectInfo = intersectInfo;
-            m_tryingToCrossEntranceDesiredMove = desiredMove;
+            m_tryCrossState.set(1, m_x, m_y, intersectInfo, desiredMove);
         }
     }
     else {
@@ -541,10 +551,7 @@ void Bee::switchToReturnToHive()
 void Bee::resetTryingToCrossEntranceState()
 {
     m_tryingToCrossEntrance = false;
-    m_tryingToCrossEntranceFailCount = 0;
-    m_tryingToCrossEntranceInitialPos.setToZero();
-    m_tryingToCrossEntranceIntersectInfo.reset();
-    m_tryingToCrossEntranceDesiredMove.setToZero();
+    m_tryCrossState.reset();
 }
 
 
