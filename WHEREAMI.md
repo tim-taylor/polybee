@@ -8,6 +8,8 @@ DONE
 
 * check that the "new trying to cross entrance" code is working properly, e.g. in Bee::continueTryingToCrossEntrance()
   Debugging and some refactoring required
+* refactoring of Bee class to use pb::Pos2D for bee position rather than two floats
+* refactor Hive class to use pb::Pos2D for bee position rather than two floats
 
 ## 3/2/26
 

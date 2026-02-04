@@ -71,8 +71,8 @@ public:
     void update();
 
     // Getters
-    float x() const { return m_x; }
-    float y() const { return m_y; }
+    float x() const { return m_pos.x; }
+    float y() const { return m_pos.y; }
     float angle() const { return m_angle; }
     static float visualRange() { return Params::beeVisualRange; }
     float colorHue() const { return m_colorHue; }
@@ -109,8 +109,7 @@ private:
     void setDirAccordingToHive();
     void resetTryingToCrossEntranceState();
 
-    float m_x;          // position of bee in environment coordinates
-    float m_y;          // position of bee in environment coordinates
+    pb::Pos2D m_pos;    // position of bee in environment coordinates
     float m_angle;      // direction of travel in radians
     float m_energy;     // energy level of the bee
     float m_colorHue;   // hue value for coloring the bee in visualisation (between 0.0 and 360.0)

@@ -26,16 +26,6 @@ struct TunnelEntranceInfo {
     int side;   // 0=North, 1=East, 2=South, 3=West
     NetType netType { NetType::NONE };  // type of net at this entrance
 
-    /*
-    TunnelEntranceInfo(float x1, float y1, float x2, float y2, int side)
-        : x1(x1), y1(y1), x2(x2), y2(y2), side(side) {}
-
-    TunnelEntranceInfo() : x1(0), y1(0), x2(0), y2(0), side(0) {}
-
-    TunnelEntranceInfo(const TunnelEntranceInfo& other)
-        : x1(other.x1), y1(other.y1), x2(other.x2), y2(other.y2), side(other.side) {}
-    */
-
     TunnelEntranceInfo(const TunnelEntranceSpec& spec, const Tunnel* pTunnel);
 
     // probability of a bee exiting the tunnel when reaching this entrance

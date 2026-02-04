@@ -28,11 +28,10 @@ Bee::Bee(Hive* pHive, Environment* pEnv) :
 
     m_pPolyBeeCore = m_pEnv->getPolyBeeCore();
 
-    m_x = m_pHive->x();
-    m_y = m_pHive->y();
+    m_pos = m_pHive->pos();
     m_distDir.param(std::uniform_real_distribution<float>::param_type(-Params::beeMaxDirDelta, Params::beeMaxDirDelta));
     m_colorHue = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine) * 360.0f;
-    m_inTunnel = m_pEnv->inTunnel(m_x, m_y);
+    m_inTunnel = m_pEnv->inTunnel(m_pos.x, m_pos.y);
     m_currentBoutDuration = 0;
     m_currentHiveDuration = 0;
     m_state = BeeState::FORAGING;
@@ -158,8 +157,8 @@ bool Bee::normalForagingUpdate()
     if ((m_inTunnel && newPosInTunnel) || (!m_inTunnel && !newPosInTunnel)) {
         // valid move: update position
         m_angle = desiredMove.angle;
-        m_x = desiredMove.x;
-        m_y = desiredMove.y;
+        m_pos.x = desiredMove.x;
+        m_pos.y = desiredMove.y;
         if (m_state == BeeState::ON_FLOWER) {
             // bee has just landed on its target flower. Its state has already been updated in forageNearestFlower(),
             // so its bout has successfully finished and our work here is done
@@ -194,8 +193,8 @@ void Bee::continueTryingToCrossEntrance()
     if (rnd < probExit) {
         // the bee successfully passed through the entrance, so it can move to the new position!
         m_angle = m_tryCrossState.desiredMove.angle;
-        m_x = m_tryCrossState.desiredMove.x;
-        m_y = m_tryCrossState.desiredMove.y;
+        m_pos.x = m_tryCrossState.desiredMove.x;
+        m_pos.y = m_tryCrossState.desiredMove.y;
         m_inTunnel = !m_inTunnel;
         m_pLastTunnelEntrance = m_tryCrossState.intersectInfo.pEntranceUsed;
 
@@ -211,12 +210,10 @@ void Bee::continueTryingToCrossEntrance()
         // bee alternates between its original position and the intersection point on the net
         // each time it makes a failed attempt to cross the entrance
         if (m_tryCrossState.failCount % 2 == 0) {
-            m_x = m_tryCrossState.initialPos.x;
-            m_y = m_tryCrossState.initialPos.y;
+            m_pos = m_tryCrossState.initialPos;
         }
         else {
-            m_x = m_tryCrossState.atNetPos.x;
-            m_y = m_tryCrossState.atNetPos.y;
+            m_pos = m_tryCrossState.atNetPos;
         }
 
         // check if bee has exceeded maximum number of attempts to cross this entrance
@@ -224,8 +221,7 @@ void Bee::continueTryingToCrossEntrance()
         if (m_tryCrossState.failCount >= maxAttempts) {
             // bee has given up trying to cross the entrance, so reset its state
             // and place it at the position it was at when it first tried to cross
-            m_x = m_tryCrossState.initialPos.x;
-            m_y = m_tryCrossState.initialPos.y;
+            m_pos = m_tryCrossState.initialPos;
             resetTryingToCrossEntranceState();
         }
     }
@@ -255,12 +251,12 @@ void Bee::attemptToCrossTunnelBoundaryWhileForaging(pb::PosAndDir2D& desiredMove
 {
     assert(m_state == BeeState::FORAGING);
 
-    auto intersectInfo = m_pEnv->getTunnel().intersectsTunnelBoundary(m_x, m_y, desiredMove.x, desiredMove.y);
+    auto intersectInfo = m_pEnv->getTunnel().intersectsTunnelBoundary(m_pos.x, m_pos.y, desiredMove.x, desiredMove.y);
 
     if (!intersectInfo.intersects) {
         pb::msg_error_and_exit(
             std::format("Bee::move(): logic error: expected intersection when crossing tunnel boundary, from ({}, {}) to ({}, {})",
-                m_x, m_y, desiredMove.x, desiredMove.y));
+                m_pos.x, m_pos.y, desiredMove.x, desiredMove.y));
     }
     else if (intersectInfo.crossesEntrance) {
         // bee wants to enter/exit via a tunnel entrance, so we need to determine whether it can
@@ -271,8 +267,8 @@ void Bee::attemptToCrossTunnelBoundaryWhileForaging(pb::PosAndDir2D& desiredMove
         if (rnd < probExit) {
             // the bee passed through an entrance, so it can move to the new position
             m_angle = desiredMove.angle;
-            m_x = desiredMove.x;
-            m_y = desiredMove.y;
+            m_pos.x = desiredMove.x;
+            m_pos.y = desiredMove.y;
             m_inTunnel = !m_inTunnel;
             // NB store pointer to last tunnel entrance used. Alternatively, we might want to record the
             // FIRST entrance used when entering the tunnel, so that the bee can try to exit via the same entrance later?
@@ -285,15 +281,14 @@ void Bee::attemptToCrossTunnelBoundaryWhileForaging(pb::PosAndDir2D& desiredMove
             // m_tryingToCrossEntranceFailCount to 1, so that it will continue trying to cross the entrance
             // in subsequent updates until it either succeeds or gives up after a maximum number of attempts.
             m_tryingToCrossEntrance = true;
-            m_tryCrossState.set(1, m_x, m_y, intersectInfo, desiredMove);
+            m_tryCrossState.set(1, m_pos.x, m_pos.y, intersectInfo, desiredMove);
         }
     }
     else {
         // the bee collided with the tunnel wall, so it cannot move where it wanted to go.
         // Instead, set its position to the point where it hit the wall
 
-        m_x = intersectInfo.point.x;
-        m_y = intersectInfo.point.y;
+        m_pos = intersectInfo.point;
 
         // and align its direction to be along the wall, in the direction closest to its desired movement direction
         float dx = intersectInfo.intersectedLine.end.x - intersectInfo.intersectedLine.start.x;
@@ -367,42 +362,42 @@ void Bee::nudgeAwayFromTunnelWalls()
         // bee is inside the tunnel: ensure it stays a minimum distance away from the walls
 
         // check left/right walls
-        if (m_x <= tunnel.x() + m_sTunnelWallBuffer) {
-            m_x = tunnel.x() + m_sTunnelWallBuffer;
+        if (m_pos.x <= tunnel.x() + m_sTunnelWallBuffer) {
+            m_pos.x = tunnel.x() + m_sTunnelWallBuffer;
         }
-        else if (m_x >= tunnel.x() + tunnel.width() - m_sTunnelWallBuffer) {
-            m_x = tunnel.x() + tunnel.width() - m_sTunnelWallBuffer;
+        else if (m_pos.x >= tunnel.x() + tunnel.width() - m_sTunnelWallBuffer) {
+            m_pos.x = tunnel.x() + tunnel.width() - m_sTunnelWallBuffer;
         }
         // check top/bottom walls
-        if (m_y <= tunnel.y() + m_sTunnelWallBuffer) {
-            m_y = tunnel.y() + m_sTunnelWallBuffer;
+        if (m_pos.y <= tunnel.y() + m_sTunnelWallBuffer) {
+            m_pos.y = tunnel.y() + m_sTunnelWallBuffer;
         }
-        else if (m_y >= tunnel.y() + tunnel.height() - m_sTunnelWallBuffer) {
-            m_y = tunnel.y() + tunnel.height() - m_sTunnelWallBuffer;
+        else if (m_pos.y >= tunnel.y() + tunnel.height() - m_sTunnelWallBuffer) {
+            m_pos.y = tunnel.y() + tunnel.height() - m_sTunnelWallBuffer;
         }
     }
     else {
         // bee is outside the tunnel: check if it's within the wall buffer zone, and nudge it out further if so
 
         // check left/right walls
-        if ((m_y >= tunnel.y()) && (m_y <= tunnel.y() + tunnel.height())) {
+        if ((m_pos.y >= tunnel.y()) && (m_pos.y <= tunnel.y() + tunnel.height())) {
             // bee is within the vertical range of the tunnel, so check horizontal distance
-            if ((m_x < tunnel.x() + tunnel.width() / 2.0f) && (m_x >= tunnel.x() - m_sTunnelWallBuffer)) {
-                m_x = tunnel.x() - m_sTunnelWallBuffer;
+            if ((m_pos.x < tunnel.x() + tunnel.width() / 2.0f) && (m_pos.x >= tunnel.x() - m_sTunnelWallBuffer)) {
+                m_pos.x = tunnel.x() - m_sTunnelWallBuffer;
             }
-            else if ((m_x >= tunnel.x() + tunnel.width() / 2.0f) && (m_x <= tunnel.x() + tunnel.width() + m_sTunnelWallBuffer)) {
-                m_x = tunnel.x() + tunnel.width() + m_sTunnelWallBuffer;
+            else if ((m_pos.x >= tunnel.x() + tunnel.width() / 2.0f) && (m_pos.x <= tunnel.x() + tunnel.width() + m_sTunnelWallBuffer)) {
+                m_pos.x = tunnel.x() + tunnel.width() + m_sTunnelWallBuffer;
             }
         }
 
         // check top/bottom walls
-        if ((m_x >= tunnel.x()) && (m_x <= tunnel.x() + tunnel.width())) {
+        if ((m_pos.x >= tunnel.x()) && (m_pos.x <= tunnel.x() + tunnel.width())) {
             // bee is within the horizontal range of the tunnel, so check vertical distance
-            if ((m_y < tunnel.y() + tunnel.height() / 2.0f) && (m_y >= tunnel.y() - m_sTunnelWallBuffer)) {
-                m_y = tunnel.y() - m_sTunnelWallBuffer;
+            if ((m_pos.y < tunnel.y() + tunnel.height() / 2.0f) && (m_pos.y >= tunnel.y() - m_sTunnelWallBuffer)) {
+                m_pos.y = tunnel.y() - m_sTunnelWallBuffer;
             }
-            else if ((m_y >= tunnel.y() + tunnel.height() / 2.0f) && (m_y <= tunnel.y() + tunnel.height() + m_sTunnelWallBuffer)) {
-                m_y = tunnel.y() + tunnel.height() + m_sTunnelWallBuffer;
+            else if ((m_pos.y >= tunnel.y() + tunnel.height() / 2.0f) && (m_pos.y <= tunnel.y() + tunnel.height() + m_sTunnelWallBuffer)) {
+                m_pos.y = tunnel.y() + tunnel.height() + m_sTunnelWallBuffer;
             }
         }
     }
@@ -429,13 +424,13 @@ std::optional<pb::PosAndDir2D> Bee::forageNearestFlower()
 {
     pb::PosAndDir2D result;
 
-    auto plantInfo = m_pEnv->selectNearbyUnvisitedPlant(m_x, m_y, m_recentlyVisitedPlants);
+    auto plantInfo = m_pEnv->selectNearbyUnvisitedPlant(m_pos.x, m_pos.y, m_recentlyVisitedPlants);
 
     if (plantInfo.has_value()) {
         Plant* pPlant = plantInfo.value();
         // found a nearby plant to forage from
-        float dx = pPlant->x() - m_x;
-        float dy = pPlant->y() - m_y;
+        float dx = pPlant->x() - m_pos.x;
+        float dy = pPlant->y() - m_pos.y;
         float angleToPlant = std::atan2(dy, dx); // angle from bee to plant
 
         result.angle = angleToPlant;
@@ -456,8 +451,8 @@ std::optional<pb::PosAndDir2D> Bee::forageNearestFlower()
         }
         else {
             // plant is further away than one step length, so just head in its direction
-            result.x = m_x + Params::beeStepLength * std::cos(angleToPlant);
-            result.y = m_y + Params::beeStepLength * std::sin(angleToPlant);
+            result.x = m_pos.x + Params::beeStepLength * std::cos(angleToPlant);
+            result.y = m_pos.y + Params::beeStepLength * std::sin(angleToPlant);
         }
 
         return result;
@@ -475,8 +470,8 @@ pb::PosAndDir2D Bee::moveInRandomDirection()
     pb::PosAndDir2D result;
 
     result.angle = m_angle + m_distDir(m_pPolyBeeCore->m_rngEngine);
-    result.x = m_x + Params::beeStepLength * std::cos(result.angle);
-    result.y = m_y + Params::beeStepLength * std::sin(result.angle);
+    result.x = m_pos.x + Params::beeStepLength * std::cos(result.angle);
+    result.y = m_pos.y + Params::beeStepLength * std::sin(result.angle);
 
     return result;
 }
@@ -486,7 +481,7 @@ pb::PosAndDir2D Bee::moveInRandomDirection()
 void Bee::updatePathHistory()
 {
     // add current position to path
-    m_path.emplace_back(m_x, m_y);
+    m_path.push_back(m_pos);
 
     // trim path to maximum length
     if (m_path.size() > static_cast<size_t>(Params::beePathRecordLen)) {
@@ -635,7 +630,7 @@ bool Bee::headToNextWaypoint()
     float stepLength = 1.0f;
 
     const pb::Pos2D& nextWaypoint = m_homingWaypoints.front();
-    pb::Pos2D moveVector = pb::Pos2D(nextWaypoint.x - m_x, nextWaypoint.y - m_y);
+    pb::Pos2D moveVector = pb::Pos2D(nextWaypoint.x - m_pos.x, nextWaypoint.y - m_pos.y);
     float distToWaypoint = moveVector.length();
 
     if (distToWaypoint <= Params::beeStepLength) {
@@ -682,8 +677,8 @@ bool Bee::headToNextWaypoint()
         moveVector.y += distJitter(m_pPolyBeeCore->m_rngEngine);
     }
 
-    m_x += moveVector.x;
-    m_y += moveVector.y;
+    m_pos.x += moveVector.x;
+    m_pos.y += moveVector.y;
 
     return reachedWaypoint;
 }
@@ -739,7 +734,7 @@ void Bee::calculateWaypointsInsideTunnel()
 
     if (m_pHive->inTunnel()) {
         // hive is inside tunnel - just set single waypoint straight to hive
-        m_homingWaypoints.push_back(pb::Pos2D(m_pHive->x(), m_pHive->y()));
+        m_homingWaypoints.push_back(m_pHive->pos());
         return;
     }
 
@@ -752,13 +747,13 @@ void Bee::calculateWaypointsInsideTunnel()
         ((m_pLastTunnelEntrance->y1 + m_pLastTunnelEntrance->y2) / 2.0f)
     );
 
-    pb::Pos2D vecToEntrance { entranceCentre.x - m_x, entranceCentre.y - m_y };
+    pb::Pos2D vecToEntrance { entranceCentre.x - m_pos.x, entranceCentre.y - m_pos.y };
 
     float distToEntrance = vecToEntrance.length();
     float bufferDist = Bee::m_sTunnelWallBuffer ; // distance to stay outside tunnel entrance when exiting
     float relDist = (distToEntrance + bufferDist) / distToEntrance;
 
-    pb::Pos2D waypoint {m_x + vecToEntrance.x * relDist, m_y + vecToEntrance.y * relDist};
+    pb::Pos2D waypoint {m_pos.x + vecToEntrance.x * relDist, m_pos.y + vecToEntrance.y * relDist};
 
     m_homingWaypoints.push_back(waypoint);
 }
@@ -791,7 +786,7 @@ void Bee::calculateWaypointsAroundTunnel()
     float buffer = m_sTunnelWallBuffer;
 
     // Check if direct path to end point intersects tunnel
-    if (!lineIntersectsTunnel(m_x, m_y, endPointX, endPointY)) {
+    if (!lineIntersectsTunnel(m_pos.x, m_pos.y, endPointX, endPointY)) {
         // Direct path is clear, just go straight to end point
         m_homingWaypoints.push_back(pb::Pos2D(endPointX, endPointY));
         return;
@@ -828,8 +823,8 @@ void Bee::calculateWaypointsAroundTunnel()
     // Helper to calculate total path distance
     auto calculatePathDistance = [&](const std::deque<pb::Pos2D>& waypoints) -> float {
         float total = 0.0f;
-        float prevX = m_x;
-        float prevY = m_y;
+        float prevX = m_pos.x;
+        float prevY = m_pos.y;
         for (const auto& wp : waypoints) {
             total += distance(prevX, prevY, wp.x, wp.y);
             prevX = wp.x;
@@ -867,8 +862,8 @@ void Bee::calculateWaypointsAroundTunnel()
     std::vector<PathOption> validPaths;
     for (auto& option : pathOptions) {
         bool valid = true;
-        float prevX = m_x;
-        float prevY = m_y;
+        float prevX = m_pos.x;
+        float prevY = m_pos.y;
 
         // Check each segment of the path
         for (const auto& wp : option.waypoints) {
