@@ -1,15 +1,12 @@
 ## 4/2/26
 
-TODO
-
-* add comments to explain how default values of net crossing params have been derived
-
 DONE
 
 * check that the "new trying to cross entrance" code is working properly, e.g. in Bee::continueTryingToCrossEntrance()
   Debugging and some refactoring required
 * refactoring of Bee class to use pb::Pos2D for bee position rather than two floats
 * refactor Hive class to use pb::Pos2D for bee position rather than two floats
+* add comments to explain how default values of net crossing params have been derived
 
 ## 3/2/26
 
