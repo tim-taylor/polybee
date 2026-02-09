@@ -1,0 +1,7 @@
+Run: output/net-expt-1d-run-info-20260209-144317-08b6df.txt
+High EMD value: 13.499981
+Polybee version: 0.1.0.0
+Git branch: main
+Git commit hash: f59edc2
+OpenCV version: 4.6.0
+Final EMD between output heatmap and target heatmap: 3.510911

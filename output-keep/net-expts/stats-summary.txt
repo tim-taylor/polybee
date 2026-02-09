@@ -1,0 +1,41 @@
+File:   net-expt-1a-emd-values.txt
+Count:  100
+Mean:   5.25932117
+Median: 5.2952425000000005
+StdDev: 0.2261613815116401
+
+File:   net-expt-1b-emd-values.txt
+Count:  100
+Mean:   5.47183078
+Median: 5.5034785
+StdDev: 0.2291597928641651
+
+File:   net-expt-1c-emd-values.txt
+Count:  100
+Mean:   3.22587919
+Median: 3.2387085
+StdDev: 0.17884933217456186
+
+File:   net-expt-1d-emd-values.txt
+Count:  100
+Mean:   3.2025874
+Median: 3.2061345
+StdDev: 0.16470900114707968
+
+============================================================
+Median Difference Significance Matrix (Mann-Whitney U test)
+Alpha = 0.05, '*' = significant difference
+============================================================
+                        net-expt-1a-emd-values net-expt-1b-emd-values net-expt-1c-emd-values net-expt-1d-emd-values 
+net-expt-1a-emd-values:                      -                      *                      *                      * 
+net-expt-1b-emd-values:                      *                      -                      *                      * 
+net-expt-1c-emd-values:                      *                      *                      -                      . 
+net-expt-1d-emd-values:                      *                      *                      .                      - 
+
+P-values:
+  net-expt-1a-emd-values vs net-expt-1b-emd-values: p = 0.000000 (significant)
+  net-expt-1a-emd-values vs net-expt-1c-emd-values: p = 0.000000 (significant)
+  net-expt-1a-emd-values vs net-expt-1d-emd-values: p = 0.000000 (significant)
+  net-expt-1b-emd-values vs net-expt-1c-emd-values: p = 0.000000 (significant)
+  net-expt-1b-emd-values vs net-expt-1d-emd-values: p = 0.000000 (significant)
+  net-expt-1c-emd-values vs net-expt-1d-emd-values: p = 0.189899
