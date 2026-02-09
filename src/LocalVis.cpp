@@ -59,8 +59,12 @@ const float TUNNEL_WALL_VISUAL_THICKNESS = 10.0f;
 const Color ENV_BACKGROUND_COLOR { 203, 189, 147, 255 };
 const Color ENV_BORDER_COLOR = WHITE;
 const Color TUNNEL_BACKGROUND_COLOR = BROWN;
-const Color TUNNEL_ENTRANCE_COLOR = WHITE;
 const Color TUNNEL_BORDER_COLOR = WHITE;
+// Entrance colors by net type (good contrast with ENV_BACKGROUND_COLOR)
+const Color ENTRANCE_COLOR_NONE     { 255, 255, 255, 255 };  // white
+const Color ENTRANCE_COLOR_ANTIBIRD { 70, 140, 200, 255 };   // medium blue
+const Color ENTRANCE_COLOR_ANTIHAIL { 190, 90, 90, 255 };    // dusty red
+const Color HIVE_COLOR { 204, 78, 52, 255 };                 // blood orange
 const Color PATCH_BACKGROUND_COLOR = GRAY;
 const Color PATCH_BORDER_COLOR = WHITE;
 
@@ -247,7 +251,19 @@ void LocalVis::drawTunnel()
             pb::msg_error_and_exit("LocalVis::drawTunnel(): invalid entrance side");
         }
 
-        DrawRectangleRec(envToDisplayRect(entranceRect), TUNNEL_ENTRANCE_COLOR);
+        Color entranceColor;
+        switch (entrance.netType) {
+        case NetType::NONE:
+            entranceColor = ENTRANCE_COLOR_NONE;
+            break;
+        case NetType::ANTIBIRD:
+            entranceColor = ENTRANCE_COLOR_ANTIBIRD;
+            break;
+        case NetType::ANTIHAIL:
+            entranceColor = ENTRANCE_COLOR_ANTIHAIL;
+            break;
+        }
+        DrawRectangleRec(envToDisplayRect(entranceRect), entranceColor);
     }
 }
 
@@ -406,7 +422,7 @@ void LocalVis::drawBees()
     for (const HiveSpec& hiveSpec : Params::hiveSpecs) {
         DrawRectangleLinesEx(
             envToDisplayRect({ hiveSpec.x-HALF_HIVE_SIZE, hiveSpec.y-HALF_HIVE_SIZE, HIVE_SIZE, HIVE_SIZE }),
-            4.0f, GOLD);
+            4.0f, HIVE_COLOR);
     }
 
     // draw bees
@@ -419,6 +435,7 @@ void LocalVis::drawBees()
         }
 
         DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], ColorFromHSV(bee.colorHue(), 0.7f, 0.9f));
+        DrawTriangleLines(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], BLACK);
 
         if (m_bShowTrails && !(bee.path().empty())) {
             size_t pathIdxMax = bee.path().size()-1;
