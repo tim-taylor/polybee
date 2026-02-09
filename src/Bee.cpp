@@ -633,6 +633,11 @@ bool Bee::headToNextWaypoint()
     pb::Pos2D moveVector = pb::Pos2D(nextWaypoint.x - m_pos.x, nextWaypoint.y - m_pos.y);
     float distToWaypoint = moveVector.length();
 
+    // Set orientation to face the waypoint
+    if (distToWaypoint > FLOAT_COMPARISON_EPSILON) {
+        m_angle = std::atan2(moveVector.y, moveVector.x);
+    }
+
     if (distToWaypoint <= Params::beeStepLength) {
         // We've reached a waypoint.
         // We need to figure out it it's a tunnel entrance waypoint - if it is, we need to consider
