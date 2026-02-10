@@ -42,6 +42,8 @@ std::vector<PatchSpec> Params::patchSpecs;
 
 // Flower configuration
 float Params::flowerInitialNectar;
+int Params::minVisitCountSuccess;
+int Params::maxVisitCountSuccess;
 
 // Bee configuration
 int Params::numBees;
@@ -65,6 +67,8 @@ std::vector<HiveSpec> Params::hiveSpecs;
 
 // Optimization
 bool Params::bEvolve;
+EvolveObjective Params::evolveObjective;
+int Params::evolveObjectivePvt;
 std::string Params::strTargetHeatmapFilename;
 int Params::numConfigsPerGen;
 int Params::numTrialsPerConfig;
@@ -151,6 +155,8 @@ void Params::initRegistry()
     REGISTRY.emplace_back("net-antibird-max-exit-attempts", "netAntibirdMaxExitAttempts", ParamType::INT, &netAntibirdMaxExitAttempts, 7, "Maximum exit attempts through antibird net before giving up");
     REGISTRY.emplace_back("net-antihail-max-exit-attempts", "netAntihailMaxExitAttempts", ParamType::INT, &netAntihailMaxExitAttempts, 11, "Maximum exit attempts through antihail net before giving up");
     REGISTRY.emplace_back("flower-initial-nectar", "flowerInitialNectar", ParamType::FLOAT, &flowerInitialNectar, 100.0f, "Initial nectar amount for each flower");
+    REGISTRY.emplace_back("min-visit-count-success", "minVisitCountSuccess", ParamType::INT, &minVisitCountSuccess, 1, "Minimum number of bee visits for successful pollination");
+    REGISTRY.emplace_back("max-visit-count-success", "maxVisitCountSuccess", ParamType::INT, &maxVisitCountSuccess, 1000, "Maximum number of bee visits for successful pollination");
     REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
     REGISTRY.emplace_back("bee-max-dir-delta", "beeMaxDirDelta", ParamType::FLOAT, &beeMaxDirDelta, 0.4f, "Maximum change in direction (radians) per step");
     REGISTRY.emplace_back("bee-step-length", "beeStepLength", ParamType::FLOAT, &beeStepLength, 20.0f, "How far a bee moves forward at each time step");
@@ -168,6 +174,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("bee-energy-max-threshold", "beeEnergyMaxThreshold", ParamType::FLOAT, &beeEnergyMaxThreshold, 100.0f, "Upper threshold of bee's energy store above which it will return to hive after successful foraging");
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");
+    REGISTRY.emplace_back("evolve-objective", "evolveObjectivePvt", ParamType::INT, &evolveObjective, 0, "Optimization objective: 0=EMD to target heatmap, 1=Fraction of flowers in successful visit range");
     REGISTRY.emplace_back("num-trials-per-config", "numTrialsPerConfig", ParamType::INT, &numTrialsPerConfig, 1, "Number of trials to run for each configuration/individual in each generation");
     REGISTRY.emplace_back("num-configs-per-gen", "numConfigsPerGen", ParamType::INT, &numConfigsPerGen, 50, "Number of configurations/inidividuals to test during each generation (if using multiple islands, this is the number per island)");
     REGISTRY.emplace_back("num-generations", "numGenerations", ParamType::INT, &numGenerations, 50, "Number of generations to run the optimization process");
@@ -432,10 +439,26 @@ void Params::initialise(int argc, char* argv[])
     bInitialised = true;
 }
 
+
 // methods
 void Params::calculateDerivedParams()
 {
+    switch (evolveObjectivePvt) {
+    case 0:
+        evolveObjective = EvolveObjective::EMD_TO_TARGET_HEATMAP;
+        break;
+    case 1:
+        evolveObjective = EvolveObjective::FRACTION_FLOWERS_SUCCESSFUL_VISIT_RANGE;
+        break;
+    default:
+        pb::msg_error_and_exit(std::format(
+            "Invalid value for evolve-objective: {}. Valid values are 0=EMD to target heatmap, "
+            "1=Fraction of flowers in successful visit range",
+            evolveObjectivePvt)
+        );
+    }
 }
+
 
 void Params::print(std::ostream& os, bool bGenerateForConfigFile)
 {
@@ -522,6 +545,7 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
     }
 }
 
+
 void Params::setAllDefault()
 {
     for (auto& vinfo : Params::REGISTRY)
@@ -573,9 +597,18 @@ void Params::checkConsistency()
         }
     }
 
+    // check at least one hive is specified
+    if (hiveSpecs.empty()) {
+        pb::msg_error_and_exit("At least one hive must be specified using the 'hive' parameter");
+    }
+
+    // if we're doing optimisation, check that the necessary parameters are set and valid
     if (bEvolve) {
         if (strTargetHeatmapFilename.empty()) {
             pb::msg_error_and_exit("Parameter 'target-heatmap-filename' must be specified if 'evolve' is true");
+        }
+        if (evolveObjectivePvt < 0 || evolveObjectivePvt > 1) {
+            pb::msg_error_and_exit("Parameter 'evolve-objective' must be 0 (EMD to target heatmap) or 1 (Fraction of flowers in successful visit range)");
         }
         if (numConfigsPerGen < 7) {
             pb::msg_error_and_exit("Parameter 'num-trials-per-gen' must be greater than or equal to 7 if 'evolve' is true");

@@ -52,6 +52,9 @@ public:
     std::vector<Plant*> getNearbyPlants(float x, float y) const;
     std::optional<Plant*> selectNearbyUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const; // get nearest plant to a given position within maxDistance
 
+    double getSuccessfulVisitFraction() const;  // fraction of plants that have a visit count in the successful visit range
+                                                // (between minVisitCountSuccess and maxVisitCountSuccess, inclusive)
+
     PolyBeeCore* getPolyBeeCore() { assert(m_pPolyBeeCore != nullptr); return m_pPolyBeeCore; }
 
 private:

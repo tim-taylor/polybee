@@ -337,6 +337,24 @@ std::vector<Plant*> Environment::getNearbyPlants(float x, float y) const
 }
 
 
+double Environment::getSuccessfulVisitFraction() const
+{
+    if (m_allPlants.empty()) {
+        return 0.0;
+    }
+
+    int successCount = 0;
+    for (const Plant& plant : m_allPlants) {
+        int vc = plant.visitCount();
+        if (vc >= Params::minVisitCountSuccess && vc <= Params::maxVisitCountSuccess) {
+            ++successCount;
+        }
+    }
+
+    return static_cast<double>(successCount) / static_cast<double>(m_allPlants.size());
+}
+
+
 // Select a plant randomly from the given list, with probability weighted by distance
 // (closer plants have higher probability of being selected)
 // Assumes that the plants vector is non-empty and that all plants in the vector are within visual range.

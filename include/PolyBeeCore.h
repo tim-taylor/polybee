@@ -45,6 +45,7 @@ public:
     const Environment& getEnvironment() const { return m_env; }
     Environment& getEnvironment() { return m_env; }
     const Heatmap& getHeatmap() const { return m_env.getHeatmap(); }
+    double getSuccessfulVisitFraction() const { return m_env.getSuccessfulVisitFraction(); }
     Tunnel& getTunnel() { return m_env.getTunnel(); }
     const std::vector<Bee>& getBees() const { return m_env.getBees(); }
 

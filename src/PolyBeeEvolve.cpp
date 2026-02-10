@@ -77,17 +77,34 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
         std::cout << "~~~~~~~~~~" << std::endl;
     }
 
-    for (int i = 0; i < Params::numTrialsPerConfig; ++i) {
+    for (int i = 0; i < Params::numTrialsPerConfig; ++i)
+    {
         core.incrementEvaluationCount();
         core.resetForNewRun();
         core.run(false); // false = do not log output files during the run
-        const Heatmap& runHeatmap = core.getHeatmap();
-        double emd = runHeatmap.emd(env.getRawTargetHeatmapNormalised());
-        fitnessValues.push_back(emd);
+
+        double objValue = 0.0;
+        switch (Params::evolveObjective) {
+            case EvolveObjective::EMD_TO_TARGET_HEATMAP: {
+                const Heatmap& runHeatmap = core.getHeatmap();
+                objValue = runHeatmap.emd(env.getRawTargetHeatmapNormalised());
+                break;
+            }
+            case EvolveObjective::FRACTION_FLOWERS_SUCCESSFUL_VISIT_RANGE: {
+                // N.B. we negate the fraction of successfully visited flowers here because pagmo minimizes
+                // the objective function, but we want to maximize this fraction
+                objValue = -(core.getSuccessfulVisitFraction());
+                break;
+            }
+            default: {
+                pb::msg_error_and_exit(std::format("Invalid evolve objective {} specified in Params::evolveObjective", Params::evolveObjectivePvt));
+            }
+        }
+
+        fitnessValues.push_back(objValue);
     }
 
-    //double mean_emd = std::accumulate(fitnessValues.begin(), fitnessValues.end(), 0.0) / fitnessValues.size();
-    const double median_emd = pb::median(fitnessValues);
+    const double medianObjValue = pb::median(fitnessValues);
 
     int num_evals_per_gen = Params::numConfigsPerGen * Params::numTrialsPerConfig;
     int gen = (core.evaluationCount()-1) / num_evals_per_gen;
@@ -100,9 +117,9 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
         localSpecs[1].e1, localSpecs[1].e2, localSpecs[1].side,
         localSpecs[2].e1, localSpecs[2].e2, localSpecs[2].side,
         localSpecs[3].e1, localSpecs[3].e2, localSpecs[3].side,
-        median_emd));
+        medianObjValue));
 
-    return {median_emd};
+    return {medianObjValue};
 }
 
 

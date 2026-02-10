@@ -56,6 +56,12 @@ struct HiveSpec {
 };
 
 
+enum class EvolveObjective {
+    EMD_TO_TARGET_HEATMAP = 0,
+    FRACTION_FLOWERS_SUCCESSFUL_VISIT_RANGE = 1
+};
+
+
 enum class NetType {
     NONE,
     ANTIBIRD,
@@ -136,6 +142,8 @@ public:
 
     // Flower configuration
     static float flowerInitialNectar; // initial nectar amount for each flower
+    static int minVisitCountSuccess; // minimum number of bee visits for successful pollination
+    static int maxVisitCountSuccess; // maximum number of bee visits for successful pollination
 
     // Bee configuration
     static int numBees;
@@ -159,6 +167,8 @@ public:
 
     // Optimization
     static bool bEvolve; // determines whether to run optimization to match output heatmap against target
+    static EvolveObjective evolveObjective; // this is the public-facing version of evolveObjectivePvt that is set in calculateDerivedParams()
+    static int evolveObjectivePvt; // 0 = EMD to target heatmap, 1 = fraction of flowers in successful visit range
     static std::string strTargetHeatmapFilename; // CSV file containing target heatmap for optimization
     static int numConfigsPerGen; // number of trials to run during each generation of optimization
     static int numTrialsPerConfig; // number of trials to run for each configuration/individual in each generation
