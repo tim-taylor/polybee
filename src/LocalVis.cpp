@@ -294,11 +294,25 @@ void LocalVis::drawPlants()
         return; // don't draw plants when showing heatmap
     }
 
+    // 8 shades of green for 0-7+ visits, all with good contrast against
+    // PATCH_BACKGROUND_COLOR (gray: 130,130,130)
+    static constexpr Color plantColors[8] = {
+        {0, 80, 0, 255},      // 0 visits: darkest green
+        {0, 110, 0, 255},     // 1 visit
+        {0, 140, 0, 255},     // 2 visits
+        {0, 170, 0, 255},     // 3 visits
+        {0, 200, 0, 255},     // 4 visits
+        {0, 230, 0, 255},     // 5 visits
+        {50, 255, 50, 255},   // 6 visits
+        {150, 255, 150, 255}, // 7+ visits: lightest green
+    };
+
     for (const Plant& plant : m_pPolyBeeCore->m_env.getAllPlants()) {
         float displayX = envToDisplayX(plant.x());
         float displayY = envToDisplayY(plant.y());
         float displaySize = envToDisplayN(HALF_PLANT_SIZE);
-        DrawCircleV({ displayX, displayY }, displaySize, plant.visited() ? DARKGREEN : GREEN);
+        int colorIdx = std::min(plant.visitCount(), 7);
+        DrawCircleV({ displayX, displayY }, displaySize, plantColors[colorIdx]);
     }
 }
 
