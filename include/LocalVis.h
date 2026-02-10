@@ -48,15 +48,15 @@ private:
     void rotateDrawState();
 
     PolyBeeCore* m_pPolyBeeCore;
-    DrawState m_drawState {DrawState::BEES_AND_HEATMAP};
+    DrawState m_drawState { DrawState::BEES };
 
-    bool m_bWaitingForUserToClose {false};
-    bool m_bPaused {false};
-    bool m_bShowTrails {true};
-    bool m_bShowEMD {true};
+    bool m_bWaitingForUserToClose { false };
+    bool m_bPaused { false };
+    bool m_bShowTrails { true };
+    bool m_bShowEMD { true };
 
     Camera2D m_camera;
-    Vector2 m_displayOffset {0.0f, 0.0f};
+    Vector2 m_displayOffset { 0.0f, 0.0f };
 
     float m_currentEMD;
     int64_t m_currentEMDTime;
