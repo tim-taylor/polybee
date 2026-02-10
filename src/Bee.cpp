@@ -209,6 +209,8 @@ void Bee::continueTryingToCrossEntrance()
 
         // bee alternates between its original position and the intersection point on the net
         // each time it makes a failed attempt to cross the entrance
+        // TODO - change logic here so that cross position and rebound position are not fixed,
+        // but updated with stochasticity on each attempt?
         if (m_tryCrossState.failCount % 2 == 0) {
             m_pos = m_tryCrossState.initialPos;
         }
@@ -216,13 +218,18 @@ void Bee::continueTryingToCrossEntrance()
             m_pos = m_tryCrossState.atNetPos;
         }
 
+        // if the bee is trying to enter the tunnel, check whether it has reached
+        // the maximum number of attempts (for bees exiting the tunnel, they'll
+        // keep on trying indefinitely until they succeed)
         // check if bee has exceeded maximum number of attempts to cross this entrance
-        int maxAttempts = m_tryCrossState.intersectInfo.pEntranceUsed->maxAttempts();
-        if (m_tryCrossState.failCount >= maxAttempts) {
-            // bee has given up trying to cross the entrance, so reset its state
-            // and place it at the position it was at when it first tried to cross
-            m_pos = m_tryCrossState.initialPos;
-            resetTryingToCrossEntranceState();
+        if (m_tryCrossState.intersectInfo.enteringTunnel) {
+            int maxAttempts = m_tryCrossState.intersectInfo.pEntranceUsed->maxAttempts();
+            if (m_tryCrossState.failCount >= maxAttempts) {
+                // bee has given up trying to cross the entrance, so reset its state
+                // and place it at the position it was at when it first tried to cross
+                m_pos = m_tryCrossState.initialPos;
+                resetTryingToCrossEntranceState();
+            }
         }
     }
 }
@@ -443,7 +450,7 @@ std::optional<pb::PosAndDir2D> Bee::forageNearestFlower()
 
             // record that we've visited this plant (and remove oldest visited plant if necessary
             // to keep memory length within limit)
-            pPlant->setVisited();
+            pPlant->incrementVisitCount();
             addToRecentlyVisitedPlants(pPlant);
 
             // and switch to ON_FLOWER state

@@ -131,6 +131,8 @@ IntersectInfo Tunnel::intersectsTunnelBoundary(float x1, float y1, float x2, flo
         return {false, false};
     }
 
+    bool enteringTunnel = pt2InTunnel; // if true, bee is trying to enter the tunnel; if false, it's trying to exit
+
     // if we reach this point, the line segment crosses the tunnel boundary somewhere, so
     // we need to check if it crosses at any of the entrances
     pb::Line2D line1(pb::Pos2D(x1, y1), pb::Pos2D(x2, y2));
@@ -141,7 +143,8 @@ IntersectInfo Tunnel::intersectsTunnelBoundary(float x1, float y1, float x2, flo
         auto intersectInfo = getLineIntersection(line1, line2);
 
         if (intersectInfo.intersects && intersectInfo.crossesEntrance) {
-            intersectInfo.pEntranceUsed = &entrance; // set pointer to the entrance that was used
+            intersectInfo.enteringTunnel = enteringTunnel;  // set whether the bee is trying to enter or exit the tunnel
+            intersectInfo.pEntranceUsed = &entrance;        // set pointer to the entrance that was used
             return intersectInfo;
         }
     }
