@@ -108,17 +108,18 @@ def print_significance_matrix(filenames, data, alpha=0.05):
             print(f"  {labels[i]} vs {labels[j]}: p = {p_value:.6f}{sig}")
 
 
-def plot_statistics(filenames, data):
-    """Plot a grouped bar chart of mean, median, and std dev for each file."""
+def plot_statistics(filenames, data, use_means=False, ylabel=None, title=None):
+    """Plot a bar chart of median (or mean) with std dev whiskers for each file."""
     if not MATPLOTLIB_AVAILABLE:
         print("\nNote: Install matplotlib for plotting (pip install matplotlib numpy)",
               file=sys.stderr)
         return
 
     # Calculate statistics for each file
-    means = [statistics.mean(d) for d in data]
-    medians = [statistics.median(d) for d in data]
+    values = [statistics.mean(d) for d in data] if use_means else \
+             [statistics.median(d) for d in data]
     stdevs = [statistics.stdev(d) if len(d) > 1 else 0.0 for d in data]
+    stat_label = 'Mean' if use_means else 'Median'
 
     # Create short labels for files
     labels = [Path(f).stem for f in filenames]
@@ -126,34 +127,30 @@ def plot_statistics(filenames, data):
         labels = [f"F{i}" for i in range(len(filenames))]
 
     x = np.arange(len(labels))
-    width = 0.25
+    width = 0.5
 
     fig, ax = plt.subplots(figsize=(max(8, len(labels) * 1.5), 6))
 
-    bars1 = ax.bar(x - width, means, width, label='Mean', color='steelblue')
-    bars2 = ax.bar(x, medians, width, label='Median', color='darkorange')
-    bars3 = ax.bar(x + width, stdevs, width, label='Std Dev', color='seagreen')
+    bars = ax.bar(x, values, width, label=stat_label, color='steelblue',
+                  yerr=stdevs, capsize=5, error_kw={'color': 'black', 'linewidth': 1.5})
 
-    ax.set_xlabel('File')
-    ax.set_ylabel('Value')
-    ax.set_title('Statistics by File')
+    ax.set_ylabel(ylabel if ylabel else stat_label)
+    ax.set_title(title if title else f'{stat_label} by File')
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=45, ha='right')
     ax.legend()
 
-    # Add value labels on bars
-    def add_labels(bars):
-        for bar in bars:
-            height = bar.get_height()
-            ax.annotate(f'{height:.1f}',
-                        xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(0, 3),
-                        textcoords="offset points",
-                        ha='center', va='bottom', fontsize=8)
+    # Add value labels on bars (above the whiskers)
+    for bar, val, sd in zip(bars, values, stdevs):
+        ax.annotate(f'{val:.3f}',
+                    xy=(bar.get_x() + bar.get_width() / 2, val + sd),
+                    xytext=(0, 5),
+                    textcoords="offset points",
+                    ha='center', va='bottom', fontsize=8)
 
-    add_labels(bars1)
-    add_labels(bars2)
-    add_labels(bars3)
+    # Add extra headroom above the highest whisker + label
+    max_top = max(v + s for v, s in zip(values, stdevs))
+    ax.set_ylim(top=max_top * 1.15 if max_top > 0 else 1.0)
 
     plt.tight_layout()
     plt.show()
@@ -167,6 +164,12 @@ def main():
                         help='Input file(s) containing numbers, one per line')
     parser.add_argument('-g', '--graph', action='store_true',
                         help='Display a graph of the statistics')
+    parser.add_argument('-m', '--means', action='store_true',
+                        help='Show means instead of medians in the graph')
+    parser.add_argument('--ylabel', type=str, default=None,
+                        help='Label for the vertical axis')
+    parser.add_argument('--title', type=str, default=None,
+                        help='Title for the plot')
     args = parser.parse_args()
 
     valid_filenames = []
@@ -191,7 +194,8 @@ def main():
 
     # Plot statistics if requested
     if args.graph:
-        plot_statistics(valid_filenames, all_data)
+        plot_statistics(valid_filenames, all_data, use_means=args.means,
+                       ylabel=args.ylabel, title=args.title)
 
 
 if __name__ == "__main__":
