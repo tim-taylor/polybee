@@ -26,5 +26,5 @@ for E in 1a 1b 1c 1d; do for F in `ls net-expt-$E-run-info*.txt`; do tail -1 $F 
 Now calculate the mean, median and std dev of each config, and calculate whether the differences are significant:
 
 ```
-../../tools/stats.py net-expt-1*-emd-values.txt
+../../tools/stats.py -g --ylabel 'EMD to uniform over patches' --title 'Median EMD values per configuration' net-expt-1*-emd-values.txt
 ```
