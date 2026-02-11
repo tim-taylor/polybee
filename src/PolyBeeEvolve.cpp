@@ -97,7 +97,8 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
                 break;
             }
             default: {
-                pb::msg_error_and_exit(std::format("Invalid evolve objective {} specified in Params::evolveObjective", Params::evolveObjectivePvt));
+                pb::msg_error_and_exit(std::format("Invalid evolve objective {} specified in Params::evolveObjective",
+                    Params::evolveObjectivePvt));
             }
         }
 

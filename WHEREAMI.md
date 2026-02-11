@@ -1,3 +1,16 @@
+## 11/2/26
+
+TODO
+
+* need to update/rename the plot_emd_scores_islands.py script to plot_opt_scores_islands.py, with a command line
+flag to indicate which objective function is being used - this will determine the labels on the graph
+(EMD vs Fraction Successful Visits)
+
+DONE
+
+* fixed - when running with evolve-objective 1 specified on command line, looks like the internal evolveObjective
+param is not getting set correctly - it seems to be 0
+
 ## 4/2/26
 
 DONE

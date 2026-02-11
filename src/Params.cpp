@@ -172,7 +172,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("bee-energy-max-threshold", "beeEnergyMaxThreshold", ParamType::FLOAT, &beeEnergyMaxThreshold, 100.0f, "Upper threshold of bee's energy store above which it will return to hive after successful foraging");
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");
-    REGISTRY.emplace_back("evolve-objective", "evolveObjectivePvt", ParamType::INT, &evolveObjective, 0, "Optimization objective: 0=EMD to target heatmap, 1=Fraction of flowers in successful visit range");
+    REGISTRY.emplace_back("evolve-objective", "evolveObjective", ParamType::INT, &evolveObjectivePvt, 0, "Optimization objective: 0=EMD to target heatmap, 1=Fraction of flowers in successful visit range");
     REGISTRY.emplace_back("min-visit-count-success", "minVisitCountSuccess", ParamType::INT, &minVisitCountSuccess, 1, "Minimum number of bee visits for successful pollination");
     REGISTRY.emplace_back("max-visit-count-success", "maxVisitCountSuccess", ParamType::INT, &maxVisitCountSuccess, 1000, "Maximum number of bee visits for successful pollination");
     REGISTRY.emplace_back("num-trials-per-config", "numTrialsPerConfig", ParamType::INT, &numTrialsPerConfig, 1, "Number of trials to run for each configuration/individual in each generation");
