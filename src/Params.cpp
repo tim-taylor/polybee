@@ -155,8 +155,6 @@ void Params::initRegistry()
     REGISTRY.emplace_back("net-antibird-max-exit-attempts", "netAntibirdMaxExitAttempts", ParamType::INT, &netAntibirdMaxExitAttempts, 7, "Maximum exit attempts through antibird net before giving up");
     REGISTRY.emplace_back("net-antihail-max-exit-attempts", "netAntihailMaxExitAttempts", ParamType::INT, &netAntihailMaxExitAttempts, 11, "Maximum exit attempts through antihail net before giving up");
     REGISTRY.emplace_back("flower-initial-nectar", "flowerInitialNectar", ParamType::FLOAT, &flowerInitialNectar, 100.0f, "Initial nectar amount for each flower");
-    REGISTRY.emplace_back("min-visit-count-success", "minVisitCountSuccess", ParamType::INT, &minVisitCountSuccess, 1, "Minimum number of bee visits for successful pollination");
-    REGISTRY.emplace_back("max-visit-count-success", "maxVisitCountSuccess", ParamType::INT, &maxVisitCountSuccess, 1000, "Maximum number of bee visits for successful pollination");
     REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
     REGISTRY.emplace_back("bee-max-dir-delta", "beeMaxDirDelta", ParamType::FLOAT, &beeMaxDirDelta, 0.4f, "Maximum change in direction (radians) per step");
     REGISTRY.emplace_back("bee-step-length", "beeStepLength", ParamType::FLOAT, &beeStepLength, 20.0f, "How far a bee moves forward at each time step");
@@ -175,6 +173,8 @@ void Params::initRegistry()
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");
     REGISTRY.emplace_back("evolve-objective", "evolveObjectivePvt", ParamType::INT, &evolveObjective, 0, "Optimization objective: 0=EMD to target heatmap, 1=Fraction of flowers in successful visit range");
+    REGISTRY.emplace_back("min-visit-count-success", "minVisitCountSuccess", ParamType::INT, &minVisitCountSuccess, 1, "Minimum number of bee visits for successful pollination");
+    REGISTRY.emplace_back("max-visit-count-success", "maxVisitCountSuccess", ParamType::INT, &maxVisitCountSuccess, 1000, "Maximum number of bee visits for successful pollination");
     REGISTRY.emplace_back("num-trials-per-config", "numTrialsPerConfig", ParamType::INT, &numTrialsPerConfig, 1, "Number of trials to run for each configuration/individual in each generation");
     REGISTRY.emplace_back("num-configs-per-gen", "numConfigsPerGen", ParamType::INT, &numConfigsPerGen, 50, "Number of configurations/inidividuals to test during each generation (if using multiple islands, this is the number per island)");
     REGISTRY.emplace_back("num-generations", "numGenerations", ParamType::INT, &numGenerations, 50, "Number of generations to run the optimization process");

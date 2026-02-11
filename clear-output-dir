@@ -1,0 +1,2 @@
+#!/bin/bash
+find /home/tim/projects/polybee/output/ -type f -delete

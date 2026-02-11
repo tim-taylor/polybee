@@ -1,0 +1,2 @@
+#!/bin/bash
+./run-release -c config-files/evolve-entrance-positions-4-rows-with-energetics.cfg --num-bees 100 --num-trials-per-config 150 --num-configs-per-gen 50 --num-generations=50 --num-islands 3 --migration-period 10 --migration-num-select 1 --migration-num-replace 1 --evolve-objective 1 --min-visit-count-success 1 --max-visit-count-success 1000 | tee out-opt-visit-ct-min-1-max-1000.txt

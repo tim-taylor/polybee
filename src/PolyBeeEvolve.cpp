@@ -111,7 +111,7 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
     int eval_in_gen = (core.evaluationCount()-1) % num_evals_per_gen;
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
-    pb::msg_info(std::format("isle {} gen {} evals {} conf {}: ents e1:{:.1f},{:.1f}:{} e2:{:.1f},{:.1f}:{} e3:{:.1f},{:.1f}:{} e4:{:.1f},{:.1f}:{}, medEMD {:.4f}",
+    pb::msg_info(std::format("isle {} gen {} evals {} conf {}: ents e1:{:.1f},{:.1f}:{} e2:{:.1f},{:.1f}:{} e3:{:.1f},{:.1f}:{} e4:{:.1f},{:.1f}:{}, medFit {:.4f}",
         core.getIslandNum(), gen, core.evaluationCount(), config_num,
         localSpecs[0].e1, localSpecs[0].e2, localSpecs[0].side,
         localSpecs[1].e1, localSpecs[1].e2, localSpecs[1].side,
