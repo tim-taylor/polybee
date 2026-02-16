@@ -271,7 +271,7 @@ void PolyBeeCore::seedRng(const std::string* pRngSeedStr)
         // we don't store the seed string back in Params in this case, as we assume
         // the caller has derived the given seed string from the seed specified in Params
     }
-    else if (Params::strRngSeed.empty()) {
+    else if (Params::strRngSeed.empty() || Params::strRngSeed == "0") {
         // if no seed string has been supplied, we generate a seed here
         // We keep it consistent with the format of user-supplied seeds by creating
         // a random string of alphanumeric characters (of length 20).

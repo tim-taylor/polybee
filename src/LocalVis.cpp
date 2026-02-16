@@ -68,6 +68,7 @@ const Color HIVE_COLOR { 204, 78, 52, 255 };                 // blood orange
 const Color PATCH_BACKGROUND_COLOR = GRAY;
 const Color PATCH_BORDER_COLOR = WHITE;
 
+const int FONT_SIZE_SMALL = 16;
 const int FONT_SIZE_REG = 20;
 const int FONT_SIZE_LARGE = 40;
 
@@ -191,6 +192,10 @@ void LocalVis::updateDrawFrame()
         // draw heatmap
         if (showHeatmap()) {
             drawHeatmap();
+        }
+
+        if (m_bShowHelpOverlay) {
+            showHelpOverlay();
         }
 
     EndMode2D();
@@ -333,6 +338,9 @@ void LocalVis::drawStatusText()
         DrawText("PAUSED", 10, 40, FONT_SIZE_LARGE, RAYWHITE);
     }
 
+    int EMDVerticalOffset = 30;
+    int SVFVerticalOffset = 30;
+
     if (showHeatmap() && m_bShowEMD) {
         std::string targetStr;
         if (m_pPolyBeeCore->getEnvironment().getRawTargetHeatmapNormalised().empty()) {
@@ -342,14 +350,24 @@ void LocalVis::drawStatusText()
             targetStr = "provided target";
         }
         DrawText(std::format("EMD (OpenCV) to {}: {:.4f} :: {} microseconds", targetStr, m_currentEMD, m_currentEMDTime).c_str(),
-            10, GetScreenHeight() - 30, FONT_SIZE_REG, RAYWHITE);
+            10, GetScreenHeight() - EMDVerticalOffset, FONT_SIZE_REG, RAYWHITE);
+        SVFVerticalOffset = 60;
+    }
+
+    if (m_bShowSVF) {
+        DrawText(std::format("SVF: {:.2f}%", m_pPolyBeeCore->getSuccessfulVisitFraction() * 100.0f).c_str(),
+            10, GetScreenHeight() - SVFVerticalOffset, FONT_SIZE_REG, RAYWHITE);
     }
 }
 
 
 void LocalVis::processKeyboardInput()
 {
-   if (IsKeyPressed(KEY_H)) {
+    if (IsKeyPressed(KEY_SLASH)) {
+        m_bShowHelpOverlay = !m_bShowHelpOverlay;
+    }
+
+    if (IsKeyPressed(KEY_H)) {
         rotateDrawState();
     }
 
@@ -364,6 +382,10 @@ void LocalVis::processKeyboardInput()
 
     if (IsKeyPressed(KEY_E)) {
         m_bShowEMD = !m_bShowEMD;
+    }
+
+    if (IsKeyPressed(KEY_S)) {
+        m_bShowSVF = !m_bShowSVF;
     }
 
     if (IsKeyDown(KEY_MINUS) || IsKeyDown(KEY_KP_SUBTRACT)) {
@@ -399,6 +421,39 @@ void LocalVis::processKeyboardInput()
     if (IsKeyDown(KEY_RIGHT)) {
         m_displayOffset.x += 10.0f / m_camera.zoom;
     }
+}
+
+
+void LocalVis::showHelpOverlay()
+{
+    const char* helpText =
+        "Controls:\n"
+        "\n"
+        "?:\tToggle this help menu\n"
+        "P:\tPause/unpause simulation\n"
+        "\n"
+        "H:\tToggle display mode (bees, heatmap, or both)\n"
+        "\n"
+        "T:\tToggle bee trails on/off\n"
+        "E:\tToggle EMD display on/off\n"
+        "S:\tToggle SVF display on/off\n"
+        "\n"
+        "+:\tSpeed up simulation (decrease delay per step)\n"
+        "-:\tSlow down simulation (increase delay per step)\n"
+        "\n"
+        "Mouse Wheel: Zoom in/out\n"
+        "Arrow Keys: Pan camera\n"
+        "R:\tReset camera zoom and position\n"
+        "\n"
+        "ESC or Close Button: Exit program";
+
+    // Draw semi-transparent background
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{0, 0, 0, 200});
+
+    // Draw help text
+    int paddingH = 40;
+    int paddingV = 100;
+    DrawText(helpText, paddingH, paddingV, FONT_SIZE_REG, RAYWHITE);
 }
 
 

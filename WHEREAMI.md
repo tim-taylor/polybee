@@ -1,10 +1,14 @@
-## 11/2/26
+## 16/2/26
 
-TODO
+DONE
 
 * when evol run finished, using the champion config, re-run the net-expts to get a bar chart showing effect of nets when we use visit count objective rather then EMD -- for non-evol runs, will need to output the final visit count fraction in the run-info log file
 
 * Add fraction successfully visited measure to visualiser output
+
+* Add help screen to visualiser
+
+## 11/2/26
 
 DONE
 

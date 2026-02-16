@@ -1,0 +1,5 @@
+#!/bin/bash
+cd /home/tim/projects/polybee
+./run-release -c config-files/evolve-entrance-positions-4-rows-with-energetics-2.cfg --num-bees 50 --rng-seed 0 --evolve-objective 1 --min-visit-count-success 3 --max-visit-count-success 1000 --evolve 0 --visualise 1 --tunnel-entrance=124.3,224.3:2 --tunnel-entrance=166.9,266.9:0 --tunnel-entrance=222.3,322.3:1 --tunnel-entrance=168.1,268.1:3
+
+

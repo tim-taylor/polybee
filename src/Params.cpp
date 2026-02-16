@@ -192,7 +192,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("logging", "logging", ParamType::BOOL, &logging, true, "Determines whether output files are written at the end of a run");
     REGISTRY.emplace_back("log-dir", "logDir", ParamType::STRING, &logDir, ".", "Directory for output files");
     REGISTRY.emplace_back("log-filename-prefix", "logFilenamePrefix", ParamType::STRING, &logFilenamePrefix, "polybee", "Prefix for output file names");
-    REGISTRY.emplace_back("rng-seed", "strRngSeed", ParamType::STRING, &strRngSeed, "", "Seed (an alphanumeric string) for random number generator");
+    REGISTRY.emplace_back("rng-seed", "strRngSeed", ParamType::STRING, &strRngSeed, "", "Seed (an alphanumeric string) for random number generator (0=random seed)");
     REGISTRY.emplace_back("command-line-quiet", "bCommandLineQuiet", ParamType::BOOL, &bCommandLineQuiet, false, "Silence messages to command line");
 }
 

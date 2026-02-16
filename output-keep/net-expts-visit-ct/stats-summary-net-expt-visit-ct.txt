@@ -1,0 +1,41 @@
+File:   net-expt-visit-ct-1a-SVF-values.txt
+Count:  100
+Mean:   0.52234
+Median: 0.52
+StdDev: 0.039782545281705
+
+File:   net-expt-visit-ct-1b-SVF-values.txt
+Count:  100
+Mean:   0.69448
+Median: 0.698
+StdDev: 0.04944897993044564
+
+File:   net-expt-visit-ct-1c-SVF-values.txt
+Count:  100
+Mean:   0.9608099999999999
+Median: 0.9655
+StdDev: 0.02142767727812217
+
+File:   net-expt-visit-ct-1d-SVF-values.txt
+Count:  100
+Mean:   0.93613
+Median: 0.939
+StdDev: 0.02877872916800274
+
+============================================================
+Median Difference Significance Matrix (Mann-Whitney U test)
+Alpha = 0.05, '*' = significant difference
+============================================================
+                                 net-expt-visit-ct-1a-SVF-values net-expt-visit-ct-1b-SVF-values net-expt-visit-ct-1c-SVF-values net-expt-visit-ct-1d-SVF-values 
+net-expt-visit-ct-1a-SVF-values:                               -                               *                               *                               * 
+net-expt-visit-ct-1b-SVF-values:                               *                               -                               *                               * 
+net-expt-visit-ct-1c-SVF-values:                               *                               *                               -                               * 
+net-expt-visit-ct-1d-SVF-values:                               *                               *                               *                               - 
+
+P-values:
+  net-expt-visit-ct-1a-SVF-values vs net-expt-visit-ct-1b-SVF-values: p = 0.000000 (significant)
+  net-expt-visit-ct-1a-SVF-values vs net-expt-visit-ct-1c-SVF-values: p = 0.000000 (significant)
+  net-expt-visit-ct-1a-SVF-values vs net-expt-visit-ct-1d-SVF-values: p = 0.000000 (significant)
+  net-expt-visit-ct-1b-SVF-values vs net-expt-visit-ct-1c-SVF-values: p = 0.000000 (significant)
+  net-expt-visit-ct-1b-SVF-values vs net-expt-visit-ct-1d-SVF-values: p = 0.000000 (significant)
+  net-expt-visit-ct-1c-SVF-values vs net-expt-visit-ct-1d-SVF-values: p = 0.000000 (significant)

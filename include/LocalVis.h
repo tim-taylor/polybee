@@ -46,6 +46,7 @@ private:
     void drawStatusText();
     void processKeyboardInput();
     void rotateDrawState();
+    void showHelpOverlay();
 
     PolyBeeCore* m_pPolyBeeCore;
     DrawState m_drawState { DrawState::BEES };
@@ -53,7 +54,9 @@ private:
     bool m_bWaitingForUserToClose { false };
     bool m_bPaused { false };
     bool m_bShowTrails { true };
-    bool m_bShowEMD { true };
+    bool m_bShowEMD { true };   // Earth Mover's Distance between current heatmap and target heatmap
+    bool m_bShowSVF { false };  // Successful Visits Fraction
+    bool m_bShowHelpOverlay { false };
 
     Camera2D m_camera;
     Vector2 m_displayOffset { 0.0f, 0.0f };

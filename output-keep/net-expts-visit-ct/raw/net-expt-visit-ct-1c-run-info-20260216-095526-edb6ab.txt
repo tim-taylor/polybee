@@ -1,0 +1,8 @@
+Run: output/net-expt-visit-ct-1c-run-info-20260216-095526-edb6ab.txt
+Polybee version: 0.1.0.0
+Git branch: main
+Git commit hash: 131bf98
+OpenCV version: 4.6.0
+High EMD value: 13.499981
+Final EMD between output heatmap and target heatmap: 3.308462
+Successful visit fraction (3-1000 visits): 0.99300

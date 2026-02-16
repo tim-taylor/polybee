@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Calculate mean, median, and standard deviation from files of numbers."""
+"""Calculate mean, median, and standard deviation from files of numbers,
+one number per line in file."""
 
 import argparse
 import sys
