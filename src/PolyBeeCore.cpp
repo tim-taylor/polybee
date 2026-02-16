@@ -221,7 +221,6 @@ void PolyBeeCore::writeConfigFile() const
 void PolyBeeCore::printRunInfo(std::ostream& os, const std::string& filename) const
 {
     os << std::format("Run: {}\n", filename);
-    os << std::format("High EMD value: {:.6f}\n", heatmap.high_emd());
     os << std::format("Polybee version: {}.{}.{}.{}\n",
         polybee_VERSION_MAJOR,
         polybee_VERSION_MINOR,
@@ -238,6 +237,7 @@ void PolyBeeCore::printRunInfo(std::ostream& os, const std::string& filename) co
     if (!target.empty()) {
         const Heatmap& heatmap = m_env.getHeatmap();
         float finalEmd = heatmap.emd(target);
+        os << std::format("High EMD value: {:.6f}\n", heatmap.high_emd());
         os << std::format("Final EMD between output heatmap and target heatmap: {:.6f}\n", finalEmd);
     }
 
