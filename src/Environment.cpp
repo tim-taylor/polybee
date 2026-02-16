@@ -147,7 +147,10 @@ void Environment::initialiseBees()
 
 void Environment::initialiseHeatmap() {
     m_heatmap.initialise(&m_bees);
-    pb::msg_info(std::format("Initial EMD between uniform target and anti-target heatmaps: {:.6f}", m_heatmap.high_emd()));
+    if (!(Params::bEvolve && Params::evolveObjective != EvolveObjective::EMD_TO_TARGET_HEATMAP)) {
+        pb::msg_info(std::format("Initial EMD between uniform target and anti-target heatmaps: {:.6f}",
+            m_heatmap.high_emd()));
+    }
 }
 
 

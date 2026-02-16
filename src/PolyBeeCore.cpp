@@ -220,7 +220,6 @@ void PolyBeeCore::writeConfigFile() const
 
 void PolyBeeCore::printRunInfo(std::ostream& os, const std::string& filename) const
 {
-    const Heatmap& heatmap = m_env.getHeatmap();
     os << std::format("Run: {}\n", filename);
     os << std::format("High EMD value: {:.6f}\n", heatmap.high_emd());
     os << std::format("Polybee version: {}.{}.{}.{}\n",
@@ -234,11 +233,18 @@ void PolyBeeCore::printRunInfo(std::ostream& os, const std::string& filename) co
         CV_VERSION_MAJOR,
         CV_VERSION_MINOR,
         CV_VERSION_REVISION);
+
     auto target = m_env.getRawTargetHeatmapNormalised();
     if (!target.empty()) {
+        const Heatmap& heatmap = m_env.getHeatmap();
         float finalEmd = heatmap.emd(target);
         os << std::format("Final EMD between output heatmap and target heatmap: {:.6f}\n", finalEmd);
     }
+
+    os << std::format("Successful visit fraction ({}-{} visits): {:.5f}\n",
+        Params::minVisitCountSuccess,
+        Params::maxVisitCountSuccess,
+        m_env.getSuccessfulVisitFraction());
 }
 
 

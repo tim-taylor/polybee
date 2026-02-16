@@ -1,0 +1,2 @@
+#!/bin/bash
+./run-release -c config-files/evolve-entrance-positions-4-rows-with-energetics-2.cfg --num-bees 50 --evolve-objective 1 --min-visit-count-success 3 --max-visit-count-success 1000 --evolve 0 --visualise 1 --tunnel-entrance=231.6,331.6:2 --tunnel-entrance=276.0,376.0:3 --tunnel-entrance=129.4,229.4:0 --tunnel-entrance=129.4,229.4:1

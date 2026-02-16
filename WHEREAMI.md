@@ -2,11 +2,15 @@
 
 TODO
 
-* need to update/rename the plot_emd_scores_islands.py script to plot_opt_scores_islands.py, with a command line
-flag to indicate which objective function is being used - this will determine the labels on the graph
-(EMD vs Fraction Successful Visits)
+* when evol run finished, using the champion config, re-run the net-expts to get a bar chart showing effect of nets when we use visit count objective rather then EMD -- for non-evol runs, will need to output the final visit count fraction in the run-info log file
+
+* Add fraction successfully visited measure to visualiser output
 
 DONE
+
+* need to update/rename the plot_emd_scores_islands.py script to plot_fitness_islands.py, with a command line
+flag to indicate which objective function is being used - this will determine the labels on the graph
+(EMD vs Fraction Successful Visits)
 
 * fixed - when running with evolve-objective 1 specified on command line, looks like the internal evolveObjective
 param is not getting set correctly - it seems to be 0
