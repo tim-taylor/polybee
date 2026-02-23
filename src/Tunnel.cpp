@@ -67,12 +67,26 @@ void Tunnel::initialise(float x, float y, float width, float height, Environment
     m_height = height;
     m_pEnv = pEnv;
 
-    // initialize tunnel boundaries
+    // initialize tunnel boundaries as lines running clockwise around the tunnel, starting with the top wall
     m_boundaries.clear();
     m_boundaries.push_back(pb::Line2D(pb::Pos2D(m_x, m_y), pb::Pos2D(m_x + m_width, m_y))); // top wall
     m_boundaries.push_back(pb::Line2D(pb::Pos2D(m_x + m_width, m_y), pb::Pos2D(m_x + m_width, m_y + m_height))); // right wall
     m_boundaries.push_back(pb::Line2D(pb::Pos2D(m_x + m_width, m_y + m_height), pb::Pos2D(m_x, m_y + m_height))); // bottom wall
     m_boundaries.push_back(pb::Line2D(pb::Pos2D(m_x, m_y + m_height), pb::Pos2D(m_x, m_y))); // left wall
+
+    // calculate and store unit vectors parallel to each boundary line, running clockwise around the tunnel
+    // (e.g. for top wall, pointing right; for left wall, pointing down etc)
+    m_boundaryUnitVectors.clear();
+    for (const auto& wall : m_boundaries) {
+        m_boundaryUnitVectors.push_back(wall.unitVector());
+    }
+
+    // calculate and store unit normal vectors for each boundary line, pointing outwards from the tunnel
+    m_boundaryNormals.clear();
+    m_boundaryNormals.push_back(pb::Pos2D(0, -1)); // top wall normal (pointing up)
+    m_boundaryNormals.push_back(pb::Pos2D(1, 0)); // right wall normal (pointing right)
+    m_boundaryNormals.push_back(pb::Pos2D(0, 1)); // bottom wall normal (pointing down)
+    m_boundaryNormals.push_back(pb::Pos2D(-1, 0)); // left wall normal (pointing left)
 
     // add entrances from Params
     initialiseEntrances();

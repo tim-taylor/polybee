@@ -14,6 +14,7 @@
 #include <vector>
 #include <deque>
 #include <optional>
+#include <cassert>
 
 class PolyBeeCore;
 class Environment;
@@ -33,28 +34,59 @@ enum class BeeState
 
 struct TryingToCrossEntranceState
 {
-    void set(int failCount_, float x, float y, const IntersectInfo& intersectInfo_, const pb::PosAndDir2D& desiredMove_) {
-        failCount = failCount_;
-        initialPos = pb::Pos2D(x, y);
-        intersectInfo = intersectInfo_;
-        desiredMove = desiredMove_;
-        atNetPos.x = x + 0.9 * (intersectInfo_.point.x - x);
-        atNetPos.y = y + 0.9 * (intersectInfo_.point.y - y);
+    // Initialise the state when the bee first makes a failed attempt to cross the entrance
+    //   pos is the bee;s current position, assumed to be the rebound position from the failed crossing attempt
+    //   intersectInfo is the IntersectInfo from the failed crossing attempt
+    //   desiredMove is the desired move that the bee was trying to make when it attempted
+    void set(const pb::Pos2D& pos, const IntersectInfo& intersectInfo, const Tunnel* pTunnel_ /* const pb::PosAndDir2D& desiredMove*/) {
+        assert(intersectInfo.pEntranceUsed != nullptr);
+        assert(pTunnel_ != nullptr);
+
+        reboundToNetLen = intersectInfo.intersectedLine.distance(pos);
+        pTunnel = pTunnel_;
+
+        moveCount = 0;
+        currentlyAtNetPos = false;
+
+        maxCount = intersectInfo.pEntranceUsed->maxAttempts() * 2; // we multiply maxAttempts by 2 here because the bee only makes an "attempt" to cross the entrance every other move (i.e. it alternates between being at the net and being at a rebound position)
+        reboundLen = std::max(reboundToNetLen - 0.1, 0.1);
+        crossLen = reboundToNetLen + 0.1;
+        pWallLine = pTunnel->getBoundary(intersectInfo.pEntranceUsed->side);
+        normalUnitVector = pWallLine->normalUnitVector();
+    }
+
+    void update() {
+        currentlyAtNetPos = !currentlyAtNetPos;
+        moveCount++;
     }
 
     void reset() {
-        failCount = 0;
-        initialPos.setToZero();
-        intersectInfo.reset();
-        desiredMove.setToZero();
-        atNetPos.setToZero();
+        moveCount = 0;
+        maxCount = 0;
+        currentlyAtNetPos = false;
+        reboundLen = 0.0f;
+        crossLen = 0.0f;
+        pWallLine = nullptr;
+        normalUnitVector.setToZero();
+
+        reboundToNetLen = 0.0f;
+        pTunnel = nullptr;
     }
 
-    int failCount { 0 };
-    pb::Pos2D initialPos;
-    pb::Pos2D atNetPos;
-    IntersectInfo intersectInfo;
-    pb::PosAndDir2D desiredMove;
+    // variables
+    int moveCount { 0 };                // count of the number of moves made while trying to cross the entrance
+                                        //   (each attempted cross, and each subsequent rebound counts as a move)
+    int maxCount { 0 };                 // maximum number of moves backwards and forwards to attempt before giving up and reverting to normal foraging
+    bool currentlyAtNetPos { false };   // whether the bee is currently at the net (having failed to cross it and about to rebound)
+    float reboundLen {0.0f};            // length of the bee's rebound path (i.e. how far it rebounds back from its position near the wall)
+    float crossLen {0.0f};              // length of the bee's path across the entrance
+                                        //   (i.e. how far it needs to move from rebound pos to successfully cross the entrance)
+    const pb::Line2D* pWallLine { nullptr }; // pointer to the line representing the wall that the bee is trying to cross
+    pb::Pos2D normalUnitVector;          // unit vector perpendicular to the wall line, pointing outwards from the tunnel
+
+private:
+    float reboundToNetLen {0.0f};       // perpendicular distance from the bee's rebound position to the net line
+    const Tunnel* pTunnel { nullptr };  // pointer to the tunnel
 };
 
 
@@ -107,7 +139,7 @@ private:
     bool nextWaypointIsTunnelEntrance() const;
     void updatePathHistory();
     void setDirAccordingToHive();
-    void resetTryingToCrossEntranceState();
+    void unsetTryingToCrossEntranceState();
 
     pb::Pos2D m_pos;    // position of bee in environment coordinates
     float m_angle;      // direction of travel in radians

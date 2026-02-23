@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 constexpr float FLOAT_COMPARISON_EPSILON = 0.000001f; // small value to use when comparing floats for equality
 
@@ -34,15 +35,25 @@ namespace Polybee {
 
     float distanceSq(float x1, float y1, float x2, float y2);
 
+    struct Line2D; // forward declaration
+
     struct Pos2D {
         float x, y;
 
         Pos2D(float x = 0.0f, float y = 0.0f) : x(x), y(y) {}
 
         float length() const;
+        Pos2D add(const Pos2D& other) const { return Pos2D(x + other.x, y + other.y); }
+        Pos2D multiply(float scalar) const { return Pos2D(x * scalar, y * scalar); }
         void resize(float newLength);
         void set(float newX, float newY) { x = newX; y = newY; }
         void setToZero() { x = 0.0f; y = 0.0f; }
+        float angle() const { return std::atan2(y, x); } // angle in radians from positive x-axis to the vector (x, y)
+
+        // return a new Pos2D that is the result of moving this position along the specified line by the specified distance
+        // if clampToLineEnds is true, the movement will be clamped to the start and end points of the line, so the returned
+        //position will never be beyond either end of the line segment
+        Pos2D moveAlongLine(const Line2D& line, float distance, bool clampToLineEnds = false) const;
     };
 
     struct PosAndDir2D {
@@ -58,7 +69,13 @@ namespace Polybee {
         Pos2D start, end;
 
         Line2D() {}
-        Line2D(Pos2D start, Pos2D end) : start(start), end(end) {}
+        Line2D(const Pos2D& start, const Pos2D& end) : start(start), end(end) {}
+
+        Pos2D unitVector() const;                   // returns a unit vector parallel to the line, pointing in the direction from start to end
+        Pos2D normalUnitVector() const;             // returns a unit vector perpendicular to the line, pointing to the left of the direction from start to end
+        float length() const;                       // Calculate length of the line segment
+        float distance(const Pos2D& point) const;   // Calculate perpendicular distance from point to (infinite projection of) line
+
     };
 
 } // namespace Polybee

@@ -13,6 +13,7 @@
 #include <vector>
 #include <optional>
 #include <tuple>
+#include <cassert>
 
 class Environment;
 class Tunnel;
@@ -121,15 +122,25 @@ public:
     float height() const { return m_height; }
     const std::vector<TunnelEntranceInfo>& getEntrances() const { return m_entrances; }
 
+    const std::vector<pb::Line2D>& getBoundaries() const { return m_boundaries; }
+    const std::vector<pb::Pos2D>&  getBoundaryUnitVectors() const { return m_boundaryUnitVectors; }
+    const std::vector<pb::Pos2D>&  getBoundaryNormals() const { return m_boundaryNormals; }
+
+    const pb::Line2D* getBoundary(int n) const { assert(n >= 0 && n < m_boundaries.size()); return &(m_boundaries[n]); }
+    const pb::Pos2D*  getBoundaryUnitVector(int n) const { assert(n >= 0 && n < m_boundaryUnitVectors.size()); return &(m_boundaryUnitVectors[n]); }
+    const pb::Pos2D*  getBoundaryNormal(int n) const { assert(n >= 0 && n < m_boundaryNormals.size()); return &(m_boundaryNormals[n]); }
+
 private:
     void addEntrance(const TunnelEntranceSpec& spec);
     IntersectInfo getLineIntersection(const pb::Line2D& line1, const pb::Line2D& line2) const;
 
-    float m_x;                  // top-left x position of tunnel in environment coordinates
-    float m_y;                  // top-left y position of tunnel in environment coordinates
-    float m_width;              // width of the tunnel
-    float m_height;             // height of the tunnel
+    float m_x;                                      // top-left x position of tunnel in environment coordinates
+    float m_y;                                      // top-left y position of tunnel in environment coordinates
+    float m_width;                                  // width of the tunnel
+    float m_height;                                 // height of the tunnel
     std::vector<pb::Line2D> m_boundaries;
+    std::vector<pb::Pos2D> m_boundaryUnitVectors;   // unit vectors parallel to the boundaries, pointing in the direction of increasing coordinate (e.g. for top wall, pointing right; for left wall, pointing down etc)
+    std::vector<pb::Pos2D> m_boundaryNormals;       // unit vectors perpendicular to the boundaries, pointing outwards from the tunnel
     std::vector<TunnelEntranceInfo> m_entrances;
     Environment* m_pEnv {nullptr};
 };

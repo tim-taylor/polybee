@@ -1,3 +1,24 @@
+## 23/2/26
+
+Have finished coding the new implementation of TryingToCrossEntranceState, Bee::continueTryingToCrossEntrance(), etc.
+Now need to debug it.
+
+## 18/2/26
+
+Have ditched previous approach becayse it was too complicated
+Now working on a simpler new implementation with a reduced TryingToCrossEntranceState
+
+## 17/2/26
+
+In process of implementing revised code for Bee bounce behaviour. Have updated TryingToCrossEntranceState
+with new/replaced data members. IntersectInfo now has intersectedWall member as well as intersectedLine
+
+TODO
+
+* Complete implementation of void TryingToCrossEntranceState::set() in Bee.cpp
+* Complete implementaion of void TryingToCrossEntranceState::update() in Bee.cpp
+* Complete revision of void Bee::continueTryingToCrossEntrance()
+
 ## 16/2/26
 
 DONE
