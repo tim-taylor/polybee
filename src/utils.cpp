@@ -88,7 +88,7 @@ namespace Polybee {
         // Get unit vector in direction of line
         Pos2D unit = unitVector();
         // Rotate 90 degrees to get normal vector (pointing to the left of the line direction)
-        return Pos2D(-unit.y, unit.x);
+        return Pos2D(unit.y, -unit.x);
     }
 
     float Line2D::distance(const Pos2D& point) const {

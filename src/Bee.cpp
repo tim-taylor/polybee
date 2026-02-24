@@ -262,7 +262,7 @@ void Bee::continueTryingToCrossEntrance()
         // First, we move from our current location at the net a little distance parallel to the wall
         // in a random direction (either way along the wall with equal probability), to give us a new starting point
         // for our rebound.
-        float sideStepMax = Params::beeStepLength * 0.2f;
+        float sideStepMax = Params::beeStepLength * 0.9f;
         float sideStep = sideStepMax - (m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine) * 2.0f * sideStepMax);
         pb::Pos2D newReboundStartPos = m_pos.moveAlongLine(*(m_tryCrossState.pWallLine), sideStep, true);
 

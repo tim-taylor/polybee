@@ -1,3 +1,7 @@
+## 24/2/26
+
+Crossing net code now debugged and working correctly.
+
 ## 23/2/26
 
 Have finished coding the new implementation of TryingToCrossEntranceState, Bee::continueTryingToCrossEntrance(), etc.
