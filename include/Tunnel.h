@@ -20,6 +20,7 @@ class Tunnel;
 
 
 struct TunnelEntranceInfo {
+    int id;     // unique ID for this entrance, assigned based on order in which entrances are specified in Params::tunnelEntranceSpecs
     float x1;   // x position of first edge of entrance (in environment coordinates)
     float y1;   // y position of first edge of entrance (in environment coordinates)
     float x2;   // x position of second edge of entrance (in environment coordinates)
@@ -27,6 +28,9 @@ struct TunnelEntranceInfo {
     int side;   // 0=North, 1=East, 2=South, 3=West
     NetType netType { NetType::NONE };  // type of net at this entrance
 
+    static int nextID; // static variable to keep track of the next ID to assign to a new entrance
+
+    TunnelEntranceInfo() = delete;
     TunnelEntranceInfo(const TunnelEntranceSpec& spec, const Tunnel* pTunnel);
 
     // probability of a bee exiting the tunnel when reaching this entrance

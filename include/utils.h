@@ -10,7 +10,7 @@ constexpr float FLOAT_COMPARISON_EPSILON = 0.000001f; // small value to use when
 
 namespace Polybee {
 
-    void msg_error_and_exit(std::string msg);
+    [[noreturn]] void msg_error_and_exit(std::string msg);
     void msg_warning(std::string msg);
     void msg_info(std::string msg);
 

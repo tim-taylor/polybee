@@ -228,6 +228,7 @@ void LocalVis::drawTunnel()
     DrawRectangleLinesEx(
         envToDisplayRect({tunnel.x(), tunnel.y(), tunnel.width(), tunnel.height()}), 5.0, TUNNEL_BORDER_COLOR);
 
+    // draw tunnel entrances with different colours based on net type
     auto& entrances = m_pPolyBeeCore->m_env.getTunnel().getEntrances();
     for (const TunnelEntranceInfo& entrance : entrances) {
         Rectangle entranceRect;
@@ -257,19 +258,53 @@ void LocalVis::drawTunnel()
         }
 
         Color entranceColor;
-        switch (entrance.netType) {
-        case NetType::NONE:
-            entranceColor = ENTRANCE_COLOR_NONE;
-            break;
-        case NetType::ANTIBIRD:
-            entranceColor = ENTRANCE_COLOR_ANTIBIRD;
-            break;
-        case NetType::ANTIHAIL:
-            entranceColor = ENTRANCE_COLOR_ANTIHAIL;
+
+        switch (m_trailColourMode) {
+        case TrailColourMode::RANDOM: {
+            entranceColor = entranceColorFromNetType(entrance.netType);
             break;
         }
+        case TrailColourMode::ENTRANCE_USED: {
+            entranceColor = entranceColorFromEntranceID(entrance.id);
+            break;
+        }
+        default:
+            pb::msg_error_and_exit("LocalVis::drawTunnel(): invalid trail colour mode");
+        }
+
         DrawRectangleRec(envToDisplayRect(entranceRect), entranceColor);
     }
+}
+
+
+Color LocalVis::entranceColorFromNetType(NetType netType) const
+{
+    switch (netType) {
+    case NetType::NONE:
+        return ENTRANCE_COLOR_NONE;
+    case NetType::ANTIBIRD:
+        return ENTRANCE_COLOR_ANTIBIRD;
+    case NetType::ANTIHAIL:
+        return ENTRANCE_COLOR_ANTIHAIL;
+    default:
+        pb::msg_error_and_exit("entranceColorForNetType(): invalid net type");
+    }
+}
+
+
+Color LocalVis::entranceColorFromEntranceID(int entranceID) const
+{
+    if (entranceID < 0 || entranceID >= TunnelEntranceInfo::nextID) {
+        pb::msg_error_and_exit("entranceColorFromEntranceID(): invalid entrance ID");
+    }
+
+    if (TunnelEntranceInfo::nextID == 0) {
+        pb::msg_error_and_exit("entranceColorFromEntranceID(): no entrances have been created yet");
+    }
+
+    float hue = (360.0f / static_cast<float>(TunnelEntranceInfo::nextID)) * (entranceID + 1);
+
+    return ColorFromHSV(hue, 0.7f, 0.9f);
 }
 
 
@@ -388,6 +423,14 @@ void LocalVis::processKeyboardInput()
         m_bShowSVF = !m_bShowSVF;
     }
 
+    if (IsKeyPressed(KEY_ONE)) {
+        m_trailColourMode = TrailColourMode::RANDOM;
+    }
+
+    if (IsKeyPressed(KEY_TWO)) {
+        m_trailColourMode = TrailColourMode::ENTRANCE_USED;
+    }
+
     if (IsKeyDown(KEY_MINUS) || IsKeyDown(KEY_KP_SUBTRACT)) {
         Params::visDelayPerStep = std::min(MAX_DELAY_PER_STEP, Params::visDelayPerStep+5);
     }
@@ -437,6 +480,9 @@ void LocalVis::showHelpOverlay()
         "T:\tToggle bee trails on/off\n"
         "E:\tToggle EMD display on/off\n"
         "S:\tToggle SVF display on/off\n"
+        "\n"
+        "1:\tBee trail colour random\n"
+        "2:\tBee trail colour by entrance used\n"
         "\n"
         "+:\tSpeed up simulation (decrease delay per step)\n"
         "-:\tSlow down simulation (increase delay per step)\n"
@@ -506,21 +552,46 @@ void LocalVis::drawBees()
         DrawTriangle(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], ColorFromHSV(bee.colorHue(), 0.7f, 0.9f));
         DrawTriangleLines(BeeShapeAbs[0], BeeShapeAbs[1], BeeShapeAbs[2], BLACK);
 
+        // draw bee path trail if enabled and if the bee has a path to draw
         if (m_bShowTrails && !(bee.path().empty())) {
             size_t pathIdxMax = bee.path().size()-1;
             int drawCount = 0;
+            Color trailColor;
 
+            switch (m_trailColourMode) {
+            case TrailColourMode::RANDOM: {
+                trailColor = ColorFromHSV(bee.colorHue(), 0.3f, 0.7f);
+                break;
+            }
+            case TrailColourMode::ENTRANCE_USED: {
+                const TunnelEntranceInfo* pEntranceUsed = bee.entranceUsed();
+                if (pEntranceUsed == nullptr) {
+                    trailColor = ColorFromHSV(bee.colorHue(), 0.3f, 0.7f); // if bee hasn't used an entrance yet, just use its colour hue for trail
+                }
+                else {
+                    trailColor = entranceColorFromEntranceID(pEntranceUsed->id);
+                }
+                break;
+            }
+            default: {
+                pb::msg_error_and_exit("LocalVis::drawBees(): invalid trail colour mode");
+            }
+            }
+
+            // first draw the line segment from the bee's current position back to the most recent point in its path
             size_t i = pathIdxMax;
             Vector2 p1 = { envToDisplayX(bee.path()[i].x), envToDisplayY(bee.path()[i].y) };
             Vector2 p2 = { envToDisplayX(bee.x()), envToDisplayY(bee.y()) };
-            DrawLineEx(p1, p2, BEE_PATH_THICKNESS, ColorAlpha(ColorFromHSV(bee.colorHue(), 0.3f, 0.7f), 1.0f));
+            DrawLineEx(p1, p2, BEE_PATH_THICKNESS, ColorAlpha(trailColor, 1.0f));
             ++drawCount;
 
+            // and now draw line segments for the rest of the path, fading out as we go back in time, until we reach
+            // the maximum number of segments to draw or the end of the path
             for (; i >= 1 && drawCount < Params::visBeePathDrawLen; --i) {
                 Vector2 p1 = { envToDisplayX(bee.path()[i-1].x), envToDisplayY(bee.path()[i-1].y) };
                 Vector2 p2 = { envToDisplayX(bee.path()[i].x), envToDisplayY(bee.path()[i].y) };
                 float alpha = 1.0f - ((pathIdxMax - static_cast<float>(i)) / Params::visBeePathDrawLen); // fade out older parts of path
-                DrawLineEx(p1, p2, BEE_PATH_THICKNESS, ColorAlpha(ColorFromHSV(bee.colorHue(), 0.3f, 0.7f), alpha));
+                DrawLineEx(p1, p2, BEE_PATH_THICKNESS, ColorAlpha(trailColor, alpha));
                 ++drawCount;
             }
         }

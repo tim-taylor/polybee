@@ -111,6 +111,7 @@ public:
     bool inTunnel() const { return m_inTunnel; }
     const std::vector<pb::Pos2D>& path() const { return m_path; }
     BeeState state() const { return m_state; }
+    const TunnelEntranceInfo* entranceUsed() const { return m_pLastTunnelEntrance; }
 
     // Setters
     void setState(BeeState state) { m_state = state; }

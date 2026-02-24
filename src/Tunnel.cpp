@@ -12,9 +12,18 @@
 #include <cmath>
 #include <algorithm>
 
+// initialise static members
+
+int TunnelEntranceInfo::nextID = 0;
+
+
+// TunnelEntranceInfo methods
+
 TunnelEntranceInfo::TunnelEntranceInfo(const TunnelEntranceSpec& spec, const Tunnel* pTunnel) :
     side(spec.side), netType(spec.netType)
 {
+    id = nextID++;
+
     // calculate entrance positions in environment coordinates based on tunnel position, tunnel size, and
     // relative entrance positions specified in spec
 
@@ -55,6 +64,7 @@ TunnelEntranceInfo::TunnelEntranceInfo(const TunnelEntranceSpec& spec, const Tun
     }
 }
 
+// Tunnel methods
 
 Tunnel::Tunnel() {
 }

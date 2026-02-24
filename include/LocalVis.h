@@ -17,6 +17,11 @@ enum class DrawState {
     HEATMAP
 };
 
+enum class TrailColourMode {
+    RANDOM,
+    ENTRANCE_USED
+};
+
 /**
  * The LocalVis class ...
  */
@@ -48,6 +53,9 @@ private:
     void rotateDrawState();
     void showHelpOverlay();
 
+    Color entranceColorFromNetType(NetType netType) const;
+    Color entranceColorFromEntranceID(int entranceID) const;
+
     PolyBeeCore* m_pPolyBeeCore;
     DrawState m_drawState { DrawState::BEES };
 
@@ -57,6 +65,8 @@ private:
     bool m_bShowEMD { true };   // Earth Mover's Distance between current heatmap and target heatmap
     bool m_bShowSVF { false };  // Successful Visits Fraction
     bool m_bShowHelpOverlay { false };
+
+    TrailColourMode m_trailColourMode { TrailColourMode::RANDOM };
 
     Camera2D m_camera;
     Vector2 m_displayOffset { 0.0f, 0.0f };
