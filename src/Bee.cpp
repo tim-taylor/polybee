@@ -269,10 +269,10 @@ void Bee::continueTryingToCrossEntrance()
         // Next we move perpendicular to the wall by the rebound length. We need to make sure we move in the right
         // direction (i.e. towards the outside of the tunnel if we're trying to get in, and towards the inside of the
         // tunnel if we're trying to get out).
-        pb::Pos2D reboundDir = m_tryCrossState.normalUnitVector.multiply(m_inTunnel ? -1.0f : 1.0f); // if we're trying to get out of the tunnel, we want
+        pb::Pos2D reboundDir = m_tryCrossState.normalUnitVector * (m_inTunnel ? -1.0f : 1.0f); // if we're trying to get out of the tunnel, we want
 
         // Now actually move the bee having calculated where it should go
-        m_pos = newReboundStartPos.add(reboundDir.multiply(m_tryCrossState.reboundLen));
+        m_pos = newReboundStartPos + (reboundDir * m_tryCrossState.reboundLen);
 
         // And update the state of the crossing attempts, and we're done
         m_tryCrossState.update();
@@ -287,8 +287,8 @@ void Bee::continueTryingToCrossEntrance()
         // We eed to make sure we move in the right direction (i.e. towards the net from the outside, and
         // away from the net from the inside). We can work this out based on whether the bee is currently
         // in the tunnel or not, and modify the normal vector accordingly.
-        pb::Pos2D desiredMoveDir = m_tryCrossState.normalUnitVector.multiply(m_inTunnel ? 1.0 : -1.0f); // if we're in the tunnel, we want to move in the direction of the normal vector, to try to get out. If we're outside the tunnel, we want to move in the opposite direction of the normal vector, to try to get in.);
-        pb::Pos2D desiredMove = m_pos.add(desiredMoveDir.multiply(m_tryCrossState.crossLen));
+        pb::Pos2D desiredMoveDir = m_tryCrossState.normalUnitVector * (m_inTunnel ? 1.0f : -1.0f); // if we're in the tunnel, we want to move in the direction of the normal vector, to try to get out. If we're outside the tunnel, we want to move in the opposite direction of the normal vector, to try to get in.);
+        pb::Pos2D desiredMove = m_pos + (desiredMoveDir * m_tryCrossState.crossLen);
 
         // Now work out the consequences of the desired move, i.e. whether the bee would intersect with the
         // tunnel boundary as it tries to move there.
