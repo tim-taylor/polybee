@@ -41,7 +41,7 @@
 
 
 // Implementation of the objective function.
-pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_double &dv) const
+pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv) const
 {
     std::vector<double> fitnessValues;
     PolyBeeCore& core = m_pPolyBeeEvolve->polyBeeCore(m_islandNum);
@@ -125,14 +125,14 @@ pagmo::vector_double PolyBeeHeatmapOptimization::fitness(const pagmo::vector_dou
 
 
 // Implementation of the box bounds.
-std::pair<pagmo::vector_double, pagmo::vector_double> PolyBeeHeatmapOptimization::get_bounds() const
+std::pair<pagmo::vector_double, pagmo::vector_double> PolyBeeOptimization::get_bounds() const
 {
     return {{0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0}, {1.0, 1.0, 1.0, 1.0, 3, 3, 3, 3}};
 }
 
 
 // Define the number of integer (as opposed to continuous) decision variables
-pagmo::vector_double::size_type PolyBeeHeatmapOptimization::get_nix() const {
+pagmo::vector_double::size_type PolyBeeOptimization::get_nix() const {
     return 4; // last 4 decision variables are integers
 }
 
@@ -287,7 +287,7 @@ PolyBeeCore& PolyBeeEvolve::polyBeeCore(std::size_t islandNum)
 void PolyBeeEvolve::evolveSinglePop() {
     // 1 - Instantiate a pagmo problem constructing it from a UDP
     // (user defined problem).
-    pagmo::problem prob{PolyBeeHeatmapOptimization{this}};
+    pagmo::problem prob{PolyBeeOptimization{this}};
 
     // 2 - Instantiate a pagmo algorithm
     // For info on available algorithms see: https://esa.github.io/pagmo2/overview.html
@@ -361,7 +361,7 @@ void PolyBeeEvolve::evolveArchipelago()
         }
 
         // 3a - Instantiate a pagmo problem constructing it from a UDP (user defined problem).
-        pagmo::problem prob{PolyBeeHeatmapOptimization{this, i}};
+        pagmo::problem prob{PolyBeeOptimization{this, i}};
 
         // 3b - Instantiate a pagmo algorithm
         pagmo::algorithm algo;

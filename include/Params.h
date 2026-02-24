@@ -105,6 +105,28 @@ private:
 };
 
 
+struct EvolveSpec {
+    // [E:n,w][;][H:i,o,f]]
+    bool  evolveEntrancePositions {true};   // whether to include tunnel entrance positions in the optimization
+    bool  evolveHivePositions {false};      // whether to include hive positions in the optimization
+
+    int   numEntrances {4};         // number of tunnel entrances (if evolveEntrancePositions is true)
+    float entranceWidth {100.0f};   // width of tunnel entrances (if evolveEntrancePositions is true)
+    int   numHivesInsideTunnel {0}; // number of hives that must be placed inside tunnel (if evolveHivePositions is true)
+    int   numHivesOutsideTunnel {0};// number of hives that must be placed outside tunner (if evolveHivePositions is true)
+    int   numHivesFree {0};         // number of hives that can be placed either inside or outside the tunnel (if evolveHivePositions is true)
+
+    EvolveSpec() = default;
+    EvolveSpec(bool evolveEntrancePositions, bool evolveHivePositions,
+               int numEntrances, float entranceWidth,
+               int numHivesInsideTunnel, int numHivesOutsideTunnel, int numHivesFree) :
+        evolveEntrancePositions(evolveEntrancePositions), evolveHivePositions(evolveHivePositions),
+        numEntrances(numEntrances), entranceWidth(entranceWidth),
+        numHivesInsideTunnel(numHivesInsideTunnel), numHivesOutsideTunnel(numHivesOutsideTunnel), numHivesFree(numHivesFree)
+    {}
+};
+
+
 /**
  * @brief Class for flexibily dealing with system parameters
  *
@@ -169,6 +191,8 @@ public:
     static bool bEvolve; // determines whether to run optimization to match output heatmap against target
     static EvolveObjective evolveObjective; // this is the public-facing version of evolveObjectivePvt that is set in calculateDerivedParams()
     static int evolveObjectivePvt; // 0 = EMD to target heatmap, 1 = fraction of flowers in successful visit range
+    static EvolveSpec evolveSpec; // specifications for the optimization process, parsed from evolveSpecPvt in calculateDerivedParams()
+    static std::string evolveSpecPvt; // string form of evolve-spec parameter, format: [E:n,w][;][H:i,o,f]]
     static std::string strTargetHeatmapFilename; // CSV file containing target heatmap for optimization
     static int numConfigsPerGen; // number of trials to run during each generation of optimization
     static int numTrialsPerConfig; // number of trials to run for each configuration/individual in each generation

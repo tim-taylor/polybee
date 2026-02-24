@@ -69,6 +69,8 @@ std::vector<HiveSpec> Params::hiveSpecs;
 bool Params::bEvolve;
 EvolveObjective Params::evolveObjective;
 int Params::evolveObjectivePvt;
+EvolveSpec Params::evolveSpec;
+std::string Params::evolveSpecPvt;
 std::string Params::strTargetHeatmapFilename;
 int Params::numConfigsPerGen;
 int Params::numTrialsPerConfig;
@@ -173,6 +175,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");
     REGISTRY.emplace_back("evolve-objective", "evolveObjective", ParamType::INT, &evolveObjectivePvt, 0, "Optimization objective: 0=EMD to target heatmap, 1=Fraction of flowers in successful visit range");
+    REGISTRY.emplace_back("evolve-spec", "evolveSpec", ParamType::STRING, &evolveSpecPvt, "", "Specification for what to evolve (format: [E:n,w][;][H:i,o,f]] where n=num entrances, w=entrance width, i=num hives inside tunnel, o=num hives outside tunnel, f=num hives free to be inside or outside)");
     REGISTRY.emplace_back("min-visit-count-success", "minVisitCountSuccess", ParamType::INT, &minVisitCountSuccess, 1, "Minimum number of bee visits for successful pollination");
     REGISTRY.emplace_back("max-visit-count-success", "maxVisitCountSuccess", ParamType::INT, &maxVisitCountSuccess, 1000, "Maximum number of bee visits for successful pollination");
     REGISTRY.emplace_back("num-trials-per-config", "numTrialsPerConfig", ParamType::INT, &numTrialsPerConfig, 1, "Number of trials to run for each configuration/individual in each generation");
@@ -271,6 +274,53 @@ std::vector<PatchSpec> parse_patch_positions(const std::vector<std::string>& pat
         }
     }
     return patches;
+}
+
+
+EvolveSpec parse_evolve_spec(const std::string& evolve_spec_str) {
+    // [E:n,w][;][H:i,o,f]]
+    std::string regex_str_p1 = R"(E:(\d+),(\d*\.?\d+))";
+    std::string regex_str_p2 = R"(H:(\d+),(\d+),(\d+))";
+    std::string regex_str_full = regex_str_p1 + ";" + regex_str_p2;
+
+    std::regex regex_1(regex_str_p1);
+    std::regex regex_2(regex_str_p2);
+    std::regex regex_full(regex_str_full);
+
+    bool evolveEntrancePositions {true};
+    bool evolveHivePositions {false};
+    int numEntrances {4};
+    float entranceWidth {50.0f};
+    int numHivesInsideTunnel {0};
+    int numHivesOutsideTunnel {0};
+    int numHivesFree {0};
+
+    std::smatch match;
+    if (std::regex_match(evolve_spec_str, match, regex_full)) {
+        evolveEntrancePositions = true;
+        evolveHivePositions = true;
+        numEntrances = std::stoi(match[1]);
+        entranceWidth = std::stof(match[2]);
+        numHivesInsideTunnel = std::stoi(match[3]);
+        numHivesOutsideTunnel = std::stoi(match[4]);
+        numHivesFree = std::stoi(match[5]);
+    } else if (std::regex_match(evolve_spec_str, match, regex_1)) {
+        evolveEntrancePositions = true;
+        evolveHivePositions = false;
+        numEntrances = std::stoi(match[1]);
+        entranceWidth = std::stof(match[2]);
+    } else if (std::regex_match(evolve_spec_str, match, regex_2)) {
+        evolveEntrancePositions = false;
+        evolveHivePositions = true;
+        numHivesInsideTunnel = std::stoi(match[1]);
+        numHivesOutsideTunnel = std::stoi(match[2]);
+        numHivesFree = std::stoi(match[3]);
+    } else {
+        pb::msg_error_and_exit("Error in parameters: evolve-spec is invalid. It should be in the format [E:n,w][;][H:i,o,f], e.g., E:4,50;H:2,2,1");
+    }
+
+    return EvolveSpec(evolveEntrancePositions, evolveHivePositions, numEntrances, entranceWidth,
+                      numHivesInsideTunnel, numHivesOutsideTunnel, numHivesFree);
 }
 
 
@@ -443,6 +493,10 @@ void Params::initialise(int argc, char* argv[])
 // methods
 void Params::calculateDerivedParams()
 {
+    if (!evolveSpecPvt.empty()) {
+        evolveSpec = parse_evolve_spec(evolveSpecPvt);
+    }
+
     switch (evolveObjectivePvt) {
     case 0:
         evolveObjective = EvolveObjective::EMD_TO_TARGET_HEATMAP;

@@ -20,11 +20,11 @@
 class PolyBeeEvolve;
 
 // User Defined Problem struct for pagmo (must be copyable)
-struct PolyBeeHeatmapOptimization {
+struct PolyBeeOptimization {
 
-    PolyBeeHeatmapOptimization(std::size_t islandNum = 0) : m_pPolyBeeEvolve{nullptr}, m_islandNum(islandNum) {}
-    PolyBeeHeatmapOptimization(PolyBeeEvolve* ptr, std::size_t islandNum = 0) : m_pPolyBeeEvolve(ptr), m_islandNum(islandNum) {}
-    PolyBeeHeatmapOptimization(const PolyBeeHeatmapOptimization& other) : m_pPolyBeeEvolve(other.m_pPolyBeeEvolve), m_islandNum(other.m_islandNum) {}
+    PolyBeeOptimization(std::size_t islandNum = 0) : m_pPolyBeeEvolve{nullptr}, m_islandNum(islandNum) {}
+    PolyBeeOptimization(PolyBeeEvolve* ptr, std::size_t islandNum = 0) : m_pPolyBeeEvolve(ptr), m_islandNum(islandNum) {}
+    PolyBeeOptimization(const PolyBeeOptimization& other) : m_pPolyBeeEvolve(other.m_pPolyBeeEvolve), m_islandNum(other.m_islandNum) {}
 
     // Implementation of the objective function.
     pagmo::vector_double fitness(const pagmo::vector_double &dv) const;

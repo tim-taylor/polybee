@@ -2,6 +2,16 @@
 
 Crossing net code now debugged and working correctly.
 
+Starting to think about doing evolutionary runs where we evolve positions of one or more hives, with or without also evolving positions of entrances
+
+Have renamed PolyBeeHeatmapOptimization to PolyBeeOptimization
+
+Have implemented a new parameter evolve-spec, which can now be used in PolyBeeOptimization to work out what can evolve and what the genetic representation should be
+
+TODO
+
+* Generalise PolyBeeOptimization to be more flexible to evolve positions of N entrances and M hives. Ability to specify width of entrances, and to specify whether hives are ALL IN, ALL OUT or MIXED is all now provided by Params::evolveSpec.  Will need to determine genetic representation according to the configuration, and modify the get_bounds() and get_nix() methods accordingly.
+
 ## 23/2/26
 
 Have finished coding the new implementation of TryingToCrossEntranceState, Bee::continueTryingToCrossEntrance(), etc.
