@@ -1,3 +1,16 @@
+## 25/2/26
+
+DONE
+
+Have set up flexible genetic representation in PolyBeeOptimization constructor
+
+TODO
+
+* Now need to update PolyBeeOptimization::fitness to use the flexible genetic representation as set up
+in the constructor
+
+* When creating an island in PolyBeeEvolve (arc.push_back(pagmo::island{algo,...), try using the supplied derived pagmo::thread_island class instead of pagmo::thread (see https://esa.github.io/pagmo2/overview.html)
+
 ## 24/2/26
 
 Crossing net code now debugged and working correctly.

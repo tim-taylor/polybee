@@ -40,6 +40,55 @@
 #include <random>
 
 
+// Constructor
+PolyBeeOptimization::PolyBeeOptimization(PolyBeeEvolve* ptr, const EvolveSpec& spec, std::size_t islandNum)
+: m_pPolyBeeEvolve(ptr),
+  m_islandNum(islandNum),
+  m_numEntrances(spec.numEntrances),
+  m_entranceWidth(spec.entranceWidth),
+  m_numHivesInsideTunnel(spec.numHivesInsideTunnel),
+  m_numHivesOutsideTunnel(spec.numHivesOutsideTunnel),
+  m_numHivesFree(spec.numHivesFree)
+{
+    // We need to establish how many decision variables we have, which ones are integers (as opposed to float)
+    // and what their bounds are
+
+    // For each tunnel entrance we need one float and one integer decision variable, where the float variable
+    // determines the position of the entrance [0.0-1.0] along the side of the tunnel, and the integer variable
+    // determines which side of the tunnel the entrance is on (0=North, 1=East, 2=South, 3=West)
+    // => 1F + 1I per entrance
+
+    // For each hive inside the tunnel we need two float decision variables that determine the position of the hive
+    // [0.0-1.0] along the horizontal and vertical sides of the tunnel repectively
+    // => 2F per hive inside tunnel
+
+    // For each hive outside the tunnel we need two float and one integer decision variables. The interger
+    // variable determines the sector that the hive is in (0=North, 1=East, 2=South, 3=West), and the float
+    // variables determine the position of the hive [0.0-1.0] along the horizontal and vertica axes of
+    // that sector of the environment
+    // => 2F + 1I per hive outside tunnel
+
+    // For each free hive we need two float decision variables that determine the position of the hive [0.0-1.0]
+    // along the horizontal and vertical axes of the entire environment
+    // => 2F per free hive
+
+    m_numFloatVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 2 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 2;
+    m_numIntegerVars = m_numEntrances * 1 + m_numHivesOutsideTunnel * 1;
+
+    // Set bounds for decision variables
+    m_lowerBounds.clear();
+    m_upperBounds.clear();
+    for (int i = 0; i < m_numFloatVars; ++i) {
+        m_lowerBounds.push_back(0.0);
+        m_upperBounds.push_back(1.0);
+    }
+    for (int i = 0; i < m_numIntegerVars; ++i) {
+        m_lowerBounds.push_back(0.0);
+        m_upperBounds.push_back(3.0); // 4 possible sides (0=North, 1=East, 2=South, 3=West)
+    }
+}
+
+
 // Implementation of the objective function.
 pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv) const
 {
@@ -127,13 +176,15 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
 // Implementation of the box bounds.
 std::pair<pagmo::vector_double, pagmo::vector_double> PolyBeeOptimization::get_bounds() const
 {
-    return {{0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0}, {1.0, 1.0, 1.0, 1.0, 3, 3, 3, 3}};
+    return {m_lowerBounds, m_upperBounds};
+    //return {{0.0, 0.0, 0.0, 0.0, 0, 0, 0, 0}, {1.0, 1.0, 1.0, 1.0, 3, 3, 3, 3}};
 }
 
 
 // Define the number of integer (as opposed to continuous) decision variables
 pagmo::vector_double::size_type PolyBeeOptimization::get_nix() const {
-    return 4; // last 4 decision variables are integers
+    return m_numIntegerVars;
+    //return 4; // last 4 decision variables are integers
 }
 
 
@@ -287,7 +338,7 @@ PolyBeeCore& PolyBeeEvolve::polyBeeCore(std::size_t islandNum)
 void PolyBeeEvolve::evolveSinglePop() {
     // 1 - Instantiate a pagmo problem constructing it from a UDP
     // (user defined problem).
-    pagmo::problem prob{PolyBeeOptimization{this}};
+    pagmo::problem prob{PolyBeeOptimization{this, Params::evolveSpec}};
 
     // 2 - Instantiate a pagmo algorithm
     // For info on available algorithms see: https://esa.github.io/pagmo2/overview.html
@@ -361,7 +412,7 @@ void PolyBeeEvolve::evolveArchipelago()
         }
 
         // 3a - Instantiate a pagmo problem constructing it from a UDP (user defined problem).
-        pagmo::problem prob{PolyBeeOptimization{this, i}};
+        pagmo::problem prob{PolyBeeOptimization{this, Params::evolveSpec, i}};
 
         // 3b - Instantiate a pagmo algorithm
         pagmo::algorithm algo;

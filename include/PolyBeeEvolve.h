@@ -8,6 +8,7 @@
 #define _POLYBEEEVOLVE_H
 
 #include "PolyBeeCore.h"
+#include "Params.h"
 #include <pagmo/population.hpp>
 #include <pagmo/algorithm.hpp>
 #include <pagmo/archipelago.hpp>
@@ -22,9 +23,13 @@ class PolyBeeEvolve;
 // User Defined Problem struct for pagmo (must be copyable)
 struct PolyBeeOptimization {
 
-    PolyBeeOptimization(std::size_t islandNum = 0) : m_pPolyBeeEvolve{nullptr}, m_islandNum(islandNum) {}
-    PolyBeeOptimization(PolyBeeEvolve* ptr, std::size_t islandNum = 0) : m_pPolyBeeEvolve(ptr), m_islandNum(islandNum) {}
-    PolyBeeOptimization(const PolyBeeOptimization& other) : m_pPolyBeeEvolve(other.m_pPolyBeeEvolve), m_islandNum(other.m_islandNum) {}
+    PolyBeeOptimization() {}
+
+    PolyBeeOptimization(PolyBeeEvolve* ptr, const EvolveSpec& spec, std::size_t islandNum = 0);
+
+    // copy constructor - required by pagmo when creating problem instances for each island in the archipelago
+    // use default copy constructor, which should do a member-wise copy
+    PolyBeeOptimization(const PolyBeeOptimization& other) = default;
 
     // Implementation of the objective function.
     pagmo::vector_double fitness(const pagmo::vector_double &dv) const;
@@ -36,10 +41,24 @@ struct PolyBeeOptimization {
     inline pagmo::vector_double::size_type get_nix() const;
 
     // Pointer back to the PolyBeeEvolve object
-    PolyBeeEvolve* m_pPolyBeeEvolve;
+    PolyBeeEvolve* m_pPolyBeeEvolve {nullptr};
+
+    // Specification for what to evolve (tunnel entrance positions and/or hive positions, and associated parameters)
+    int   m_numEntrances {1};
+    float m_entranceWidth {50.0f};
+    int   m_numHivesInsideTunnel {0};
+    int   m_numHivesOutsideTunnel {0};
+    int   m_numHivesFree {0};
 
     // Island number for this problem instance
-    std::size_t m_islandNum;
+    std::size_t m_islandNum {1};
+
+
+private:
+    pagmo::vector_double::size_type m_numFloatVars {0};
+    pagmo::vector_double::size_type m_numIntegerVars {0};
+    pagmo::vector_double m_lowerBounds;
+    pagmo::vector_double m_upperBounds;
 };
 
 
