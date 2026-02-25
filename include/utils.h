@@ -10,9 +10,9 @@ constexpr float FLOAT_COMPARISON_EPSILON = 0.000001f; // small value to use when
 
 namespace Polybee {
 
-    [[noreturn]] void msg_error_and_exit(std::string msg);
-    void msg_warning(std::string msg);
-    void msg_info(std::string msg);
+    [[noreturn]] void msg_error_and_exit(const std::string& msg);
+    void msg_warning(const std::string& msg);
+    void msg_info(const std::string& msg);
 
     template<typename T>
     T median(const std::vector<T>& values) {
