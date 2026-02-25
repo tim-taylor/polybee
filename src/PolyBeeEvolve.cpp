@@ -44,12 +44,27 @@
 PolyBeeOptimization::PolyBeeOptimization(PolyBeeEvolve* ptr, const EvolveSpec& spec, std::size_t islandNum)
 : m_pPolyBeeEvolve(ptr),
   m_islandNum(islandNum),
+  m_evolveEntrancePositions(spec.evolveEntrancePositions),
+  m_evolveHivePositions(spec.evolveHivePositions),
   m_numEntrances(spec.numEntrances),
   m_entranceWidth(spec.entranceWidth),
   m_numHivesInsideTunnel(spec.numHivesInsideTunnel),
   m_numHivesOutsideTunnel(spec.numHivesOutsideTunnel),
   m_numHivesFree(spec.numHivesFree)
 {
+    // first do some checks to make sure the parameters are consistent with each other
+    if ((!m_evolveEntrancePositions) && (m_numEntrances != 0)) {
+        pb::msg_error_and_exit("PolyBeeOptimization constructor: evolveEntrancePositions is false but numEntrances is not zero");
+    }
+
+    if ((!m_evolveHivePositions) && (m_numHivesInsideTunnel + m_numHivesOutsideTunnel + m_numHivesFree != 0)) {
+        pb::msg_error_and_exit("PolyBeeOptimization constructor: evolveHivePositions is false but numHivesInsideTunnel, numHivesOutsideTunnel, and numHivesFree are not all zero");
+    }
+
+    if (!m_evolveEntrancePositions && !m_evolveHivePositions) {
+        pb::msg_error_and_exit("PolyBeeOptimization constructor: both evolveEntrancePositions and evolveHivePositions cannot be false");
+    }
+
     // We need to establish how many decision variables we have, which ones are integers (as opposed to float)
     // and what their bounds are
 
@@ -59,21 +74,24 @@ PolyBeeOptimization::PolyBeeOptimization(PolyBeeEvolve* ptr, const EvolveSpec& s
     // => 1F + 1I per entrance
 
     // For each hive inside the tunnel we need two float decision variables that determine the position of the hive
-    // [0.0-1.0] along the horizontal and vertical sides of the tunnel repectively
-    // => 2F per hive inside tunnel
+    // [0.0-1.0] along the horizontal and vertical sides of the tunnel repectively and an int to specify the
+    // direction of hive exit (0=North, 1=East, 2=South, 3=West, 4=Random)
+    // => 2F + 1I per hive inside tunnel
 
-    // For each hive outside the tunnel we need two float and one integer decision variables. The interger
-    // variable determines the sector that the hive is in (0=North, 1=East, 2=South, 3=West), and the float
-    // variables determine the position of the hive [0.0-1.0] along the horizontal and vertica axes of
-    // that sector of the environment
-    // => 2F + 1I per hive outside tunnel
+    // For each hive outside the tunnel we need two float and two integer decision variables. The float
+    // variables determine the position of the hive [0.0-1.0] along the horizontal and vertical axes of
+    // that sector of the environment, the first integer specifies the direction of hive exit (0=North,
+    // 1=East, 2=South, 3=West, 4=Random), and the second integer specifies the sector of the environment
+    // that the hive is in (0=North, 1=East, 2=South, 3=West)
+    // => 2F + 2I per hive outside tunnel
 
     // For each free hive we need two float decision variables that determine the position of the hive [0.0-1.0]
-    // along the horizontal and vertical axes of the entire environment
-    // => 2F per free hive
+    // along the horizontal and vertical axes of the entire environment, and one integer variable to specify the
+    // direction of hive exit (0=North, 1=East, 2=South, 3=West, 4=Random)
+    // => 2F + 1I per free hive
 
     m_numFloatVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 2 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 2;
-    m_numIntegerVars = m_numEntrances * 1 + m_numHivesOutsideTunnel * 1;
+    m_numIntegerVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 1 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 1;
 
     // Set bounds for decision variables
     m_lowerBounds.clear();
@@ -84,7 +102,16 @@ PolyBeeOptimization::PolyBeeOptimization(PolyBeeEvolve* ptr, const EvolveSpec& s
     }
     for (int i = 0; i < m_numIntegerVars; ++i) {
         m_lowerBounds.push_back(0.0);
-        m_upperBounds.push_back(3.0); // 4 possible sides (0=North, 1=East, 2=South, 3=West)
+        double ub = 3.0; // 4 possible options (0=North, 1=East, 2=South, 3=West)
+        if (
+            (i >= m_numEntrances && i < m_numEntrances + m_numHivesInsideTunnel) ||
+            (i >= m_numEntrances + m_numHivesInsideTunnel && i < m_numEntrances + m_numHivesInsideTunnel + (m_numHivesOutsideTunnel*2) && (i-(m_numEntrances + m_numHivesInsideTunnel))%2 == 0) ||
+            (i >= (m_numEntrances + m_numHivesInsideTunnel + (m_numHivesOutsideTunnel*2)))
+        ){
+            ub = 4.0;
+        }
+
+        m_upperBounds.push_back(ub);
     }
 }
 
@@ -95,30 +122,118 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     std::vector<double> fitnessValues;
     PolyBeeCore& core = m_pPolyBeeEvolve->polyBeeCore(m_islandNum);
     const Environment& env = core.getEnvironment();
-
     bool firstCall = (core.isMasterCore() && core.evaluationCount() == 0);
 
-    float entranceWidth = 100.0f; // fixed entrance width of 100 units
-
-    assert(dv.size() == 8); // we expect 8 decision variables
-    assert(entranceWidth < Params::tunnelW && entranceWidth < Params::tunnelH);
+    assert(dv.size() == m_numFloatVars + m_numIntegerVars);
 
     std::vector<float> tunnelLengths = {
-        Params::tunnelW - entranceWidth, // North
-        Params::tunnelH - entranceWidth, // East
-        Params::tunnelW - entranceWidth, // South
-        Params::tunnelH - entranceWidth  // West
+        Params::tunnelW - m_entranceWidth, // North
+        Params::tunnelH - m_entranceWidth, // East
+        Params::tunnelW - m_entranceWidth, // South
+        Params::tunnelH - m_entranceWidth  // West
     };
 
-    std::vector<TunnelEntranceSpec> localSpecs;
+    // Now we need to translate the decision vector elements into specific tunnel entrance and hive position
+    // parameters.
+    //
+    // We need to read the elements in the order dictated by the following lines in the constructor:
+    //
+    // m_numFloatVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 2 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 2;
+    // m_numIntegerVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 1 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 1;
 
-    for (int i = 0; i < 4; ++i) {
-        int side = static_cast<int>(dv[4+i]);
-        float e1 = static_cast<float>(dv[i]) * tunnelLengths[side];
-        float e2 = e1 + entranceWidth;
-        localSpecs.emplace_back(e1, e2, side);
+    std::vector<TunnelEntranceSpec> localSpecs;
+    std::vector<HiveSpec> hiveSpecs;
+
+    std::size_t floatVarIndex = 0;
+    std::size_t intVarIndex = m_numFloatVars;
+
+    // Tunnel entrances
+    if (!m_evolveEntrancePositions) {
+        // If we are not evolving tunnel entrance positions, then the entrance(s) should be instantiated according to
+        // the regular Params::tunnelEntranceSpecs. This has already been done by the Tunnel::initialiseEntrances()
+        // method, which is called by Tunnel::initialise(), which is called by Environment::initialise(), which itself
+        // is called from the PolyBeeCore constructor, so we don't need to do anything here.
     }
-    core.getTunnel().initialiseEntrances(localSpecs);
+    else {
+        for (int i = 0; i < m_numEntrances; ++i) {
+            int side = static_cast<int>(dv[intVarIndex++]);
+            float e1 = static_cast<float>(dv[floatVarIndex++]) * tunnelLengths[side];
+            float e2 = e1 + m_entranceWidth;
+            localSpecs.emplace_back(e1, e2, side);
+        }
+        core.getTunnel().initialiseEntrances(localSpecs);
+    }
+
+    if (!m_evolveHivePositions) {
+        // If we are not evolving hive positions, then the hive(s) should be instantiated according to the
+        // regular Params::hiveSpecs. This has already been done by the Environment::initialiseHives() method,
+        // which is called from Environment::initialise(), which itself is called from the PolyBeeCore constructor,
+        // so we don't need to do anything here.
+    }
+    else {
+        float sf = 0.98f;               // scale factor for hive position variables to add a safety margin so that hives are not placed right up against the tunnel walls or the borders of the environment
+        float mf = (1.0f - sf) / 2.0f;  // left and right (or top and bottom) margin scale factor for hive position variables
+        //float sf2 = sf + mf;        // scale factor hive positions when we only want a margin on one side
+
+        // Hives inside tunnel
+        for (int i = 0; i < m_numHivesInsideTunnel; ++i) {
+            float lx = mf * Params::tunnelW + static_cast<float>(dv[floatVarIndex++]) * Params::tunnelW * sf;
+            float ly = mf * Params::tunnelH + static_cast<float>(dv[floatVarIndex++]) * Params::tunnelH * sf;
+            int dir = static_cast<int>(dv[intVarIndex++]);
+            float x = Params::tunnelX + lx;
+            float y = Params::tunnelY + ly;
+            hiveSpecs.emplace_back(x, y, dir);
+        }
+
+        // Hives outside tunnel
+        float LregionWidth = Params::tunnelX;
+        float RregionLeft = Params::tunnelX + Params::tunnelW;
+        float RregionWidth = Params::envW - RregionLeft;
+        float TregionHeight = Params::tunnelY;
+        float BregionTop = Params::tunnelY + Params::tunnelH;
+        float BregionHeight = Params::envH - BregionTop;
+
+        for (int i = 0; i < m_numHivesOutsideTunnel; ++i) {
+            float _x = static_cast<float>(dv[floatVarIndex++]);
+            float _y = static_cast<float>(dv[floatVarIndex++]);
+            int dir = static_cast<int>(dv[intVarIndex++]);
+            int sector = static_cast<int>(dv[intVarIndex++]);
+
+            float x, y;
+            switch (sector) {
+                case 0: // North (top)
+                    x = mf * Params::envW + _x * Params::envW * sf;
+                    y = mf * TregionHeight + _y * TregionHeight * sf;
+                    break;
+                case 1: // East (right)
+                    x = RregionLeft + mf * RregionWidth + _x * RregionWidth * sf;
+                    y = Params::tunnelY + mf * Params::tunnelH + _y * Params::tunnelH * sf;
+                    break;
+                case 2: // South (bottom)
+                    x = mf * Params::envW + _x * Params::envW * sf;
+                    y = BregionTop + mf * BregionHeight + _y * BregionHeight * sf;
+                    break;
+                case 3: // West (left)
+                    x = mf * Params::tunnelX + _x * Params::tunnelX * sf;
+                    y = Params::tunnelY + mf * Params::tunnelH + _y * Params::tunnelH * sf;
+                    break;
+                default:
+                    pb::msg_error_and_exit(std::format("Invalid sector value {} for hive position specified in decision vector", sector));
+            }
+
+            hiveSpecs.emplace_back(x, y, dir);
+        }
+
+        // Free hives
+        for (int i = 0; i < m_numHivesFree; ++i) {
+            float x = mf * Params::envW + static_cast<float>(dv[floatVarIndex++]) * Params::envW * sf;
+            float y = mf * Params::envH + static_cast<float>(dv[floatVarIndex++]) * Params::envH * sf;
+            int dir = static_cast<int>(dv[intVarIndex++]);
+            hiveSpecs.emplace_back(x, y, dir);
+        }
+
+        core.getEnvironment().initialiseHives(hiveSpecs);
+    }
 
     // Write config file for this configuration once at the start of the run
     if (firstCall) {
@@ -161,6 +276,7 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     int eval_in_gen = (core.evaluationCount()-1) % num_evals_per_gen;
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
+    // TODO - update the following
     pb::msg_info(std::format("isle {} gen {} evals {} conf {}: ents e1:{:.1f},{:.1f}:{} e2:{:.1f},{:.1f}:{} e3:{:.1f},{:.1f}:{} e4:{:.1f},{:.1f}:{}, medFit {:.4f}",
         core.getIslandNum(), gen, core.evaluationCount(), config_num,
         localSpecs[0].e1, localSpecs[0].e2, localSpecs[0].side,

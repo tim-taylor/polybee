@@ -2,12 +2,16 @@
 
 DONE
 
-Have set up flexible genetic representation in PolyBeeOptimization constructor
+Set up flexible genetic representation in PolyBeeOptimization constructor
+
+Updated PolyBeeOptimization::fitness to use the flexible genetic representation as set up
+in the constructor
 
 TODO
 
-* Now need to update PolyBeeOptimization::fitness to use the flexible genetic representation as set up
-in the constructor
+* Need to update the code that outputs summary data at the end of PolyBeeOptimization::fitness()
+
+* Need to debug all new code, especially the code that sets the upper bounds in the PolyBeeOptimization constructor
 
 * When creating an island in PolyBeeEvolve (arc.push_back(pagmo::island{algo,...), try using the supplied derived pagmo::thread_island class instead of pagmo::thread (see https://esa.github.io/pagmo2/overview.html)
 

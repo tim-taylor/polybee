@@ -57,6 +57,8 @@ public:
 
     PolyBeeCore* getPolyBeeCore() { assert(m_pPolyBeeCore != nullptr); return m_pPolyBeeCore; }
 
+    void initialiseHives(const std::vector<HiveSpec>& hiveSpecs);
+
 private:
     void initialiseTunnel();
     void initialisePlants();

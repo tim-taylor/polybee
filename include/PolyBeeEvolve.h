@@ -44,7 +44,10 @@ struct PolyBeeOptimization {
     PolyBeeEvolve* m_pPolyBeeEvolve {nullptr};
 
     // Specification for what to evolve (tunnel entrance positions and/or hive positions, and associated parameters)
-    int   m_numEntrances {1};
+    bool  m_evolveEntrancePositions {false};
+    bool  m_evolveHivePositions {false};
+
+    int   m_numEntrances {0};
     float m_entranceWidth {50.0f};
     int   m_numHivesInsideTunnel {0};
     int   m_numHivesOutsideTunnel {0};

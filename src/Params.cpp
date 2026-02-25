@@ -652,7 +652,7 @@ void Params::checkConsistency()
     }
 
     // check at least one hive is specified
-    if (hiveSpecs.empty()) {
+    if (hiveSpecs.empty() && !(bEvolve && evolveSpec.evolveHivePositions)) {
         pb::msg_error_and_exit("At least one hive must be specified using the 'hive' parameter");
     }
 
@@ -675,6 +675,15 @@ void Params::checkConsistency()
         }
         if (migrationPeriod <= 0 && numIslands > 1) {
             pb::msg_error_and_exit("Parameter 'migration-period' must be greater than zero if 'num-islands' is greater than 1");
+        }
+        if (evolveSpec.entranceWidth >= Params::tunnelW || evolveSpec.entranceWidth >= Params::tunnelH) {
+            pb::msg_error_and_exit("Parameter 'evolve-spec' specifies an entrance width that is larger than the tunnel dimensions");
+        }
+        if (evolveSpec.evolveEntrancePositions && evolveSpec.numEntrances <= 0) {
+            pb::msg_error_and_exit("Parameter 'evolve-spec' specifies that entrance positions should be evolved, but numEntrances is not greater than zero");
+        }
+        if (evolveSpec.evolveHivePositions && (evolveSpec.numHivesInsideTunnel + evolveSpec.numHivesOutsideTunnel + evolveSpec.numHivesFree <= 0)) {
+            pb::msg_error_and_exit("Parameter 'evolve-spec' specifies that hive positions should be evolved, but numHives is not greater than zero");
         }
     }
 

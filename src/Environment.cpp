@@ -112,13 +112,18 @@ pb::Pos2D Environment::envPosToGridIndex(float x, float y) const
 }
 
 
-void Environment::initialiseHives()
+void Environment::initialiseHives(const std::vector<HiveSpec>& hiveSpecs)
 {
-    auto numHives = Params::hiveSpecs.size();
+    auto numHives = hiveSpecs.size();
     for (int i = 0; i < numHives; ++i) {
-        const HiveSpec& spec = Params::hiveSpecs[i];
+        const HiveSpec& spec = hiveSpecs[i];
         m_hives.emplace_back(spec.x, spec.y, spec.direction, this);
     }
+}
+
+void Environment::initialiseHives()
+{
+    initialiseHives(Params::hiveSpecs);
 }
 
 
