@@ -56,8 +56,7 @@ struct PolyBeeOptimization {
     // Island number for this problem instance
     std::size_t m_islandNum {1};
 
-
-private:
+    // The following members are derived from the above specifications and should not be set directly
     pagmo::vector_double::size_type m_numFloatVars {0};
     pagmo::vector_double::size_type m_numIntegerVars {0};
     pagmo::vector_double m_lowerBounds;

@@ -113,6 +113,8 @@ PolyBeeOptimization::PolyBeeOptimization(PolyBeeEvolve* ptr, const EvolveSpec& s
 
         m_upperBounds.push_back(ub);
     }
+
+    assert(true);
 }
 
 
@@ -231,8 +233,6 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
             int dir = static_cast<int>(dv[intVarIndex++]);
             hiveSpecs.emplace_back(x, y, dir);
         }
-
-        core.getEnvironment().initialiseHives(hiveSpecs);
     }
 
     // Write config file for this configuration once at the start of the run
@@ -245,6 +245,8 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     {
         core.incrementEvaluationCount();
         core.resetForNewRun();
+        core.getEnvironment().initialiseHivesAndBees(hiveSpecs);// we need to re-initialise the hives in the environment
+                                                                // with the new hive positions for this run
         core.run(false); // false = do not log output files during the run
 
         double objValue = 0.0;
@@ -276,14 +278,26 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     int eval_in_gen = (core.evaluationCount()-1) % num_evals_per_gen;
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
-    // TODO - update the following
-    pb::msg_info(std::format("isle {} gen {} evals {} conf {}: ents e1:{:.1f},{:.1f}:{} e2:{:.1f},{:.1f}:{} e3:{:.1f},{:.1f}:{} e4:{:.1f},{:.1f}:{}, medFit {:.4f}",
+    // Output some info about the current configuration and its fitness value
+    std::string msg = std::format("isle {} gen {} evals {} conf {} mdFit {:.4f} /entrances/ ",
+        core.getIslandNum(), gen, core.evaluationCount(), config_num, medianObjValue);
+    for (int i = 0; i < localSpecs.size(); ++i) {
+        msg += std::format("e{} {:.1f},{:.1f}:{} ", i, localSpecs[i].e1, localSpecs[i].e2, localSpecs[i].side);
+    }
+    msg += "/hives/ ";
+    for (int i = 0; i < hiveSpecs.size(); ++i) {
+        msg += std::format("h{} {:.1f},{:.1f}:{}", i, hiveSpecs[i].x, hiveSpecs[i].y, hiveSpecs[i].direction);
+    }
+    pb::msg_info(msg);
+    /*
+        ents e1:{:.1f},{:.1f}:{} e2:{:.1f},{:.1f}:{} e3:{:.1f},{:.1f}:{} e4:{:.1f},{:.1f}:{}, medFit {:.4f}",
         core.getIslandNum(), gen, core.evaluationCount(), config_num,
         localSpecs[0].e1, localSpecs[0].e2, localSpecs[0].side,
         localSpecs[1].e1, localSpecs[1].e2, localSpecs[1].side,
         localSpecs[2].e1, localSpecs[2].e2, localSpecs[2].side,
         localSpecs[3].e1, localSpecs[3].e2, localSpecs[3].side,
         medianObjValue));
+    */
 
     return {medianObjValue};
 }
@@ -649,7 +663,7 @@ void PolyBeeEvolve::evolveArchipelago()
             for (std::size_t entry_idx = firstNewMigration; entry_idx < num_entries; ++entry_idx) {
                 auto [ts, id, dv, fv, source, dest] = log[entry_idx];
                 double median_fitness = pb::median(fv);
-                pb::msg_info(std::format("  At time {:.2f} individual {} (median fitness {}) migrated from Island {} -> {}",
+                pb::msg_info(std::format("  At time {:.2f} individual {} (median fitness {:.5f}) migrated from Island {} -> {}",
                     ts, id, median_fitness, source, dest));
             }
             firstNewMigration = num_entries;
@@ -670,14 +684,17 @@ void PolyBeeEvolve::showBestIndividuals(const pagmo::archipelago& arc, int gen) 
 
     for (size_t i = 0; i < arc.size(); ++i)
     {
+        const auto* pPBO = arc[i].get_population().get_problem().extract<PolyBeeOptimization>();
+        assert(pPBO != nullptr);
+
         double island_best = arc[i].get_population().champion_f()[0];
-        pb::msg_info(std::format("  Best fitness for island {}: {}", i, island_best));
+        pb::msg_info(std::format("  Best fitness for island {}: {:.5f}", i, island_best));
 
         auto champ = arc[i].get_population().champion_x();
         std::string best_indiv;
         for (size_t i = 0; i < champ.size(); ++i) {
             if (i > 0) { best_indiv += ", "; }
-            best_indiv += std::format("{}", champ[i]);
+            best_indiv += (i < pPBO->m_numFloatVars) ? std::format("{:.5f}", champ[i]) : std::format("{}", champ[i]);
         }
         pb::msg_info(std::format("  Best individual for island {}: {}", i, best_indiv));
 
@@ -688,7 +705,7 @@ void PolyBeeEvolve::showBestIndividuals(const pagmo::archipelago& arc, int gen) 
         }
     }
 
-    pb::msg_info(std::format("  Overall best fitness: {} (island {})", best_f, best_i));
+    pb::msg_info(std::format("  Overall best fitness: {:.5f} (island {})", best_f, best_i));
 }
 
 

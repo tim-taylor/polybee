@@ -27,8 +27,9 @@ void Environment::initialise(PolyBeeCore* pCore)
     m_height = Params::envH;
     initialiseTunnel();
     initialisePlants();
-    initialiseHives();
-    initialiseBees();
+    if (!(Params::bEvolve && Params::evolveSpec.evolveHivePositions)) {
+        initialiseHivesAndBees();
+    }
     initialiseHeatmap();
     initialiseTargetHeatmap();
 }
@@ -112,18 +113,20 @@ pb::Pos2D Environment::envPosToGridIndex(float x, float y) const
 }
 
 
-void Environment::initialiseHives(const std::vector<HiveSpec>& hiveSpecs)
+void Environment::initialiseHivesAndBees(const std::vector<HiveSpec>& hiveSpecs)
 {
+    m_hives.clear();
     auto numHives = hiveSpecs.size();
     for (int i = 0; i < numHives; ++i) {
         const HiveSpec& spec = hiveSpecs[i];
         m_hives.emplace_back(spec.x, spec.y, spec.direction, this);
     }
+    initialiseBees();
 }
 
-void Environment::initialiseHives()
+void Environment::initialiseHivesAndBees()
 {
-    initialiseHives(Params::hiveSpecs);
+    initialiseHivesAndBees(Params::hiveSpecs);
 }
 
 
@@ -133,6 +136,8 @@ void Environment::initialiseBees()
     if (m_hives.empty()) {
         pb::msg_error_and_exit("No hives have been defined in the environment, but bees are to be initialised. Cannot create bees without hives.");
     }
+
+    m_bees.clear();
 
     int numHives = static_cast<int>(m_hives.size());
     int numBeesPerHive = Params::numBees / numHives;
@@ -245,7 +250,7 @@ void Environment::initialiseTargetHeatmap()
 // Reset the environment to its initial state suitable for a new simulation run
 void Environment::reset() {
     // TODO - as the class is developed, ensure all relevant state is reset here
-    resetBees();
+    resetHivesAndBees();
     resetPlants();
     m_heatmap.reset();
 }
@@ -258,9 +263,13 @@ void Environment::resetPlants() {
 }
 
 
-void Environment::resetBees() {
+void Environment::resetHivesAndBees() {
+    m_hives.clear();
     m_bees.clear();
-    initialiseBees();
+
+    // Hives and bees will get re-initialised by initialiseHivesAndBees(), which should be called from outside
+    // this method after resetting the environment (this happens in PolyBeeOptimization::fitness() before each run)
+    // So we don't need to/should not call initialiseBees() here.
 }
 
 void Environment::update() {

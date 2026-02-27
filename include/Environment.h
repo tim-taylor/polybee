@@ -48,6 +48,7 @@ public:
     const Heatmap& getHeatmap() const { return m_heatmap; }
     const std::vector<std::vector<double>>& getRawTargetHeatmapNormalised() const { return m_rawTargetHeatmapNormalised; }
     const std::vector<Bee>& getBees() const { return m_bees; }
+    const std::vector<Hive>& getHives() const { return m_hives; }
     const std::vector<Plant>& getAllPlants() const { return m_allPlants; }
     std::vector<Plant*> getNearbyPlants(float x, float y) const;
     std::optional<Plant*> selectNearbyUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const; // get nearest plant to a given position within maxDistance
@@ -57,16 +58,16 @@ public:
 
     PolyBeeCore* getPolyBeeCore() { assert(m_pPolyBeeCore != nullptr); return m_pPolyBeeCore; }
 
-    void initialiseHives(const std::vector<HiveSpec>& hiveSpecs);
+    void initialiseHivesAndBees(const std::vector<HiveSpec>& hiveSpecs);
 
 private:
     void initialiseTunnel();
     void initialisePlants();
-    void initialiseHives();
-    void initialiseBees();
+    void initialiseHivesAndBees();
+    void initialiseBees(); // this should only be called from initialiseHivesAndBees
     void initialiseHeatmap();
     void initialiseTargetHeatmap();
-    void resetBees();
+    void resetHivesAndBees();
     void resetPlants();
     pb::Pos2D envPosToGridIndex(float x, float y) const;
     Plant* pickRandomPlantWeightedByDistance(const std::vector<NearbyPlantInfo>& plants) const;

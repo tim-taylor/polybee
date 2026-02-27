@@ -47,6 +47,7 @@ public:
     const Heatmap& getHeatmap() const { return m_env.getHeatmap(); }
     double getSuccessfulVisitFraction() const { return m_env.getSuccessfulVisitFraction(); }
     Tunnel& getTunnel() { return m_env.getTunnel(); }
+    const std::vector<Hive>& getHives() const { return m_env.getHives(); }
     const std::vector<Bee>& getBees() const { return m_env.getBees(); }
 
     void pauseSimulation(bool pause) {m_bPaused = pause;}

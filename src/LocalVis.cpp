@@ -534,9 +534,9 @@ void LocalVis::rotateDrawState()
 void LocalVis::drawBees()
 {
     // draw hives
-    for (const HiveSpec& hiveSpec : Params::hiveSpecs) {
+    for (const Hive& hive : m_pPolyBeeCore->getHives()) {
         DrawRectangleLinesEx(
-            envToDisplayRect({ hiveSpec.x-HALF_HIVE_SIZE, hiveSpec.y-HALF_HIVE_SIZE, HIVE_SIZE, HIVE_SIZE }),
+            envToDisplayRect({ hive.x()-HALF_HIVE_SIZE, hive.y()-HALF_HIVE_SIZE, HIVE_SIZE, HIVE_SIZE }),
             4.0f, HIVE_COLOR);
     }
 

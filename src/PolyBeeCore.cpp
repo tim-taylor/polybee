@@ -38,10 +38,10 @@ PolyBeeCore::PolyBeeCore(int argc, char* argv[]) :
     if (!Params::bCommandLineQuiet) {
         std::cout << "~~~~~~~~~~ FINAL PARAM VALUES ~~~~~~~~~~\n";
         Params::print(std::cout);
-        std::cout << "~~~~~~~~~~\n";
+        std::cout << "~~~~~~~~~~" << std::endl;
     }
 
-    if (Params::hiveSpecs.empty()) {
+    if (Params::hiveSpecs.empty()  && !(Params::bEvolve && Params::evolveSpec.evolveHivePositions)) {
         pb::msg_error_and_exit("No hive positions have been defined!");
     }
 

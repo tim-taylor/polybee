@@ -1,3 +1,17 @@
+## 27/2/26
+
+DONE
+
+Debugged new code, including the code that sets the upper bounds in the PolyBeeOptimization constructor
+
+Updated the code that outputs summary data at the end of PolyBeeOptimization::fitness()
+
+Considered using thread_island class when creating an island in PolyBeeEvolve (arc.push_back(pagmo::island{algo,...). However, looking at the docs it appears that this UDI is "automatically selected by the constructors of island on non-POSIX platforms or when both the island’s problem and algorithm provide at least the basic thread safety guarantee." (https://esa.github.io/pagmo2/docs/cpp/islands/thread_island.html)
+
+TODO
+
+
+
 ## 25/2/26
 
 DONE
@@ -6,14 +20,6 @@ Set up flexible genetic representation in PolyBeeOptimization constructor
 
 Updated PolyBeeOptimization::fitness to use the flexible genetic representation as set up
 in the constructor
-
-TODO
-
-* Need to update the code that outputs summary data at the end of PolyBeeOptimization::fitness()
-
-* Need to debug all new code, especially the code that sets the upper bounds in the PolyBeeOptimization constructor
-
-* When creating an island in PolyBeeEvolve (arc.push_back(pagmo::island{algo,...), try using the supplied derived pagmo::thread_island class instead of pagmo::thread (see https://esa.github.io/pagmo2/overview.html)
 
 ## 24/2/26
 

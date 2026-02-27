@@ -597,6 +597,7 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
             os << "(none)" << linesep;
         }
     }
+    os << std::flush;
 }
 
 
