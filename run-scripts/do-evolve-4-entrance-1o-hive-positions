@@ -1,0 +1,2 @@
+#!/bin/bash
+./run-release -c config-files/evolve-4-entrance-1o-hive-positions.cfg | tee out-evolve-4-entrance-1o-hive-positions.txt

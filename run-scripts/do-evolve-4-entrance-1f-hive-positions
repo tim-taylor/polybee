@@ -1,0 +1,2 @@
+#!/bin/bash
+./run-release -c config-files/evolve-4-entrance-1o-hive-positions.cfg --evolve-spec "E:4,100.0;H:0,0,1" --log-filename-prefix evolve-4-entrance-1f-hive-positions | tee out-evolve-4-entrance-1f-hive-positions.txt
