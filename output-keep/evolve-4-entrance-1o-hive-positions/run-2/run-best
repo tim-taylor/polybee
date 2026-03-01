@@ -1,0 +1,3 @@
+#!/bin/bash
+cd /home/tim/projects/polybee
+./run -c ./config-files/evolve-4-entrance-1o-hive-positions.cfg --evolve false --visualise true --tunnel-entrance 162.2,262.2:0 --tunnel-entrance 281.1,381.1:1 --tunnel-entrance 155.5,255.5:2 --tunnel-entrance 258.5,358.5:3 --hive 340.4,52.4:4 --num-iterations 2000
