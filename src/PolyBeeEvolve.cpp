@@ -279,12 +279,12 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
     // Output some info about the current configuration and its fitness value
-    std::string msg = std::format("isle {} gen {} evals {} conf {} mdFit {:.4f} /entrances/ ",
+    std::string msg = std::format("isl {} gen {} evl {} cnf {} mdF {:.4f} /e/ ",
         core.getIslandNum(), gen, core.evaluationCount(), config_num, medianObjValue);
     for (int i = 0; i < localSpecs.size(); ++i) {
         msg += std::format("e{} {:.1f},{:.1f}:{} ", i, localSpecs[i].e1, localSpecs[i].e2, localSpecs[i].side);
     }
-    msg += "/hives/ ";
+    msg += "/h/ ";
     for (int i = 0; i < hiveSpecs.size(); ++i) {
         msg += std::format("h{} {:.1f},{:.1f}:{}", i, hiveSpecs[i].x, hiveSpecs[i].y, hiveSpecs[i].direction);
     }
