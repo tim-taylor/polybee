@@ -1,0 +1,40 @@
+
+Base Config:
+  Count:  100
+  Min:    0.6362
+  Q1:     0.7269
+  Median: 0.7619
+  Q3:     0.8028
+  Max:    0.9075
+  Mean:   0.7653
+  Std Dev:0.0616
+
+Horizontal Compact:
+  Count:  100
+  Min:    0.6913
+  Q1:     0.8372
+  Median: 0.8906
+  Q3:     0.9250
+  Max:    0.9888
+  Mean:   0.8763
+  Std Dev:0.0621
+
+Vertical Compact:
+  Count:  100
+  Min:    0.8137
+  Q1:     0.8784
+  Median: 0.9156
+  Q3:     0.9403
+  Max:    0.9812
+  Mean:   0.9063
+  Std Dev:0.0425
+
+Vertical & Horizontal Compact:
+  Count:  100
+  Min:    0.9100
+  Q1:     0.9888
+  Median: 0.9950
+  Q3:     0.9975
+  Max:    1.0000
+  Mean:   0.9919
+  Std Dev:0.0110

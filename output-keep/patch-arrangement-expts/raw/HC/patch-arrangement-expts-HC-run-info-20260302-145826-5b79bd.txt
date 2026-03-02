@@ -1,0 +1,8 @@
+Run: output/patch-arrangement-expts-HC-run-info-20260302-145826-5b79bd.txt
+Polybee version: 0.1.0.0
+Git branch: main
+Git commit hash: 268c253
+OpenCV version: 4.6.0
+High EMD value: 13.499981
+Final EMD between output heatmap and target heatmap: 4.983397
+Successful visit fraction (1-1000 visits): 0.93500
