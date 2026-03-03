@@ -1,13 +1,20 @@
+## 3/3/26
+
+DONE
+
+* Send results to Alan
+* Refactor PolyBeeOptimization::fitness() - break it down into smaller methods
+
+TO DO
+
+* Collect data to validate bee net bounce code against the stats in Romina's paper
+
+
 ## 2/3/26
 
 DONE
 
 Have run and analysed patch-arrangement-expts
-
-TO DO
-
-* Send results to Alan
-* Refactor PolyBeeOptimization::fitness() - break it down into smaller methods
 
 ## 27/2/26
 
