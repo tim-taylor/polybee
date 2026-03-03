@@ -1,3 +1,14 @@
+## 2/3/26
+
+DONE
+
+Have run and analysed patch-arrangement-expts
+
+TO DO
+
+* Send results to Alan
+* Refactor PolyBeeOptimization::fitness() - break it down into smaller methods
+
 ## 27/2/26
 
 DONE
@@ -7,10 +18,6 @@ Debugged new code, including the code that sets the upper bounds in the PolyBeeO
 Updated the code that outputs summary data at the end of PolyBeeOptimization::fitness()
 
 Considered using thread_island class when creating an island in PolyBeeEvolve (arc.push_back(pagmo::island{algo,...). However, looking at the docs it appears that this UDI is "automatically selected by the constructors of island on non-POSIX platforms or when both the island’s problem and algorithm provide at least the basic thread safety guarantee." (https://esa.github.io/pagmo2/docs/cpp/islands/thread_island.html)
-
-TODO
-
-
 
 ## 25/2/26
 

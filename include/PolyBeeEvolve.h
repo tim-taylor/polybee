@@ -61,6 +61,12 @@ struct PolyBeeOptimization {
     pagmo::vector_double::size_type m_numIntegerVars {0};
     pagmo::vector_double m_lowerBounds;
     pagmo::vector_double m_upperBounds;
+
+private:
+    // private help methods
+    void initialiseEntrancesAndHivesFromDecisionVector(
+        PolyBeeCore& core, const pagmo::vector_double& dv, const std::vector<float>& tunnelLengths,
+        std::vector<TunnelEntranceSpec>& localSpecs, std::vector<HiveSpec>& hiveSpecs) const;
 };
 
 

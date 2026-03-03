@@ -395,7 +395,7 @@ void Params::initialise(int argc, char* argv[])
              "Plant patch specification in format x,y,w,h:r[:j[:s[:n:dx,dy]]] where x,y,w,h define the "
              "top-left corner of the patch (in environment coordinates) "
              "r is spacing between plants, j is jitter between plants (std dev, default 0.0), s is species id (default 1) "
-             "n in the number of repeats of the patch (default 1), and dx,dy is the offset between repeats "
+             "n in the number of repeats of the patch (default 1), and dx,dy is the offset between repeats, "
              "e.g. --patch 200,200,50,400:2:0.5:1:3:100,0");
 
 

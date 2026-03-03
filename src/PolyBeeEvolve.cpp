@@ -135,6 +135,76 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
         Params::tunnelH - m_entranceWidth  // West
     };
 
+    std::vector<TunnelEntranceSpec> localSpecs;
+    std::vector<HiveSpec> hiveSpecs;
+
+    initialiseEntrancesAndHivesFromDecisionVector(core, dv, tunnelLengths, localSpecs, hiveSpecs);
+
+    // Write config file for this configuration once at the start of the run
+    if (firstCall) {
+        core.writeConfigFile();
+        std::cout << "~~~~~~~~~~" << std::endl;
+    }
+
+    for (int i = 0; i < Params::numTrialsPerConfig; ++i)
+    {
+        core.incrementEvaluationCount();
+        core.resetForNewRun();
+        core.getEnvironment().initialiseHivesAndBees(hiveSpecs);// we need to re-initialise the hives in the environment
+                                                                // with the new hive positions for this run
+        core.run(false); // false = do not log output files during the run
+
+        double objValue = 0.0;
+        switch (Params::evolveObjective) {
+            case EvolveObjective::EMD_TO_TARGET_HEATMAP: {
+                const Heatmap& runHeatmap = core.getHeatmap();
+                objValue = runHeatmap.emd(env.getRawTargetHeatmapNormalised());
+                break;
+            }
+            case EvolveObjective::FRACTION_FLOWERS_SUCCESSFUL_VISIT_RANGE: {
+                // N.B. we negate the fraction of successfully visited flowers here because pagmo minimizes
+                // the objective function, but we want to maximize this fraction
+                objValue = -(core.getSuccessfulVisitFraction());
+                break;
+            }
+            default: {
+                pb::msg_error_and_exit(std::format("Invalid evolve objective {} specified in Params::evolveObjective",
+                    Params::evolveObjectivePvt));
+            }
+        }
+
+        fitnessValues.push_back(objValue);
+    }
+
+    const double medianObjValue = pb::median(fitnessValues);
+
+    int num_evals_per_gen = Params::numConfigsPerGen * Params::numTrialsPerConfig;
+    int gen = (core.evaluationCount()-1) / num_evals_per_gen;
+    int eval_in_gen = (core.evaluationCount()-1) % num_evals_per_gen;
+    int config_num = eval_in_gen / Params::numTrialsPerConfig;
+
+    // Output some info about the current configuration and its fitness value
+    std::string msg = std::format("isl {} gen {} evl {} cnf {} mdF {:.4f} /e/ ",
+        core.getIslandNum(), gen, core.evaluationCount(), config_num, medianObjValue);
+    for (int i = 0; i < localSpecs.size(); ++i) {
+        msg += std::format("e{} {:.1f},{:.1f}:{} ", i, localSpecs[i].e1, localSpecs[i].e2, localSpecs[i].side);
+    }
+    msg += "/h/ ";
+    for (int i = 0; i < hiveSpecs.size(); ++i) {
+        msg += std::format("h{} {:.1f},{:.1f}:{}", i, hiveSpecs[i].x, hiveSpecs[i].y, hiveSpecs[i].direction);
+    }
+    pb::msg_info(msg);
+
+    return {medianObjValue};
+}
+
+
+// a private helper method for PolyBeeOptimization::fitness() that reads the decision vector and initialises
+// the tunnel entrance and hive specifications accordingly
+void PolyBeeOptimization::initialiseEntrancesAndHivesFromDecisionVector(
+    PolyBeeCore& core, const pagmo::vector_double& dv, const std::vector<float>& tunnelLengths,
+    std::vector<TunnelEntranceSpec>& localSpecs, std::vector<HiveSpec>& hiveSpecs) const
+{
     // Now we need to translate the decision vector elements into specific tunnel entrance and hive position
     // parameters.
     //
@@ -142,9 +212,6 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     //
     // m_numFloatVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 2 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 2;
     // m_numIntegerVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 1 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 1;
-
-    std::vector<TunnelEntranceSpec> localSpecs;
-    std::vector<HiveSpec> hiveSpecs;
 
     std::size_t floatVarIndex = 0;
     std::size_t intVarIndex = m_numFloatVars;
@@ -155,6 +222,7 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
         // the regular Params::tunnelEntranceSpecs. This has already been done by the Tunnel::initialiseEntrances()
         // method, which is called by Tunnel::initialise(), which is called by Environment::initialise(), which itself
         // is called from the PolyBeeCore constructor, so we don't need to do anything here.
+        assert(!core.getTunnel().getEntrances().empty()); // there should be some entrances already initialised in the tunnel
     }
     else {
         for (int i = 0; i < m_numEntrances; ++i) {
@@ -171,6 +239,7 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
         // regular Params::hiveSpecs. This has already been done by the Environment::initialiseHives() method,
         // which is called from Environment::initialise(), which itself is called from the PolyBeeCore constructor,
         // so we don't need to do anything here.
+        assert(!core.getHives().empty()); // there should be some hives already initialised in the environment
     }
     else {
         float sf = 0.98f;               // scale factor for hive position variables to add a safety margin so that hives are not placed right up against the tunnel walls or the borders of the environment
@@ -234,72 +303,6 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
             hiveSpecs.emplace_back(x, y, dir);
         }
     }
-
-    // Write config file for this configuration once at the start of the run
-    if (firstCall) {
-        core.writeConfigFile();
-        std::cout << "~~~~~~~~~~" << std::endl;
-    }
-
-    for (int i = 0; i < Params::numTrialsPerConfig; ++i)
-    {
-        core.incrementEvaluationCount();
-        core.resetForNewRun();
-        core.getEnvironment().initialiseHivesAndBees(hiveSpecs);// we need to re-initialise the hives in the environment
-                                                                // with the new hive positions for this run
-        core.run(false); // false = do not log output files during the run
-
-        double objValue = 0.0;
-        switch (Params::evolveObjective) {
-            case EvolveObjective::EMD_TO_TARGET_HEATMAP: {
-                const Heatmap& runHeatmap = core.getHeatmap();
-                objValue = runHeatmap.emd(env.getRawTargetHeatmapNormalised());
-                break;
-            }
-            case EvolveObjective::FRACTION_FLOWERS_SUCCESSFUL_VISIT_RANGE: {
-                // N.B. we negate the fraction of successfully visited flowers here because pagmo minimizes
-                // the objective function, but we want to maximize this fraction
-                objValue = -(core.getSuccessfulVisitFraction());
-                break;
-            }
-            default: {
-                pb::msg_error_and_exit(std::format("Invalid evolve objective {} specified in Params::evolveObjective",
-                    Params::evolveObjectivePvt));
-            }
-        }
-
-        fitnessValues.push_back(objValue);
-    }
-
-    const double medianObjValue = pb::median(fitnessValues);
-
-    int num_evals_per_gen = Params::numConfigsPerGen * Params::numTrialsPerConfig;
-    int gen = (core.evaluationCount()-1) / num_evals_per_gen;
-    int eval_in_gen = (core.evaluationCount()-1) % num_evals_per_gen;
-    int config_num = eval_in_gen / Params::numTrialsPerConfig;
-
-    // Output some info about the current configuration and its fitness value
-    std::string msg = std::format("isl {} gen {} evl {} cnf {} mdF {:.4f} /e/ ",
-        core.getIslandNum(), gen, core.evaluationCount(), config_num, medianObjValue);
-    for (int i = 0; i < localSpecs.size(); ++i) {
-        msg += std::format("e{} {:.1f},{:.1f}:{} ", i, localSpecs[i].e1, localSpecs[i].e2, localSpecs[i].side);
-    }
-    msg += "/h/ ";
-    for (int i = 0; i < hiveSpecs.size(); ++i) {
-        msg += std::format("h{} {:.1f},{:.1f}:{}", i, hiveSpecs[i].x, hiveSpecs[i].y, hiveSpecs[i].direction);
-    }
-    pb::msg_info(msg);
-    /*
-        ents e1:{:.1f},{:.1f}:{} e2:{:.1f},{:.1f}:{} e3:{:.1f},{:.1f}:{} e4:{:.1f},{:.1f}:{}, medFit {:.4f}",
-        core.getIslandNum(), gen, core.evaluationCount(), config_num,
-        localSpecs[0].e1, localSpecs[0].e2, localSpecs[0].side,
-        localSpecs[1].e1, localSpecs[1].e2, localSpecs[1].side,
-        localSpecs[2].e1, localSpecs[2].e2, localSpecs[2].side,
-        localSpecs[3].e1, localSpecs[3].e2, localSpecs[3].side,
-        medianObjValue));
-    */
-
-    return {medianObjValue};
 }
 
 
