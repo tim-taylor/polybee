@@ -244,7 +244,6 @@ void PolyBeeOptimization::initialiseEntrancesAndHivesFromDecisionVector(
     else {
         float sf = 0.98f;               // scale factor for hive position variables to add a safety margin so that hives are not placed right up against the tunnel walls or the borders of the environment
         float mf = (1.0f - sf) / 2.0f;  // left and right (or top and bottom) margin scale factor for hive position variables
-        //float sf2 = sf + mf;        // scale factor hive positions when we only want a margin on one side
 
         // Hives inside tunnel
         for (int i = 0; i < m_numHivesInsideTunnel; ++i) {
