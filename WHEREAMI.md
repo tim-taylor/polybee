@@ -1,14 +1,20 @@
+## 10/3/26
+
+DONE
+
+* Fixed - we are sometimes running into the msg_error_and_exit in Bee::continueTryingToCrossEntrance(). Need to debug this!
+* Read Zoe's thesis sections on simulating barriers (baffles), plus looked at what she wrote on bee movement params etc
+
+TO DO
+
+* Look at validating net crossing stats against Romina's paper
+* Implement barriers and design some experiments for this
+
 ## 9/3/26
 
 DONE
 
 * Implemented collection and output of net crossing success rate and rebounds, so we can validate model against Romina's stats.
-
-TO DO
-
-* We are sometimes running into the msg_error_and_exit in Bee::continueTryingToCrossEntrance(). Need to debug this!
-
-* Look at validating net crossing stats against Romina's paper
 
 ## 3/3/26
 

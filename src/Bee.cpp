@@ -370,13 +370,24 @@ void Bee::continueTryingToCrossEntrance()
         // And deal with the consequences depending on whether it intersects with the tunnel boundary, and whether
         // it crosses an entrance or just hits the wall
         if (!intersectInfo.intersects) {
-            // bee doesn't even hit the boundary. It is past the edge of the tunnel boundary, which
-            // can happen in the first attempt to do this if it started off in this position back
-            // in Bee::attemptToCrossTunnelBoundaryWhileForaging() while trying to do a very lateral
-            // move across the entrance. In this case, just return the bee to normal foraging mode.
-
-            recordCurrentCrossingInfo(false); // mark current crossing info as failed and add it to records
-            unsetTryingToCrossEntranceState();
+            // Bee doesn't even hit the boundary
+            if (m_tryCrossState.moveCount == 0) {
+                // Bee is past the edge of the tunnel boundary, which can happen in the first attempt to do this if
+                // it started off in this position back in Bee::attemptToCrossTunnelBoundaryWhileForaging() while
+                // trying to do a very lateral move across the entrance. In this case, just return the bee to normal
+                // foraging mode.
+                recordCurrentCrossingInfo(false); // mark current crossing info as failed and add it to records
+                unsetTryingToCrossEntranceState();
+            }
+            else {
+                // If this happens on a subsequent move towards the net, it suggests that the bee has somehow moved
+                // in such a way that it is no longer in the position we expected it to be based on our rebound and
+                // cross logic, and is now in a position where it cannot even intersect with the tunnel boundary when
+                // trying to move back towards the net.
+                pb::msg_error_and_exit(
+                    std::format("Bee::continueTryingToCrossEntrance(): logic error: expected intersection when crossing tunnel boundary, from ({}, {}) to ({}, {})",
+                        m_pos.x, m_pos.y, desiredMove.x, desiredMove.y));
+            }
         }
         else if (intersectInfo.crossesEntrance) {
             // bee wants to enter/exit via a tunnel entrance, so we need to determine whether it can
