@@ -1,14 +1,21 @@
+## 9/3/26
+
+DONE
+
+* Implemented collection and output of net crossing success rate and rebounds, so we can validate model against Romina's stats.
+
+TO DO
+
+* We are sometimes running into the msg_error_and_exit in Bee::continueTryingToCrossEntrance(). Need to debug this!
+
+* Look at validating net crossing stats against Romina's paper
+
 ## 3/3/26
 
 DONE
 
 * Send results to Alan
 * Refactor PolyBeeOptimization::fitness() - break it down into smaller methods
-
-TO DO
-
-* Collect data to validate bee net bounce code against the stats in Romina's paper
-
 
 ## 2/3/26
 

@@ -73,6 +73,7 @@ struct TunnelEntranceSpec {
     float e1;           // position of first edge of entrance along the specified side of tunnel, in tunnel coordinates
     float e2;           // position of second edge of entrance along the specified side of tunnel, in tunnel coordinates
     int side;           // 0=North, 1=East, 2=South, 3=West
+    int id {0};         // unique ID for this entrance, assigned automatically in Tunnel::addEntrance()
     NetType netType;
 
     TunnelEntranceSpec(float e1, float e2, int side) : e1(e1), e2(e2), side(side), netType(NetType::NONE) {}

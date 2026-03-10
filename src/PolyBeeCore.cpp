@@ -245,6 +245,10 @@ void PolyBeeCore::printRunInfo(std::ostream& os, const std::string& filename) co
         Params::minVisitCountSuccess,
         Params::maxVisitCountSuccess,
         m_env.getSuccessfulVisitFraction());
+
+    EntranceCrossingStats crossingStats = m_env.getEntranceCrossingStats(EntranceCrossingType::ALL);
+    os << std::format("Tunnel entrance crossing success rate: {:.2f}%\n", crossingStats.successRate * 100.0f);
+    os << std::format("Mean number of rebounds per tunnel entrance crossing attempt: {:.2f}\n", crossingStats.meanRebounds);
 }
 
 

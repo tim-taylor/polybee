@@ -42,6 +42,14 @@ namespace Polybee {
         y *= scale;
     }
 
+    Pos2D Pos2D::normalized() const {
+        float len = length();
+        if (len < FLOAT_COMPARISON_EPSILON) {
+            return Pos2D(0, 0); // zero-length vector, return zero vector
+        }
+        return Pos2D(x / len, y / len);
+    }
+
     Pos2D Pos2D::moveAlongLine(const Line2D& line, float distance, bool clampToLineEnds) const {
         float lineLength = line.length();
         if (lineLength < FLOAT_COMPARISON_EPSILON) {

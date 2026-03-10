@@ -109,6 +109,7 @@ void Tunnel::addEntrance(const TunnelEntranceSpec& spec) {
     if (specCopy.e2 < specCopy.e1) {
         std::swap(specCopy.e1, specCopy.e2);
     }
+    specCopy.id = m_entrances.size(); // assign a unique entrance ID for each entrance added
     m_entrances.emplace_back(specCopy, this);
 }
 

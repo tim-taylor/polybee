@@ -29,6 +29,19 @@ struct NearbyPlantInfo {
 };
 
 
+struct EntranceCrossingStats {
+    float successRate {0.0f};   // fraction of crossing attempts that were successful (one "attempt" might involve multiple rebounds)
+    float meanRebounds {0.0f};  // mean number of rebounds
+};
+
+
+enum class EntranceCrossingType {
+    ENTRY,
+    EXIT,
+    ALL
+};
+
+
 /**
  * The Environment class ...
  */
@@ -59,6 +72,8 @@ public:
     PolyBeeCore* getPolyBeeCore() { assert(m_pPolyBeeCore != nullptr); return m_pPolyBeeCore; }
 
     void initialiseHivesAndBees(const std::vector<HiveSpec>& hiveSpecs);
+
+    EntranceCrossingStats getEntranceCrossingStats(EntranceCrossingType type) const; // get stats on tunnel entrance crossing attempts across all bees, for current state of the environment
 
 private:
     void initialiseTunnel();

@@ -1,11 +1,10 @@
 {
     "tasks": [
         {
-            "type": "cppbuild",
-            "label": "C/C++: g++ build active file",
-            "command": "cmake --build build --target Debug",
-            "args": [
-            ],
+            "type": "shell",
+            "label": "cmake build debug",
+            "command": "${workspaceFolder}/make-debug",
+            "args": [],
             "options": {
                 "cwd": "${workspaceFolder}"
             },

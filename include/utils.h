@@ -50,6 +50,7 @@ namespace Polybee {
         void set(float newX, float newY) { x = newX; y = newY; }
         void setToZero() { x = 0.0f; y = 0.0f; }
         float angle() const { return std::atan2(y, x); } // angle in radians from positive x-axis to the vector (x, y)
+        Pos2D normalized() const;
 
         // return a new Pos2D that is the result of moving this position along the specified line by the specified distance
         // if clampToLineEnds is true, the movement will be clamped to the start and end points of the line, so the returned

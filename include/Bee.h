@@ -22,6 +22,7 @@ class Hive;
 class TunnelEntranceInfo;
 class Plant;
 
+
 enum class BeeState
 {
     FORAGING,
@@ -32,46 +33,12 @@ enum class BeeState
 };
 
 
+// Struct to keep track of the state of a bee that is trying to cross a tunnel entrance
 struct TryingToCrossEntranceState
 {
-    // Initialise the state when the bee first makes a failed attempt to cross the entrance
-    //   pos is the bee;s current position, assumed to be the rebound position from the failed crossing attempt
-    //   intersectInfo is the IntersectInfo from the failed crossing attempt
-    //   desiredMove is the desired move that the bee was trying to make when it attempted
-    void set(const pb::Pos2D& pos, const IntersectInfo& intersectInfo, const Tunnel* pTunnel_ /* const pb::PosAndDir2D& desiredMove*/) {
-        assert(intersectInfo.pEntranceUsed != nullptr);
-        assert(pTunnel_ != nullptr);
-
-        reboundToNetLen = intersectInfo.intersectedLine.distance(pos);
-        pTunnel = pTunnel_;
-
-        moveCount = 0;
-        currentlyAtNetPos = false;
-
-        maxCount = intersectInfo.pEntranceUsed->maxAttempts() * 2; // we multiply maxAttempts by 2 here because the bee only makes an "attempt" to cross the entrance every other move (i.e. it alternates between being at the net and being at a rebound position)
-        reboundLen = std::max(reboundToNetLen - 0.1, 0.1);
-        crossLen = reboundToNetLen + 0.1;
-        pWallLine = pTunnel->getBoundary(intersectInfo.pEntranceUsed->side);
-        normalUnitVector = pWallLine->normalUnitVector();
-    }
-
-    void update() {
-        currentlyAtNetPos = !currentlyAtNetPos;
-        moveCount++;
-    }
-
-    void reset() {
-        moveCount = 0;
-        maxCount = 0;
-        currentlyAtNetPos = false;
-        reboundLen = 0.0f;
-        crossLen = 0.0f;
-        pWallLine = nullptr;
-        normalUnitVector.setToZero();
-
-        reboundToNetLen = 0.0f;
-        pTunnel = nullptr;
-    }
+    void set(const pb::Pos2D& pos, const IntersectInfo& intersectInfo, const Tunnel* pTunnel_);
+    void update();
+    void reset();
 
     // variables
     int moveCount { 0 };                // count of the number of moves made while trying to cross the entrance
@@ -87,6 +54,27 @@ struct TryingToCrossEntranceState
 private:
     float reboundToNetLen {0.0f};       // perpendicular distance from the bee's rebound position to the net line
     const Tunnel* pTunnel { nullptr };  // pointer to the tunnel
+};
+
+
+// Struct to record info about a bee's attempt to cross a tunnel entrance, for calculating stats on crossing attempts
+struct CrossingInfo
+{
+    bool success {false};
+    int numRebounds {0};
+    NetType netType {NetType::NONE};
+    int entranceID {0};
+    bool isEntry {false}; // whether the crossing attempt was an attempt to enter the tunnel (as opposed to exit)
+
+    void reset() {
+        success = false;
+        numRebounds = 0;
+        netType = NetType::NONE;
+        entranceID = 0;
+        isEntry = false;
+    }
+
+    void incrementReboundCount() { numRebounds++; }
 };
 
 
@@ -112,6 +100,9 @@ public:
     const std::vector<pb::Pos2D>& path() const { return m_path; }
     BeeState state() const { return m_state; }
     const TunnelEntranceInfo* entranceUsed() const { return m_pLastTunnelEntrance; }
+    //const std::vector<CrossingInfo>& tunnelExitRecords() const { return m_tunnelExitRecords; }
+    //const std::vector<CrossingInfo>& tunnelEntryRecords() const { return m_tunnelEntryRecords; }
+    const std::vector<CrossingInfo>& entranceCrossingRecords() const { return m_entranceCrossingRecords; }
 
     // Setters
     void setState(BeeState state) { m_state = state; }
@@ -141,6 +132,7 @@ private:
     void updatePathHistory();
     void setDirAccordingToHive();
     void unsetTryingToCrossEntranceState();
+    void recordCurrentCrossingInfo(bool success);
 
     pb::Pos2D m_pos;    // position of bee in environment coordinates
     float m_angle;      // direction of travel in radians
@@ -159,6 +151,10 @@ private:
 
     bool m_tryingToCrossEntrance { false };
     TryingToCrossEntranceState m_tryCrossState;
+
+    CrossingInfo m_currentCrossingInfo;
+    std::vector<CrossingInfo> m_entranceCrossingRecords;  // record of the bee's attempts to enter or exit the tunnel, for calculating stats
+    //std::vector<CrossingInfo> m_tunnelEntryRecords; // record of the bee's attempts to enter the tunnel, for calculating stats
 
     std::vector<Plant*> m_recentlyVisitedPlants; // the last N plants visited by the bee
     std::vector<pb::Pos2D> m_path;               // record of the path taken by the bee

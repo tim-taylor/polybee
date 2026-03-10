@@ -408,3 +408,28 @@ Plant* Environment::pickRandomPlantWeightedByDistance(const std::vector<NearbyPl
 }
 
 
+EntranceCrossingStats Environment::getEntranceCrossingStats(EntranceCrossingType type) const {
+
+    EntranceCrossingStats stats;
+
+    int numAttempts = 0;
+    int numSuccesses = 0;
+    int numRebounds = 0;
+    for (const Bee& bee : m_bees) {
+        const auto& records = bee.entranceCrossingRecords();
+        for (const auto& record : records) {
+            if (type == EntranceCrossingType::ALL ||
+                (type == EntranceCrossingType::ENTRY && record.isEntry) ||
+                (type == EntranceCrossingType::EXIT && !record.isEntry)) {
+                numAttempts++;
+                numSuccesses += record.success ? 1 : 0;
+                numRebounds += record.numRebounds;
+            }
+        }
+    }
+
+    stats.successRate = numAttempts > 0 ? static_cast<float>(numSuccesses) / static_cast<float>(numAttempts) : 0.0f;
+    stats.meanRebounds = numAttempts > 0 ? static_cast<float>(numRebounds) / static_cast<float>(numAttempts) : 0.0f;
+
+    return stats;
+}
