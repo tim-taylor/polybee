@@ -1,14 +1,24 @@
+## 11/3/26
+
+DONE
+
+* Implemented a significant fraction of code for barriers in tunnel and integrating those into bee movement code.
+
+TO DO
+
+* Show barriers in LocalVis code
+* implement Env::pathObstructedByBarrier
+* implement Env::distanceToNearestObstructingBarrier
+* augment Bee::moveInRandomDir
+* think about expt design for using barriers - will need to extend PolyBeeEvolve code for this
+* also, look at validating net crossing stats against Romina's paper
+
 ## 10/3/26
 
 DONE
 
 * Fixed - we are sometimes running into the msg_error_and_exit in Bee::continueTryingToCrossEntrance(). Need to debug this!
 * Read Zoe's thesis sections on simulating barriers (baffles), plus looked at what she wrote on bee movement params etc
-
-TO DO
-
-* Look at validating net crossing stats against Romina's paper
-* Implement barriers and design some experiments for this
 
 ## 9/3/26
 
