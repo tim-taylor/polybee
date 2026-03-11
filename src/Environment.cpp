@@ -26,6 +26,7 @@ void Environment::initialise(PolyBeeCore* pCore)
     m_width = Params::envW;
     m_height = Params::envH;
     initialiseTunnel();
+    initialiseBarriers();
     initialisePlants();
     if (!(Params::bEvolve && Params::evolveSpec.evolveHivePositions)) {
         initialiseHivesAndBees();
@@ -42,6 +43,59 @@ void Environment::initialiseTunnel()
 }
 
 
+void Environment::initialiseBarriers()
+{
+    // Calculate total number of barriers and max barrier length
+    int totalBarriers = 0;
+    float maxBarrierLength = 0.0f;
+
+    for (const BarrierSpec& spec : Params::barrierSpecs) {
+        totalBarriers += spec.numRepeatsX * spec.numRepeatsY;
+        if (spec.length() > maxBarrierLength) {
+            maxBarrierLength = spec.length();
+        }
+    }
+    m_allBarriers.reserve(totalBarriers);
+
+    // initialise barrier grid (NB this stores pointers instead of Barrier objects)
+    // - first determine the size of each cell in the grid. We want this to be at least as large as
+    //   the longest barrier, so that we know that a 3x3 group of cells centered on a bee's current position
+    //   will contain all barriers that the bee might possibly come across in its next potential move.
+    //   In the (unlikely) case that all barriers are shorter than the bee's visual range, we use the bee's visual range
+    //   as the cell size, so that we know that the 3x3 group of cells will contain all barriers near plants that
+    //   the bee might be trying to visit.
+    m_barrierGridCellSize = std::max(maxBarrierLength, Params::beeVisualRange); // size of each cell in spatial index grid
+    m_barrierGridW = static_cast<size_t>(std::ceil(m_width / m_barrierGridCellSize));
+    m_barrierGridH = static_cast<size_t>(std::ceil(m_height / m_barrierGridCellSize));
+    m_barrierGrid.resize(m_barrierGridW, std::vector<std::vector<Barrier*>>(m_barrierGridH));
+
+    // initialise barriers from Params
+    for (const BarrierSpec& spec : Params::barrierSpecs)
+    {
+        float startX = spec.x1;
+        float startY = spec.y1;
+        float endX = spec.x2;
+        float endY = spec.y2;
+        for (int i = 0; i < spec.numRepeatsX; ++i) {
+            float thisStartX = startX + (i * spec.dx);
+            float thisEndX = endX + (i * spec.dx);
+
+            for (int j = 0; j < spec.numRepeatsY; ++j) {
+                float thisStartY = startY + (j * spec.dy);
+                float thisEndY = endY + (j * spec.dy);
+
+                // create a barrier and add to m_allBarriers
+                m_allBarriers.emplace_back(thisStartX, thisStartY, thisEndX, thisEndY);
+
+                // add pointer to this barrier in the spatial grid (based on the midpoint of the barrier)
+                auto [gridi, gridj] = envPosToBarrierGridIndex((thisStartX + thisEndX) / 2.0f, (thisStartY + thisEndY) / 2.0f);
+                m_barrierGrid[gridi][gridj].push_back(&m_allBarriers.back());
+            }
+        }
+    }
+}
+
+
 // Initialise plants from Params::patchSpecs. Also builds spatial index grid for plant locations
 // used for efficient lookup of nearby plants.
 void Environment::initialisePlants()
@@ -49,13 +103,13 @@ void Environment::initialisePlants()
     // Calculate total number of plants across all patches
     int totalPlants = 0;
     for (const PatchSpec& spec : Params::patchSpecs) {
-        totalPlants += spec.numX * spec.numY * spec.numRepeats;
+        totalPlants += spec.getNumX() * spec.getNumY() * spec.numRepeats;
     }
 
     // Reserve space for all plants to prevent reallocation and pointer invalidation
     m_allPlants.reserve(totalPlants);
 
-    // initialise plant grid (now stores pointers instead of Plant objects)
+    // initialise plant grid (NB this stores pointers instead of Plant objects)
     m_plantGridCellSize = Params::beeVisualRange; // size of each cell in spatial index grid
     m_plantGridW = static_cast<size_t>(std::ceil(m_width / m_plantGridCellSize));
     m_plantGridH = static_cast<size_t>(std::ceil(m_height / m_plantGridCellSize));
@@ -66,17 +120,17 @@ void Environment::initialisePlants()
     {
         std::normal_distribution<float> distJitter(0.0f, spec.jitter);
 
-        float first_patch_topleft_plant_x = spec.x + ((spec.w - ((spec.numX - 1) * spec.spacing)) / 2.0f);
-        float first_patch_topleft_plant_y = spec.y + ((spec.h - ((spec.numY - 1) * spec.spacing)) / 2.0f);
+        float first_patch_topleft_plant_x = spec.x + ((spec.w - ((spec.getNumX() - 1) * spec.spacing)) / 2.0f);
+        float first_patch_topleft_plant_y = spec.y + ((spec.h - ((spec.getNumY() - 1) * spec.spacing)) / 2.0f);
 
         for (int i = 0; i < spec.numRepeats; ++i) {
             float this_patch_topleft_plant_x = first_patch_topleft_plant_x + (i * spec.dx);
             float this_patch_topleft_plant_y = first_patch_topleft_plant_y + (i * spec.dy);
 
             float x = this_patch_topleft_plant_x;
-            for (int a = 0; a < spec.numX; ++a) {
+            for (int a = 0; a < spec.getNumX(); ++a) {
                 float y = this_patch_topleft_plant_y;
-                for (int b = 0; b < spec.numY; ++b) {
+                for (int b = 0; b < spec.getNumY(); ++b) {
                     // add jitter to the individual plant position
                     float plantX = x + distJitter(m_pPolyBeeCore->m_rngEngine);
                     float plantY = y + distJitter(m_pPolyBeeCore->m_rngEngine);
@@ -85,7 +139,7 @@ void Environment::initialisePlants()
                     m_allPlants.emplace_back(plantX, plantY, spec.speciesID);
 
                     // add pointer to this plant in the spatial grid
-                    auto [i,j] = envPosToGridIndex(plantX, plantY);
+                    auto [i,j] = envPosToPlantGridIndex(plantX, plantY);
                     m_plantGrid[i][j].push_back(&m_allPlants.back());
 
                     y += spec.spacing;
@@ -98,7 +152,7 @@ void Environment::initialisePlants()
 
 
 // Convert environment position (x,y) to grid index for m_plantGrid
-pb::Pos2D Environment::envPosToGridIndex(float x, float y) const
+pb::Pos2D Environment::envPosToPlantGridIndex(float x, float y) const
 {
     //assert(x >= 0.0f && x < m_width + FLOAT_COMPARISON_EPSILON);
     //assert(y >= 0.0f && y < m_height + FLOAT_COMPARISON_EPSILON);
@@ -108,6 +162,19 @@ pb::Pos2D Environment::envPosToGridIndex(float x, float y) const
 
     int i = std::clamp(static_cast<int>(gridx), 0, static_cast<int>(m_plantGridW)-1);
     int j = std::clamp(static_cast<int>(gridy), 0, static_cast<int>(m_plantGridH)-1);
+
+    return pb::Pos2D(i, j);
+}
+
+
+// Convert environment position (x,y) to grid index for m_barrierGrid
+pb::Pos2D Environment::envPosToBarrierGridIndex(float x, float y) const
+{
+    float gridx = x / m_barrierGridCellSize;
+    float gridy = y / m_barrierGridCellSize;
+
+    int i = std::clamp(static_cast<int>(gridx), 0, static_cast<int>(m_barrierGridW)-1);
+    int j = std::clamp(static_cast<int>(gridy), 0, static_cast<int>(m_barrierGridH)-1);
 
     return pb::Pos2D(i, j);
 }
@@ -248,6 +315,15 @@ void Environment::initialiseTargetHeatmap()
 
 
 // Reset the environment to its initial state suitable for a new simulation run
+//
+// This method resets are tranistory state of the environment that may have changed during a run,
+// such as plant visit counts, bee positions and plant state.
+//
+// It does NOT reset fixed parameters of the environment such as positions of tunnels and barriers.
+//
+// Note, when running in optimization mode, tunnel entrance positions and hive positions are
+// reset by PolyBeeOptimization::initialiseEntrancesAndHivesFromDecisionVector
+//
 void Environment::reset() {
     // TODO - as the class is developed, ensure all relevant state is reset here
     resetHivesAndBees();
@@ -291,14 +367,17 @@ bool Environment::inTunnel(float x, float y) const {
 
 
 // Find an unvisited plant nearby to the given position (x,y).
-// Returns std::nullopt if no unvisited plant is found within visual range.
+// Returns std::nullopt if no unvisited plant is found that is both:
+// * within visual range, and
+// * not not obstructed by a barrier
+//
 // The 'visited' parameter is a list of plants that have recently been visited by the bee.
+//
 // This method considers only plants within visual range. If more than one unvisited plant is found,
 // it uses a distance-weighted random selection to pick one.
+//
 std::optional<Plant*> Environment::selectNearbyUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const
 {
-    // TODO - should also check whether the tunnel wall is between the bee and the plant?
-
     std::vector<NearbyPlantInfo> visiblePlants;
 
     float rangeSq = Bee::visualRange() * Bee::visualRange();
@@ -312,8 +391,11 @@ std::optional<Plant*> Environment::selectNearbyUnvisitedPlant(float x, float y, 
         float distSq = pb::distanceSq(x, y, pPlant->x(), pPlant->y()); // squared distance to plant
 
         if (distSq <= rangeSq) {
-            // Plant is within visual range
-            visiblePlants.emplace_back(pPlant, std::sqrt(distSq));
+            // Plant is within visual range...
+            if (!pathObstructedByBarrier(x, y, pPlant->x(), pPlant->y())) {
+                // ... and is not obstructed by a barrier. So add it to the list!
+                visiblePlants.emplace_back(pPlant, std::sqrt(distSq));
+            }
         }
     }
 
@@ -333,12 +415,57 @@ std::optional<Plant*> Environment::selectNearbyUnvisitedPlant(float x, float y, 
 }
 
 
+bool Environment::pathObstructedByBarrier(float x1, float y1, float x2, float y2) const
+{
+    // TODO - implement this!
+
+    /*
+    // Check for barriers in the 3x3 grid cells around the midpoint of the line between (x1,y1) and (x2,y2)
+    float midX = (x1 + x2) / 2.0f;
+    float midY = (y1 + y2) / 2.0f;
+
+    auto [i, j] = envPosToBarrierGridIndex(midX, midY);
+
+    for (int di = -1; di <= 1; ++di) {
+        for (int dj = -1; dj <= 1; ++dj) {
+            if (i + di >= 0 && i + di < m_barrierGrid.size() &&
+                j + dj >= 0 && j + dj < m_barrierGrid[i + di].size()) {
+                const auto& cell = m_barrierGrid[i + di][j + dj];
+                for (const Barrier* pBarrier : cell) {
+                    if (pBarrier->intersectsLine(x1, y1, x2, y2)) {
+                        return true; // Line is obstructed by a barrier
+                    }
+                }
+            }
+        }
+    }
+    */
+
+    return false; // No barriers obstructing the line
+}
+
+
+std::optional<float> Environment::distanceToNearestObstructingBarrier(float x1, float y1, float x2, float y2) const
+{
+    // TODO - implement this!
+    // check barriers in the 3x3 grid cells around the bee's current position
+    // and return the distance to the nearest barrier (or std::nullopt if no barriers nearby)
+
+    return std::nullopt;
+}
+
+
 // Return a flat vector of all plants in the local 3x3 grid cells around the given position
+//
+// These are selected purely based upon being present in the local 3x3 grid. This method
+// does NOT take into account whether the plant is within the bee's visual range, nor
+// whether or not it is objstructed by a barrier
+//
 std::vector<Plant*> Environment::getNearbyPlants(float x, float y) const
 {
     std::vector<Plant*> nearbyPlants;
 
-    auto [i, j] = envPosToGridIndex(x, y);
+    auto [i, j] = envPosToPlantGridIndex(x, y);
 
     for (int di = -1; di <= 1; ++di) {
         for (int dj = -1; dj <= 1; ++dj) {

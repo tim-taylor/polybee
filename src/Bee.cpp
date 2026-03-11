@@ -604,6 +604,13 @@ std::optional<pb::PosAndDir2D> Bee::forageNearestFlower()
 
 
 // Calculate a new position by moving in a random direction from the bee's current position.
+//
+// The returned position MAY be on the other side of a tunnel wall, and it is up to the caller
+// code to determine whether the bee can successfully cross an entrance to complete this
+// move.
+//
+// The returned position will NOT be such that the bee has to cross a barrier. Checks are
+// made in this code and potential moves that would cross a barrier are discounted.
 pb::PosAndDir2D Bee::moveInRandomDirection()
 {
     pb::PosAndDir2D result;
@@ -611,6 +618,14 @@ pb::PosAndDir2D Bee::moveInRandomDirection()
     result.angle = m_angle + m_distDir(m_pPolyBeeCore->m_rngEngine);
     result.x = m_pos.x + Params::beeStepLength * std::cos(result.angle);
     result.y = m_pos.y + Params::beeStepLength * std::sin(result.angle);
+
+    // check for collision with barriers
+    auto distOpt = m_pEnv->distanceToNearestObstructingBarrier(m_pos.x, m_pos.y, result.x, result.y);
+    if (distOpt.has_value()) {
+        float dist = distOpt.value();
+        // TODO - implement code to deal with this case!
+
+    }
 
     return result;
 }

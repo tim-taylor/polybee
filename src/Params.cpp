@@ -37,6 +37,9 @@ float Params::netAntihailExitProb;
 int Params::netAntibirdMaxExitAttempts;
 int Params::netAntihailMaxExitAttempts;
 
+// Barrier configuration
+std::vector<BarrierSpec> Params::barrierSpecs;
+
 // Patch configuration
 std::vector<PatchSpec> Params::patchSpecs;
 
@@ -240,6 +243,35 @@ std::vector<TunnelEntranceSpec> parse_tunnel_entrance_positions(const std::vecto
     return entrances;
 }
 
+// Helper function to parse barrier specifications from strings of the form "x1,y1:x2,y2[:nrx,dx[:nry,dy]]"
+// (x1,y1,x2,y2,dx,dy are floats, nrx, nry are ints)
+std::vector<BarrierSpec> parse_barrier_positions(const std::vector<std::string>& barrier_strings) {
+    std::vector<BarrierSpec> barriers;
+    std::string regex_str_p1 = R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):(\d+|\d+\.\d+),(\d+|\d+\.\d+))"; // x1,y1:x2,y2
+    std::string regex_str_p2 = R"(:(\d+),(\d*\.?\d+))";                  // :nrx,dx
+    std::string regex_str_p3 = R"(:(\d+),(\d*\.?\d+))";                  // :nry,dy
+
+    std::regex barrier_regex_1(regex_str_p1);
+    std::regex barrier_regex_2(regex_str_p1 + regex_str_p2);
+    std::regex barrier_regex_3(regex_str_p1 + regex_str_p2 + regex_str_p3);
+
+    for (const auto& barrier_str : barrier_strings) {
+        std::smatch match;
+        if (std::regex_match(barrier_str, match, barrier_regex_3)) {
+            barriers.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stof(match[3]), std::stof(match[4]),
+                std::stoi(match[5]), std::stof(match[6]), std::stoi(match[7]), std::stof(match[8]));
+        } else if (std::regex_match(barrier_str, match, barrier_regex_2)) {
+            barriers.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stof(match[3]), std::stof(match[4]),
+                std::stoi(match[5]), std::stof(match[6]));
+        } else if (std::regex_match(barrier_str, match, barrier_regex_1)) {
+            barriers.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stof(match[3]), std::stof(match[4]));
+        } else {
+            throw std::invalid_argument("Invalid barrier specification: " + barrier_str);
+        }
+    }
+    return barriers;
+}
+
 // Helper function to parse patch specifications from strings of the form "x,y,w,h:r[:j[:s[:n:dx,dy]]]"
 // (x,y,w,h,r,j are floats, s,n are ints, dx,dy are floats)
 std::vector<PatchSpec> parse_patch_positions(const std::vector<std::string>& patch_strings) {
@@ -389,6 +421,14 @@ void Params::initialise(int argc, char* argv[])
             ("tunnel-entrance", po::value<std::vector<std::string>>()->multitoken(),
              "Tunnel entrance specification in format e1,e2:s[:t] where e1 and e2 are positions of edges of entrance along the specified side of tunnel (position being the distance measured from one end of that side), and s is the side (0=North, 1=East, 2=South, 3=West), e.g., --tunnel-entrance 5.5,10.0:0 --tunnel-entrance 3.0,6.0:2. The optional t specifies the net type (0=NONE, 1=ANTIBIRD, 2=ANTIHAIL), e.g., --tunnel-entrance 5.5,10.0:0:1. Default value if not specified is 0 (NONE)");
 
+        // Special case for barrier positions (multiple allowed)
+        config.add_options()
+            ("barrier", po::value<std::vector<std::string>>()->multitoken(),
+             "Barrier specification in format x1,y1:x2,y2[:nrx,dx[:nry,dy]] where x1,y1,x2,y2 define the endpoints of the barrier (in environment coordinates), "
+             "nrx is the number of repeats along the x axis, dx is the spacing between repeats along the x axis, "
+             "nry is the number of repeats along the y axis, and dy is the spacing between repeats along the y axis, "
+             "e.g. --barrier 0,0:100,0:2,50:3,50");
+
         // Special case for plant patch defintions (multiple allowed)
         config.add_options()
             ("patch", po::value<std::vector<std::string>>()->multitoken(),
@@ -450,6 +490,10 @@ void Params::initialise(int argc, char* argv[])
 
         if (vm.count("tunnel-entrance")) {
             tunnelEntranceSpecs = parse_tunnel_entrance_positions(vm["tunnel-entrance"].as<std::vector<std::string>>());
+        }
+
+        if (vm.count("barrier")) {
+            barrierSpecs = parse_barrier_positions(vm["barrier"].as<std::vector<std::string>>());
         }
 
         if (vm.count("patch")) {
@@ -571,6 +615,32 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
         }
     }
 
+    // print barrier info
+    if (!bGenerateForConfigFile) {
+        os << "Barriers:" << linesep;
+    }
+
+    if (!barrierSpecs.empty()) {
+        for (size_t i = 0; i < barrierSpecs.size(); ++i) {
+            os << "barrier";
+            if (!bGenerateForConfigFile) {
+                os << (i+1);
+            }
+            os << valsep << coordOpen
+               << barrierSpecs[i].x1 << "," << barrierSpecs[i].y1 << "," << barrierSpecs[i].x2 << "," << barrierSpecs[i].y2 << coordClose
+               << ":" << barrierSpecs[i].numRepeatsX
+               << "," << barrierSpecs[i].dx
+               << ":" << barrierSpecs[i].numRepeatsY
+               << "," << barrierSpecs[i].dy
+               << linesep;
+        }
+    }
+    else {
+        if (!bGenerateForConfigFile) {
+            os << "(none)" << linesep;
+        }
+    }
+
     // print patch info
     if (!bGenerateForConfigFile) {
         os << "Plant Patches:" << linesep;
@@ -597,6 +667,7 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
             os << "(none)" << linesep;
         }
     }
+
     os << std::flush;
 }
 

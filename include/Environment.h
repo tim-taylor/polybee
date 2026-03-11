@@ -35,6 +35,13 @@ struct EntranceCrossingStats {
 };
 
 
+struct Barrier {
+    pb::Line2D line;
+
+    Barrier(float x1, float y1, float x2, float y2) : line(pb::Line2D(pb::Pos2D(x1, y1), pb::Pos2D(x2, y2))) {}
+};
+
+
 enum class EntranceCrossingType {
     ENTRY,
     EXIT,
@@ -65,6 +72,8 @@ public:
     const std::vector<Plant>& getAllPlants() const { return m_allPlants; }
     std::vector<Plant*> getNearbyPlants(float x, float y) const;
     std::optional<Plant*> selectNearbyUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const; // get nearest plant to a given position within maxDistance
+    bool pathObstructedByBarrier(float x1, float y1, float x2, float y2) const;
+    std::optional<float> distanceToNearestObstructingBarrier(float x1, float y1, float x2, float y2) const;
 
     double getSuccessfulVisitFraction() const;  // fraction of plants that have a visit count in the successful visit range
                                                 // (between minVisitCountSuccess and maxVisitCountSuccess, inclusive)
@@ -77,6 +86,7 @@ public:
 
 private:
     void initialiseTunnel();
+    void initialiseBarriers();
     void initialisePlants();
     void initialiseHivesAndBees();
     void initialiseBees(); // this should only be called from initialiseHivesAndBees
@@ -84,7 +94,8 @@ private:
     void initialiseTargetHeatmap();
     void resetHivesAndBees();
     void resetPlants();
-    pb::Pos2D envPosToGridIndex(float x, float y) const;
+    pb::Pos2D envPosToPlantGridIndex(float x, float y) const;
+    pb::Pos2D envPosToBarrierGridIndex(float x, float y) const;
     Plant* pickRandomPlantWeightedByDistance(const std::vector<NearbyPlantInfo>& plants) const;
 
     float m_width;
@@ -92,13 +103,21 @@ private:
     std::vector<Bee> m_bees;
     std::vector<Hive> m_hives;
     Tunnel m_tunnel;
-    std::vector<Plant> m_allPlants;  // Owns all Plant objects
-    std::vector<std::vector<std::vector<Plant*>>> m_plantGrid;  // Spatial index with pointers into m_allPlants
+
+    std::vector<Plant> m_allPlants;                                 // Owns all Plant objects
+    std::vector<std::vector<std::vector<Plant*>>> m_plantGrid;      // Spatial index for plants, with pointers into m_allPlants
     float m_plantGridCellSize {1.0f};
     size_t m_plantGridW {1};
     size_t m_plantGridH {1};
+
+    std::vector<Barrier> m_allBarriers;                             // Owns all Barrier objects
+    std::vector<std::vector<std::vector<Barrier*>>> m_barrierGrid;  // Spatial index for barriers, with pointers into m_allBarriers
+    float m_barrierGridCellSize {1.0f};
+    size_t m_barrierGridW {1};
+    size_t m_barrierGridH {1};
+
     Heatmap m_heatmap;
-    std::vector<std::vector<double>> m_rawTargetHeatmapNormalised; // target heatmap for use in PolyBeeEvolve, and for calculating EMD in one-off runs
+    std::vector<std::vector<double>> m_rawTargetHeatmapNormalised;  // target heatmap for use in PolyBeeEvolve, and for calculating EMD in one-off runs
 
     PolyBeeCore* m_pPolyBeeCore { nullptr };
 };

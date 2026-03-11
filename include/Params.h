@@ -81,6 +81,36 @@ struct TunnelEntranceSpec {
 };
 
 
+struct BarrierSpec {
+    // x1,y1:x2,y2[:nrx,dx[:nry,dy]]
+    float x1;               // x position of first endpoint of barrier in environment coordinates
+    float y1;               // y position of first endpoint of barrier in environment coordinates
+    float x2;               // x position of second endpoint of barrier in environment coordinates
+    float y2;               // y position of second endpoint of barrier in environment coordinates
+    int numRepeatsX {1};    // number of repeats of the barrier along x axis
+    float dx {200.0f};      // spacing between repeats along x axis
+    int numRepeatsY {1};    // number of repeats of the barrier along y axis
+    float dy {200.0f};      // spacing between repeats along y axis
+
+    BarrierSpec(float x1, float y1, float x2, float y2) :
+        x1(x1), y1(y1), x2(x2), y2(y2) { setLength(); }
+    BarrierSpec(float x1, float y1, float x2, float y2, int numRepeatsX, float dx) :
+        x1(x1), y1(y1), x2(x2), y2(y2), numRepeatsX(numRepeatsX), dx(dx) { setLength(); }
+    BarrierSpec(float x1, float y1, float x2, float y2, int numRepeatsX, float dx, int numRepeatsY, float dy) :
+        x1(x1), y1(y1), x2(x2), y2(y2), numRepeatsX(numRepeatsX), dx(dx), numRepeatsY(numRepeatsY), dy(dy) { setLength(); }
+
+    // we assume that the x and y positions are set once at construction and never changed after, so we can calculate
+    // the length of the barrier once at construction and just return it in the length() method
+    float length() const { return len; };
+
+private:
+    float len;
+    void setLength() {
+        len = std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+    }
+};
+
+
 struct PatchSpec {
     //  x,y,w,h:r[:j:[s[:n:dx,dy]]]
     float x;                // x position of top-left-corner of patch in environment coordinates
@@ -93,8 +123,9 @@ struct PatchSpec {
     int   numRepeats {1};   // number of repeats of the patch
     float dx {200.0f};      // x offset between repeats of patch
     float dy {0.0f};        // y offset between repeats of patch
-    int   numX {1};         // number of plants along x axis of patch
-    int   numY {1};         // number of plants along y axis of patch
+
+    int getNumX() const { return numX; } // number of plants along x axis of patch - derived from w and spacing
+    int getNumY() const { return numY; } // number of plants along y axis of patch - derived from h and spacing
 
     PatchSpec(float x, float y, float w, float h, float spacing);
     PatchSpec(float x, float y, float w, float h, float spacing, float jitter);
@@ -103,6 +134,9 @@ struct PatchSpec {
 
 private:
     void commonInit();
+
+    int numX {1};         // number of plants along x axis of patch - derived from w and spacing
+    int numY {1};         // number of plants along y axis of patch - derived from h and spacing
 };
 
 
@@ -159,6 +193,9 @@ public:
     static float netAntihailExitProb;       // probability of bee exiting through antihail net
     static int netAntibirdMaxExitAttempts;  // max exit attempts through antibird net
     static int netAntihailMaxExitAttempts;  // max exit attempts through antihail net
+
+    // Barrier configuration
+    static std::vector<BarrierSpec> barrierSpecs;
 
     // Patch configuration
     static std::vector<PatchSpec> patchSpecs;
