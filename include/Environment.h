@@ -39,6 +39,11 @@ struct Barrier {
     pb::Line2D line;
 
     Barrier(float x1, float y1, float x2, float y2) : line(pb::Line2D(pb::Pos2D(x1, y1), pb::Pos2D(x2, y2))) {}
+
+    float x1() const { return line.start.x; }
+    float y1() const { return line.start.y; }
+    float x2() const { return line.end.x; }
+    float y2() const { return line.end.y; }
 };
 
 
@@ -69,9 +74,12 @@ public:
     const std::vector<std::vector<double>>& getRawTargetHeatmapNormalised() const { return m_rawTargetHeatmapNormalised; }
     const std::vector<Bee>& getBees() const { return m_bees; }
     const std::vector<Hive>& getHives() const { return m_hives; }
+
     const std::vector<Plant>& getAllPlants() const { return m_allPlants; }
     std::vector<Plant*> getNearbyPlants(float x, float y) const;
     std::optional<Plant*> selectNearbyUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const; // get nearest plant to a given position within maxDistance
+
+    const std::vector<Barrier>& getAllBarriers() const { return m_allBarriers; }
     bool pathObstructedByBarrier(float x1, float y1, float x2, float y2) const;
     std::optional<float> distanceToNearestObstructingBarrier(float x1, float y1, float x2, float y2) const;
 

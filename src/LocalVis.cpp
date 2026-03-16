@@ -184,6 +184,9 @@ void LocalVis::updateDrawFrame()
         // draw plants
         drawPlants();
 
+        // draw barriers
+        drawBarriers();
+
         // draw bees
         if (showBees()) {
             drawBees();
@@ -305,6 +308,16 @@ Color LocalVis::entranceColorFromEntranceID(int entranceID) const
     float hue = (360.0f / static_cast<float>(TunnelEntranceInfo::nextID)) * (entranceID + 1);
 
     return ColorFromHSV(hue, 0.7f, 0.9f);
+}
+
+
+void LocalVis::drawBarriers()
+{
+    for (const Barrier& barrier : m_pPolyBeeCore->m_env.getAllBarriers()) {
+        DrawLineEx({ envToDisplayX(barrier.x1()), envToDisplayY(barrier.y1()) },
+                   { envToDisplayX(barrier.x2()), envToDisplayY(barrier.y2()) },
+                   3.0f, BLACK);
+    }
 }
 
 

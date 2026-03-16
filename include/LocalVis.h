@@ -46,6 +46,7 @@ private:
     void drawBees();
     void drawHeatmap();
     void drawTunnel();
+    void drawBarriers();
     void drawPatches();
     void drawPlants();
     void drawStatusText();
