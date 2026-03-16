@@ -415,43 +415,75 @@ std::optional<Plant*> Environment::selectNearbyUnvisitedPlant(float x, float y, 
 }
 
 
-bool Environment::pathObstructedByBarrier(float x1, float y1, float x2, float y2) const
+// Return a flat vector of all barriers in the local 3x3 grid cells around the given position
+// The x and y parameters are experessed in environment coordinates (not grid indices)
+//
+std::vector<Barrier*> Environment::getNearbyBarriers(float x, float y) const
 {
-    // TODO - implement this!
+    std::vector<Barrier*> nearbyBarriers;
 
-    /*
-    // Check for barriers in the 3x3 grid cells around the midpoint of the line between (x1,y1) and (x2,y2)
-    float midX = (x1 + x2) / 2.0f;
-    float midY = (y1 + y2) / 2.0f;
-
-    auto [i, j] = envPosToBarrierGridIndex(midX, midY);
+    auto [i, j] = envPosToBarrierGridIndex(x, y);
 
     for (int di = -1; di <= 1; ++di) {
         for (int dj = -1; dj <= 1; ++dj) {
             if (i + di >= 0 && i + di < m_barrierGrid.size() &&
                 j + dj >= 0 && j + dj < m_barrierGrid[i + di].size()) {
                 const auto& cell = m_barrierGrid[i + di][j + dj];
-                for (const Barrier* pBarrier : cell) {
-                    if (pBarrier->intersectsLine(x1, y1, x2, y2)) {
-                        return true; // Line is obstructed by a barrier
-                    }
-                }
+                nearbyBarriers.insert(nearbyBarriers.end(), cell.begin(), cell.end());
             }
         }
     }
-    */
+
+    return nearbyBarriers;
+}
+
+
+// Check for barriers in the 3x3 grid cells around the midpoint of the line between (x1,y1) and (x2,y2)
+// and return true if any barrier intersects the line between (x1,y1) and (x2,y2)
+bool Environment::pathObstructedByBarrier(float x1, float y1, float x2, float y2) const
+{
+    pb::Line2D pathLine(pb::Pos2D(x1, y1), pb::Pos2D(x2, y2));
+    float midX = (x1 + x2) / 2.0f;
+    float midY = (y1 + y2) / 2.0f;
+    std::vector<Barrier*> nearbyBarriers = getNearbyBarriers(midX, midY);
+
+
+    for (const Barrier* pBarrier : nearbyBarriers) {
+        auto intersectInfo = pBarrier->line.getIntersectInfo(pathLine);
+        if (intersectInfo.intersects && intersectInfo.withinBounds) {
+            return true; // Line is obstructed by a barrier
+        }
+    }
 
     return false; // No barriers obstructing the line
 }
 
 
+// Check for barriers in the 3x3 grid cells around the midpoint of the line between (x1,y1) and (x2,y2)
+// and return the distance from point (x1, y1) to the nearest barrier (or std::nullopt if no barriers nearby)
 std::optional<float> Environment::distanceToNearestObstructingBarrier(float x1, float y1, float x2, float y2) const
 {
-    // TODO - implement this!
-    // check barriers in the 3x3 grid cells around the bee's current position
-    // and return the distance to the nearest barrier (or std::nullopt if no barriers nearby)
+    pb::Line2D pathLine(pb::Pos2D(x1, y1), pb::Pos2D(x2, y2));
+    float minDistSq = std::numeric_limits<float>::max();
+    bool foundBarrier = false;
 
-    return std::nullopt;
+    float midX = (x1 + x2) / 2.0f;
+    float midY = (y1 + y2) / 2.0f;
+    std::vector<Barrier*> nearbyBarriers = getNearbyBarriers(midX, midY);
+
+    for (const Barrier* pBarrier : nearbyBarriers) {
+        auto intersectInfo = pBarrier->line.getIntersectInfo(pathLine);
+        if (intersectInfo.intersects && intersectInfo.withinBounds) {
+            float distSq = (intersectInfo.point.x - x1) * (intersectInfo.point.x - x1) +
+                           (intersectInfo.point.y - y1) * (intersectInfo.point.y - y1);
+            if (distSq < minDistSq) {
+                minDistSq = distSq;
+                foundBarrier = true;
+            }
+        }
+    }
+
+    return (foundBarrier ? std::optional<float>(std::sqrt(minDistSq)) : std::nullopt);
 }
 
 

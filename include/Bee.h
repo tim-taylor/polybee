@@ -36,7 +36,7 @@ enum class BeeState
 // Struct to keep track of the state of a bee that is trying to cross a tunnel entrance
 struct TryingToCrossEntranceState
 {
-    void set(const pb::Pos2D& pos, const IntersectInfo& intersectInfo, const Tunnel* pTunnel_);
+    void set(const pb::Pos2D& pos, const pb::IntersectInfo& intersectInfo, const Tunnel* pTunnel_);
     void update();
     void reset();
 
@@ -122,7 +122,7 @@ private:
     void nudgeAwayFromTunnelWalls();
     float alignAngleWithLine(float desiredAngle, float line_dx, float line_dy) const;
     std::optional<pb::PosAndDir2D> forageNearestFlower();
-    pb::PosAndDir2D moveInRandomDirection();
+    pb::PosAndDir2D moveInRandomDirection(int attemptNumber = 0);
     void addToRecentlyVisitedPlants(Plant* pPlant);
     bool lineIntersectsTunnel(float x1, float y1, float x2, float y2) const;
     void calculateWaypointsAroundTunnel();

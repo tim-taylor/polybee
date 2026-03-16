@@ -119,4 +119,45 @@ namespace Polybee {
         return std::sqrt((point.x - projX) * (point.x - projX) + (point.y - projY) * (point.y - projY));
     }
 
+
+    // Returns an IntersectInfo struct indicating whether the two lines intersect,
+    // whether the intersection is within both line segments, and the intersection point
+    IntersectInfo Line2D::getIntersectInfo(const pb::Line2D& otherLine) const
+    {
+        double x1 = start.x, y1 = start.y;
+        double x2 = end.x, y2 = end.y;
+        double x3 = otherLine.start.x, y3 = otherLine.start.y;
+        double x4 = otherLine.end.x, y4 = otherLine.end.y;
+
+        // Calculate the denominator
+        float denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+
+        // If denominator is 0, lines are parallel or coincident
+        if (std::abs(denominator) < 1e-10) {
+            return {false, false};
+        }
+
+        // Calculate the parameters t and u
+        // t is the parameter for line1, u is the parameter for line2
+        // Each of these parameters represent how far along the line segment the intersection occurs
+        // If t is 0, the intersection is at the start of line1; if t is 1, it's at the end
+        // If u is 0, the intersection is at the start of line2; if u is 1, it's at the end
+        // If either t or u is outside the range [0, 1], the intersection does not occur within the line segments
+        float t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator;
+        float u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / denominator;
+
+        // Calculate intersection point
+        pb::Pos2D intersection;
+        intersection.x = x1 + t * (x2 - x1);
+        intersection.y = y1 + t * (y2 - y1);
+
+        // Check if intersection point is within both line segments
+        if (t >= 0.0f && t <= 1.0f && u >= 0.0f && u <= 1.0f) {
+            return {true, true, intersection, otherLine};
+        }
+        else {
+            return {true, false, intersection, otherLine};
+        }
+    }
+
 } // namespace Polybee

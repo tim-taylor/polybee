@@ -8,6 +8,7 @@
 #include "Environment.h"
 #include "PolyBeeCore.h"
 #include "Params.h"
+#include "utils.h"
 #include <numbers>
 #include <random>
 #include <cassert>
@@ -23,10 +24,10 @@ const float Bee::m_sTunnelWallBuffer {0.1f};
 
 // Initialise the state when the bee first makes a failed attempt to cross the entrance
 // * pos is the bee;s current position, assumed to be the rebound position from the failed crossing attempt
-// * intersectInfo is the IntersectInfo from the failed crossing attempt
+// * intersectInfo is the pb::IntersectInfo from the failed crossing attempt
 // * pTunnel is a pointer to the tunnel (we need this to get information about the side of the tunnel
 //     that the bee is trying to cross)
-void TryingToCrossEntranceState::set(const pb::Pos2D& pos, const IntersectInfo& intersectInfo, const Tunnel* pTunnel_) {
+void TryingToCrossEntranceState::set(const pb::Pos2D& pos, const pb::IntersectInfo& intersectInfo, const Tunnel* pTunnel_) {
     assert(intersectInfo.pEntranceUsed != nullptr);
     assert(pTunnel_ != nullptr);
 
@@ -257,7 +258,7 @@ void Bee::attemptToCrossTunnelBoundaryWhileForaging(pb::PosAndDir2D& desiredMove
             std::format("Bee::move(): logic error: expected intersection when crossing tunnel boundary, from ({}, {}) to ({}, {})",
                 m_pos.x, m_pos.y, desiredMove.x, desiredMove.y));
     }
-    else if (intersectInfo.crossesEntrance) {
+    else if (intersectInfo.withinBounds) {
         // Initialise m_currentCrossingInfo struct as this is the start of a new crossing attempt
         m_currentCrossingInfo.entranceID = intersectInfo.pEntranceUsed->id;
         m_currentCrossingInfo.netType = intersectInfo.pEntranceUsed->netType;
@@ -389,7 +390,7 @@ void Bee::continueTryingToCrossEntrance()
                         m_pos.x, m_pos.y, desiredMove.x, desiredMove.y));
             }
         }
-        else if (intersectInfo.crossesEntrance) {
+        else if (intersectInfo.withinBounds) {
             // bee wants to enter/exit via a tunnel entrance, so we need to determine whether it can
             // successfullly do so based on the net type at this entrance
 
@@ -611,8 +612,11 @@ std::optional<pb::PosAndDir2D> Bee::forageNearestFlower()
 //
 // The returned position will NOT be such that the bee has to cross a barrier. Checks are
 // made in this code and potential moves that would cross a barrier are discounted.
-pb::PosAndDir2D Bee::moveInRandomDirection()
+pb::PosAndDir2D Bee::moveInRandomDirection(int attemptNumber /*=0*/)
 {
+    static const float minMoveLen = 0.01f;
+    static const int maxAttempts = 5;
+
     pb::PosAndDir2D result;
 
     result.angle = m_angle + m_distDir(m_pPolyBeeCore->m_rngEngine);
@@ -621,13 +625,35 @@ pb::PosAndDir2D Bee::moveInRandomDirection()
 
     // check for collision with barriers
     auto distOpt = m_pEnv->distanceToNearestObstructingBarrier(m_pos.x, m_pos.y, result.x, result.y);
+
     if (distOpt.has_value()) {
+        // collision with barrier detected, so we need to adjust the move to avoid crossing it
         float dist = distOpt.value();
-        // TODO - implement code to deal with this case!
+        float shorterMoveLen = 0.9f * dist;
 
+        // if the distance to the nearest barrier is above a minimum threshold,
+        // just move in the same direction but not as far as the barrier
+        if (shorterMoveLen > minMoveLen) {
+            result.x = m_pos.x + shorterMoveLen * std::cos(result.angle);
+            result.y = m_pos.y + shorterMoveLen * std::sin(result.angle);
+            return result;
+        }
+        // if the distance to the nearest barrier is below the minimum threshold, recursively
+        // trying moving in a diffent direction up to a fixed maximum number of attempts
+        else if (attemptNumber < maxAttempts) {
+            return moveInRandomDirection(attemptNumber + 1);
+        }
+        else {
+            // if we've exceeded the maximum number of attempts, just stay in the same position for this update
+            result.x = m_pos.x;
+            result.y = m_pos.y;
+            return result;
+        }
     }
-
-    return result;
+    else {
+        // no collision with barriers, so we can just return the new position as calculated
+        return result;
+    }
 }
 
 

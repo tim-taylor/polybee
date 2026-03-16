@@ -134,16 +134,16 @@ void Tunnel::initialiseEntrances() {
 // return information about the intersection.
 //
 // If an intersection occurs at an entrance, the returned IntersectInfo struct will have
-// intersects=true, crossesEntrance=true, pEntranceUsed=the entrance that was used,
+// intersects=true, withinBounds=true, pEntranceUsed=the entrance that was used,
 // and point=the intersection point.
 //
 // If an intersection occurs with the tunnel walls but outside any entrance, the returned
-// IntersectInfo will have intersects=true, crossesEntrance=false, pEntranceUsed=nullptr,
+// IntersectInfo will have intersects=true, withinBounds=false, pEntranceUsed=nullptr,
 // and point=the intersection point.
 //
 // If no intersection occurs, intersects=false.
 //
-IntersectInfo Tunnel::intersectsTunnelBoundary(float x1, float y1, float x2, float y2) const
+pb::IntersectInfo Tunnel::intersectsTunnelBoundary(float x1, float y1, float x2, float y2) const
 {
     assert(m_pEnv != nullptr);
 
@@ -165,9 +165,9 @@ IntersectInfo Tunnel::intersectsTunnelBoundary(float x1, float y1, float x2, flo
     {
         pb::Line2D line2(pb::Pos2D{entrance.x1, entrance.y1}, pb::Pos2D{entrance.x2, entrance.y2});
 
-        auto intersectInfo = getLineIntersection(line1, line2);
+        auto intersectInfo = line1.getIntersectInfo(line2);
 
-        if (intersectInfo.intersects && intersectInfo.crossesEntrance) {
+        if (intersectInfo.intersects && intersectInfo.withinBounds) {
             intersectInfo.enteringTunnel = enteringTunnel;  // set whether the bee is trying to enter or exit the tunnel
             intersectInfo.pEntranceUsed = &entrance;        // set pointer to the entrance that was used
             return intersectInfo;
@@ -178,53 +178,11 @@ IntersectInfo Tunnel::intersectsTunnelBoundary(float x1, float y1, float x2, flo
     // Now we check for intersections with the tunnel boundaries themselves, so we can
     // provide an intersection point even if the bee didn't cross at an entrance
     for (const auto& wall : m_boundaries) {
-        auto intersectInfo = getLineIntersection(line1, wall);
-        if (intersectInfo.crossesEntrance) {
+        auto intersectInfo = line1.getIntersectInfo(wall);
+        if (intersectInfo.withinBounds) {
             return {true, false, intersectInfo.point, wall}; // intersection with wall outside entrance limits
         }
     }
     pb::msg_error_and_exit("Tunnel::intersectsTunnelBoundary(): logic error: expected to find an intersection with tunnel walls when crossing boundary outside entrances.");
     return {false, false}; // to satisfy compiler
 }
-
-
-// Returns an IntersectInfo struct indicating whether the two lines intersect,
-// whether the intersection is within both line segments, and the intersection point
-IntersectInfo Tunnel::getLineIntersection(const pb::Line2D& line1, const pb::Line2D& line2) const
-{
-    double x1 = line1.start.x, y1 = line1.start.y;
-    double x2 = line1.end.x, y2 = line1.end.y;
-    double x3 = line2.start.x, y3 = line2.start.y;
-    double x4 = line2.end.x, y4 = line2.end.y;
-
-    // Calculate the denominator
-    float denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-
-    // If denominator is 0, lines are parallel or coincident
-    if (std::abs(denominator) < 1e-10) {
-        return {false, false};
-    }
-
-    // Calculate the parameters t and u
-    // t is the parameter for line1, u is the parameter for line2
-    // Each of these parameters represent how far along the line segment the intersection occurs
-    // If t is 0, the intersection is at the start of line1; if t is 1, it's at the end
-    // If u is 0, the intersection is at the start of line2; if u is 1, it's at the end
-    // If either t or u is outside the range [0, 1], the intersection does not occur within the line segments
-    float t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator;
-    float u = ((x1 - x3) * (y1 - y2) - (y1 - y3) * (x1 - x2)) / denominator;
-
-    // Calculate intersection point
-    pb::Pos2D intersection;
-    intersection.x = x1 + t * (x2 - x1);
-    intersection.y = y1 + t * (y2 - y1);
-
-    // Check if intersection point is within both line segments
-    if (t >= 0.0f && t <= 1.0f && u >= 0.0f && u <= 1.0f) {
-        return {true, true, intersection, line2};
-    }
-    else {
-        return {true, false, intersection, line2};
-    }
-}
-

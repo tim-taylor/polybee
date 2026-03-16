@@ -80,6 +80,7 @@ public:
     std::optional<Plant*> selectNearbyUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const; // get nearest plant to a given position within maxDistance
 
     const std::vector<Barrier>& getAllBarriers() const { return m_allBarriers; }
+    std::vector<Barrier*> getNearbyBarriers(float x, float y) const;
     bool pathObstructedByBarrier(float x1, float y1, float x2, float y2) const;
     std::optional<float> distanceToNearestObstructingBarrier(float x1, float y1, float x2, float y2) const;
 
