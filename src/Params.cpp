@@ -39,6 +39,7 @@ int Params::netAntihailMaxExitAttempts;
 
 // Barrier configuration
 std::vector<BarrierSpec> Params::barrierSpecs;
+float Params::barrierPassProb;
 
 // Patch configuration
 std::vector<PatchSpec> Params::patchSpecs;
@@ -159,6 +160,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("net-antihail-exit-prob", "netAntihailExitProb", ParamType::FLOAT, &netAntihailExitProb, 0.0371f, "Per-attempt probability of bee exiting through antihail net");
     REGISTRY.emplace_back("net-antibird-max-exit-attempts", "netAntibirdMaxExitAttempts", ParamType::INT, &netAntibirdMaxExitAttempts, 7, "Maximum exit attempts through antibird net before giving up");
     REGISTRY.emplace_back("net-antihail-max-exit-attempts", "netAntihailMaxExitAttempts", ParamType::INT, &netAntihailMaxExitAttempts, 11, "Maximum exit attempts through antihail net before giving up");
+    REGISTRY.emplace_back("barrier-pass-prob", "barrierPassProb", ParamType::FLOAT, &barrierPassProb, 0.0f, "Probability that a bee will fly over a barrier rather than having its path blocked by it");
     REGISTRY.emplace_back("flower-initial-nectar", "flowerInitialNectar", ParamType::FLOAT, &flowerInitialNectar, 100.0f, "Initial nectar amount for each flower");
     REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
     REGISTRY.emplace_back("bee-max-dir-delta", "beeMaxDirDelta", ParamType::FLOAT, &beeMaxDirDelta, 0.4f, "Maximum change in direction (radians) per step");
@@ -425,8 +427,8 @@ void Params::initialise(int argc, char* argv[])
         config.add_options()
             ("barrier", po::value<std::vector<std::string>>()->multitoken(),
              "Barrier specification in format x1,y1:x2,y2[:nrx,dx[:nry,dy]] where x1,y1,x2,y2 define the endpoints of the barrier (in environment coordinates), "
-             "nrx is the number of repeats along the x axis, dx is the spacing between repeats along the x axis, "
-             "nry is the number of repeats along the y axis, and dy is the spacing between repeats along the y axis, "
+             "nrx is the number of repeats along the x axis (default 1), dx is the spacing between repeats along the x axis, "
+             "nry is the number of repeats along the y axis (default 1), and dy is the spacing between repeats along the y axis, "
              "e.g. --barrier 0,0:100,0:2,50:3,50");
 
         // Special case for plant patch defintions (multiple allowed)
@@ -721,6 +723,11 @@ void Params::checkConsistency()
             // Path exists but is not a directory
             pb::msg_error_and_exit(std::format("Log directory path '{}' exists but is not a directory", logDir));
         }
+    }
+
+    // check barrier-pass-prob is in valid range
+    if (barrierPassProb < 0.0f || barrierPassProb > 1.0f) {
+        pb::msg_error_and_exit(std::format("Parameter 'barrier-pass-prob' must be between 0.0 and 1.0, but is {}", barrierPassProb));
     }
 
     // check at least one hive is specified

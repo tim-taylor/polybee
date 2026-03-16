@@ -203,10 +203,10 @@ bool Bee::normalForagingUpdate()
     // keep within bounds of environment
     keepMoveWithinEnvironment(desiredMove);
 
-    // check if new position is valid
+    // check if new position would involve crossing tunnel boundary
     bool newPosInTunnel = m_pEnv->inTunnel(desiredMove.x, desiredMove.y);
     if ((m_inTunnel && newPosInTunnel) || (!m_inTunnel && !newPosInTunnel)) {
-        // valid move: update position
+        // no boundary crossing, so we can just move to the new position at this point
         m_angle = desiredMove.angle;
         m_pos.x = desiredMove.x;
         m_pos.y = desiredMove.y;
@@ -627,27 +627,38 @@ pb::PosAndDir2D Bee::moveInRandomDirection(int attemptNumber /*=0*/)
     auto distOpt = m_pEnv->distanceToNearestObstructingBarrier(m_pos.x, m_pos.y, result.x, result.y);
 
     if (distOpt.has_value()) {
-        // collision with barrier detected, so we need to adjust the move to avoid crossing it
-        float dist = distOpt.value();
-        float shorterMoveLen = 0.9f * dist;
+        // collision with barrier detected
 
-        // if the distance to the nearest barrier is above a minimum threshold,
-        // just move in the same direction but not as far as the barrier
-        if (shorterMoveLen > minMoveLen) {
-            result.x = m_pos.x + shorterMoveLen * std::cos(result.angle);
-            result.y = m_pos.y + shorterMoveLen * std::sin(result.angle);
+        // first, figure out if we can just fly over it anyway
+        if (Params::barrierPassProb > 0.0f &&
+            (m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine) < Params::barrierPassProb)) {
+            // we can pass over the barrier, so just return the new position as calculated
             return result;
-        }
-        // if the distance to the nearest barrier is below the minimum threshold, recursively
-        // trying moving in a diffent direction up to a fixed maximum number of attempts
-        else if (attemptNumber < maxAttempts) {
-            return moveInRandomDirection(attemptNumber + 1);
         }
         else {
-            // if we've exceeded the maximum number of attempts, just stay in the same position for this update
-            result.x = m_pos.x;
-            result.y = m_pos.y;
-            return result;
+            // no, we didn't manage to fly over the barrier, so it's going to block our desired move
+            // now figure out exactly what is going to happen
+            float dist = distOpt.value();
+            float shorterMoveLen = 0.9f * dist;
+
+            // if the distance to the nearest barrier is above a minimum threshold,
+            // just move in the same direction but not as far as the barrier
+            if (shorterMoveLen > minMoveLen) {
+                result.x = m_pos.x + shorterMoveLen * std::cos(result.angle);
+                result.y = m_pos.y + shorterMoveLen * std::sin(result.angle);
+                return result;
+            }
+            // if the distance to the nearest barrier is below the minimum threshold, recursively
+            // trying moving in a diffent direction up to a fixed maximum number of attempts
+            else if (attemptNumber < maxAttempts) {
+                return moveInRandomDirection(attemptNumber + 1);
+            }
+            else {
+                // if we've exceeded the maximum number of attempts, just stay in the same position for this update
+                result.x = m_pos.x;
+                result.y = m_pos.y;
+                return result;
+            }
         }
     }
     else {

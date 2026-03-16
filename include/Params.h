@@ -196,6 +196,7 @@ public:
 
     // Barrier configuration
     static std::vector<BarrierSpec> barrierSpecs;
+    static float barrierPassProb; // probability that a bee will fly over a barrier rather than having its path blocked
 
     // Patch configuration
     static std::vector<PatchSpec> patchSpecs;
