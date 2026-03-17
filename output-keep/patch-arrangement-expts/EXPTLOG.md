@@ -26,5 +26,5 @@ for F in `ls patch-arrangement-expts-*`; do gawk '/Successful visit/ {print $6}'
 Generate a box and whiskers plot showing all configs, as follows:
 
 ```
-../../tools/plot_boxplot.py visit-fractions-patch-arrangement-expts-*.csv --ylabel "Successful Visit fraction" --labels "Base Config" "Horizontal Compact" "Vertical Compact" "Vertical & Horizontal Compact" --title "Patch arrangement and Successful Visit fraction" | tee stats-visit-fractions-patch-arrangement-expts.txt
+../../tools/plot_boxplot.py visit-fractions-patch-arrangement-expts-*.csv --ylabel "Successful Visit fraction" --labels "Base Config" "Horizontal Compact" "Vertical Compact" "Vertical & Horizontal Compact" --title "Patch arrangement and Successful Visit fraction" --ymin 0.625 --ymax 1.025| tee stats-visit-fractions-patch-arrangement-expts.txt
 ```

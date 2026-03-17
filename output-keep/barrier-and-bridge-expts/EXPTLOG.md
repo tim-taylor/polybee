@@ -26,5 +26,5 @@ for F in `ls barrier-and-bridge-expts-*`; do gawk '/Successful visit/ {print $6}
 Generate a box and whiskers plot showing all configs, as follows:
 
 ```
-../../tools/plot_boxplot.py visit-fractions-barrier-and-bridge-expts-base.csv visit-fractions-barrier-and-bridge-expts-BRG.csv visit-fractions-barrier-and-bridge-expts-BAR.csv visit-fractions-barrier-and-bridge-expts-BAR-BRG.csv --ylabel "Successful Visit fraction" --labels "Base Config" "Bridges" "Barriers" "Barriers & Bridges" | tee stats-visit-fractions-barrier-and-bridge-expts.txt
+../../tools/plot_boxplot.py visit-fractions-barrier-and-bridge-expts-base.csv visit-fractions-barrier-and-bridge-expts-BRG.csv visit-fractions-barrier-and-bridge-expts-BAR.csv visit-fractions-barrier-and-bridge-expts-BAR-BRG.csv --title "Barriers, Bridges and Successful Visit fraction" --ylabel "Successful Visit fraction" --labels "Base Config" "Bridges" "Barriers" "Barriers & Bridges" --ymin 0.625 --ymax 1.025 | tee stats-visit-fractions-barrier-and-bridge-expts.txt
 ```

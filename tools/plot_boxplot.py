@@ -45,7 +45,7 @@ def load_csv_data(filename):
         print(f"Error loading CSV file '{filename}': {e}", file=sys.stderr)
         sys.exit(1)
 
-def create_boxplot(datasets, labels, title="", ylabel="Value", save_only=False, output_file=None):
+def create_boxplot(datasets, labels, title="", ylabel="Value", save_only=False, output_file=None, ymin=None, ymax=None):
     """
     Create a box and whisker plot with one box per dataset.
 
@@ -91,6 +91,9 @@ def create_boxplot(datasets, labels, title="", ylabel="Value", save_only=False, 
     ax.set_xticklabels(labels, rotation=15, ha='right', fontsize=10)
 
     ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5, axis='y')
+
+    if ymin is not None or ymax is not None:
+        ax.set_ylim(bottom=ymin, top=ymax)
 
     # Show stats text box only for a single dataset (too crowded otherwise)
     if len(datasets) == 1:
@@ -154,6 +157,10 @@ Examples:
                         help='Label for the vertical axis (default: "Value")')
     parser.add_argument('--labels', nargs='+', metavar='LABEL',
                         help='Custom labels for each input file (must match number of files)')
+    parser.add_argument('--ymin', type=float, default=None,
+                        help='Minimum value for the y axis')
+    parser.add_argument('--ymax', type=float, default=None,
+                        help='Maximum value for the y axis')
 
     args = parser.parse_args()
 
@@ -194,10 +201,10 @@ Examples:
         # Base output name on first input file
         output_file = os.path.splitext(args.input_files[0])[0] + '.png'
         create_boxplot(datasets, x_labels, title=args.title, ylabel=args.ylabel,
-                       save_only=True, output_file=output_file)
+                       save_only=True, output_file=output_file, ymin=args.ymin, ymax=args.ymax)
     else:
         create_boxplot(datasets, x_labels, title=args.title, ylabel=args.ylabel,
-                       save_only=False)
+                       save_only=False, ymin=args.ymin, ymax=args.ymax)
 
 if __name__ == '__main__':
     main()
