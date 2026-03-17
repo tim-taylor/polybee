@@ -113,16 +113,17 @@ private:
 
 struct PatchSpec {
     //  x,y,w,h:r[:j:[s[:n:dx,dy]]]
-    float x;                // x position of top-left-corner of patch in environment coordinates
-    float y;                // y position of top-left-corner of patch in environment coordinates
-    float w;                // width of patch
-    float h;                // height of patch
-    float spacing {0.0f};   // spacing between plants
-    float jitter {0.0f};    // jitter between plants (std dev)
-    int   speciesID {1};    // species
-    int   numRepeats {1};   // number of repeats of the patch
-    float dx {200.0f};      // x offset between repeats of patch
-    float dy {0.0f};        // y offset between repeats of patch
+    float x;                    // x position of top-left-corner of patch in environment coordinates
+    float y;                    // y position of top-left-corner of patch in environment coordinates
+    float w;                    // width of patch
+    float h;                    // height of patch
+    float spacing {0.0f};       // spacing between plants
+    float jitter {0.0f};        // jitter between plants (std dev)
+    int   speciesID {1};        // species
+    int   numRepeats {1};       // number of repeats of the patch
+    float dx {200.0f};          // x offset between repeats of patch
+    float dy {0.0f};            // y offset between repeats of patch
+    bool  ignoreForSVF {false}; // if set, flowers in this patch don't count in calculation of successful visit fraction
 
     int getNumX() const { return numX; } // number of plants along x axis of patch - derived from w and spacing
     int getNumY() const { return numY; } // number of plants along y axis of patch - derived from h and spacing
@@ -131,6 +132,7 @@ struct PatchSpec {
     PatchSpec(float x, float y, float w, float h, float spacing, float jitter);
     PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID);
     PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID, int numRepeats, float dx, float dy);
+    PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID, int numRepeats, float dx, float dy, bool ignore);
 
 private:
     void commonInit();

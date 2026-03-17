@@ -135,6 +135,12 @@ PatchSpec::PatchSpec(float x, float y, float w, float h, float spacing, float ji
     commonInit();
 }
 
+PatchSpec::PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID, int numRepeats, float dx, float dy, bool ignore) :
+    x(x), y(y), w(w), h(h), spacing(spacing), jitter(jitter), speciesID(speciesID), numRepeats(numRepeats), dx(dx), dy(dy), ignoreForSVF(ignore)
+{
+    commonInit();
+}
+
 void PatchSpec::commonInit()
 {
     // Calculate numX and numY based on w, h, and spacing
@@ -282,15 +288,21 @@ std::vector<PatchSpec> parse_patch_positions(const std::vector<std::string>& pat
     std::string regex_str_p2 = R"(:(\d*\.?\d+)?)";                       // :j
     std::string regex_str_p3 = R"(:(\d+)?)";                             // :s
     std::string regex_str_p4 = R"(:(\d+)?:(\d*\.?\d+)?,(\d*\.?\d+)?)";   // :n:dx,dy
+    std::string regex_str_p5 = R"(:(\d)?)"; // :i
 
     std::regex patch_regex_1(regex_str_p1);
     std::regex patch_regex_2(regex_str_p1 + regex_str_p2);
     std::regex patch_regex_3(regex_str_p1 + regex_str_p2 + regex_str_p3);
     std::regex patch_regex_4(regex_str_p1 + regex_str_p2 + regex_str_p3 + regex_str_p4);
+    std::regex patch_regex_5(regex_str_p1 + regex_str_p2 + regex_str_p3 + regex_str_p4 + regex_str_p5);
 
     for (const auto& patch_str : patch_strings) {
         std::smatch match;
-        if (std::regex_match(patch_str, match, patch_regex_4)) {
+        if (std::regex_match(patch_str, match, patch_regex_5)) {
+            patches.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stof(match[3]), std::stof(match[4]),
+                std::stof(match[5]), std::stof(match[6]), std::stoi(match[7]), std::stoi(match[8]), std::stof(match[9]),
+                std::stof(match[10]), (std::stoi(match[11]) != 0));
+        } else if (std::regex_match(patch_str, match, patch_regex_4)) {
             patches.emplace_back(std::stof(match[1]), std::stof(match[2]), std::stof(match[3]), std::stof(match[4]),
                 std::stof(match[5]), std::stof(match[6]), std::stoi(match[7]), std::stoi(match[8]), std::stof(match[9]),
                 std::stof(match[10]));
@@ -434,11 +446,13 @@ void Params::initialise(int argc, char* argv[])
         // Special case for plant patch defintions (multiple allowed)
         config.add_options()
             ("patch", po::value<std::vector<std::string>>()->multitoken(),
-             "Plant patch specification in format x,y,w,h:r[:j[:s[:n:dx,dy]]] where x,y,w,h define the "
+             "Plant patch specification in format x,y,w,h:r[:j[:s[:n:dx,dy[:i]]]] where x,y,w,h define the "
              "top-left corner of the patch (in environment coordinates) "
              "r is spacing between plants, j is jitter between plants (std dev, default 0.0), s is species id (default 1) "
-             "n in the number of repeats of the patch (default 1), and dx,dy is the offset between repeats, "
-             "e.g. --patch 200,200,50,400:2:0.5:1:3:100,0");
+             "n in the number of repeats of the patch (default 1), dx,dy is the offset between repeats, and "
+             "i is an 'ignore' flag (0 or 1, default 0) that determines whether the plants in the patch are ignored "
+             "for the purposes of calculating fraction of successfully visited plants, "
+             "e.g. --patch 200,200,50,400:2:0.5:1:3:100,0:1");
 
 
         // Hidden options, will be allowed both on command line and
@@ -661,6 +675,7 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
                << ":" << patchSpecs[i].speciesID
                << ":" << patchSpecs[i].numRepeats
                << ":" << coordOpen << patchSpecs[i].dx << "," << patchSpecs[i].dy << coordClose
+               << ":" << (patchSpecs[i].ignoreForSVF ? "1" : "0")
                << linesep;
         }
     }

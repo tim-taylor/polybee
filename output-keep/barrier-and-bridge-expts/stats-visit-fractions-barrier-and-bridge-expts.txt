@@ -1,0 +1,40 @@
+
+Base Config:
+  Count:  100
+  Min:    0.7800
+  Q1:     0.8622
+  Median: 0.8975
+  Q3:     0.9191
+  Max:    0.9712
+  Mean:   0.8899
+  Std Dev:0.0421
+
+Bridges:
+  Count:  100
+  Min:    0.7400
+  Q1:     0.8584
+  Median: 0.8875
+  Q3:     0.9141
+  Max:    0.9600
+  Mean:   0.8800
+  Std Dev:0.0471
+
+Barriers:
+  Count:  100
+  Min:    0.6913
+  Q1:     0.7834
+  Median: 0.8244
+  Q3:     0.8575
+  Max:    0.9363
+  Mean:   0.8204
+  Std Dev:0.0533
+
+Barriers & Bridges:
+  Count:  100
+  Min:    0.6613
+  Q1:     0.7459
+  Median: 0.7812
+  Q3:     0.8113
+  Max:    0.9225
+  Mean:   0.7805
+  Std Dev:0.0531

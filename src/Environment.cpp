@@ -142,6 +142,12 @@ void Environment::initialisePlants()
                     auto [i,j] = envPosToPlantGridIndex(plantX, plantY);
                     m_plantGrid[i][j].push_back(&m_allPlants.back());
 
+                    // if we're not ignoring this patch, add a pointer to the plant to the list of all plants
+                    // to be included in the Successful Visit Fraction calculation
+                    if (!spec.ignoreForSVF) {
+                        m_plantsForSVFCalc.push_back(&m_allPlants.back());
+                    }
+
                     y += spec.spacing;
                 }
                 x += spec.spacing;
@@ -520,14 +526,14 @@ double Environment::getSuccessfulVisitFraction() const
     }
 
     int successCount = 0;
-    for (const Plant& plant : m_allPlants) {
-        int vc = plant.visitCount();
-        if (vc >= Params::minVisitCountSuccess && vc <= Params::maxVisitCountSuccess) {
+    for (const Plant* pPlant : m_plantsForSVFCalc) {
+        int vc = pPlant->visitCount();
+            if (vc >= Params::minVisitCountSuccess && vc <= Params::maxVisitCountSuccess) {
             ++successCount;
         }
     }
 
-    return static_cast<double>(successCount) / static_cast<double>(m_allPlants.size());
+    return static_cast<double>(successCount) / static_cast<double>(m_plantsForSVFCalc.size());
 }
 
 

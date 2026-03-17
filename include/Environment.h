@@ -76,6 +76,7 @@ public:
     const std::vector<Hive>& getHives() const { return m_hives; }
 
     const std::vector<Plant>& getAllPlants() const { return m_allPlants; }
+    const std::vector<Plant*>& getPlantsForSVFCalc() const { return m_plantsForSVFCalc; }
     std::vector<Plant*> getNearbyPlants(float x, float y) const;
     std::optional<Plant*> selectNearbyUnvisitedPlant(float x, float y, const std::vector<Plant*>& visited) const; // get nearest plant to a given position within maxDistance
 
@@ -114,6 +115,7 @@ private:
     Tunnel m_tunnel;
 
     std::vector<Plant> m_allPlants;                                 // Owns all Plant objects
+    std::vector<Plant*> m_plantsForSVFCalc;                         // Pointers to plants for Successful Visit Fraction calculation
     std::vector<std::vector<std::vector<Plant*>>> m_plantGrid;      // Spatial index for plants, with pointers into m_allPlants
     float m_plantGridCellSize {1.0f};
     size_t m_plantGridW {1};
