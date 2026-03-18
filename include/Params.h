@@ -143,23 +143,35 @@ private:
 
 
 struct EvolveSpec {
-    // [E:n,w][;][H:i,o,f]]
+    // [E:n,w][;][H:i,o,f]][;][B:n,w][;][X:n,w]
     bool  evolveEntrancePositions {true};   // whether to include tunnel entrance positions in the optimization
     bool  evolveHivePositions {false};      // whether to include hive positions in the optimization
+    bool  evolveBridgePositions {false};    // whether to include bridge positions in the optimization
+    bool  evolveBarrierPositions {false};   // whether to include barrier positions in the optimization
 
     int   numEntrances {4};         // number of tunnel entrances (if evolveEntrancePositions is true)
     float entranceWidth {100.0f};   // width of tunnel entrances (if evolveEntrancePositions is true)
     int   numHivesInsideTunnel {0}; // number of hives that must be placed inside tunnel (if evolveHivePositions is true)
     int   numHivesOutsideTunnel {0};// number of hives that must be placed outside tunner (if evolveHivePositions is true)
     int   numHivesFree {0};         // number of hives that can be placed either inside or outside the tunnel (if evolveHivePositions is true)
+    int   numBridges {0};           // number of bridges to include in the environment (if evolveBridgePositions is true)
+    float bridgeWidth {50.0f};      // width of a bridge (if evolveBridgePositions is true)
+    int   numBarriers {0};          // number of barriers to include in the environment (if evolveBarrierPositions is true)
+    float barrierWidth {100.0f};    // width of barriers (if evolveBarrierPositions is true)
 
     EvolveSpec() = default;
     EvolveSpec(bool evolveEntrancePositions, bool evolveHivePositions,
+               bool evolveBridgePositions, bool evolveBarrierPositions,
                int numEntrances, float entranceWidth,
-               int numHivesInsideTunnel, int numHivesOutsideTunnel, int numHivesFree) :
+               int numHivesInsideTunnel, int numHivesOutsideTunnel, int numHivesFree,
+               int numBridges, float bridgeWidth,
+               int numBarriers, float barrierWidth) :
         evolveEntrancePositions(evolveEntrancePositions), evolveHivePositions(evolveHivePositions),
+        evolveBridgePositions(evolveBridgePositions), evolveBarrierPositions(evolveBarrierPositions),
         numEntrances(numEntrances), entranceWidth(entranceWidth),
-        numHivesInsideTunnel(numHivesInsideTunnel), numHivesOutsideTunnel(numHivesOutsideTunnel), numHivesFree(numHivesFree)
+        numHivesInsideTunnel(numHivesInsideTunnel), numHivesOutsideTunnel(numHivesOutsideTunnel), numHivesFree(numHivesFree),
+        numBridges(numBridges), bridgeWidth(bridgeWidth),
+        numBarriers(numBarriers), barrierWidth(barrierWidth)
     {}
 };
 

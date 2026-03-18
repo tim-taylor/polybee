@@ -1,3 +1,19 @@
+## 18/3/26
+
+Working on having evolvable bridges and barrier
+
+DONE
+
+* have updated Params code and EvolveSpec struct to include info on bridges and barriers
+
+TODO
+
+* Need to update PolyBeeEvolve code to use this info from EvolveSpec and to instantiate
+bridges and barriers accordingly:
+  - PolyBeeOptimization constructor
+  - fitness method
+  - initialiseEntrancesAndHivesFromDecisionVector
+
 ## 11/3/26
 
 DONE

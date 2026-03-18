@@ -1,0 +1,10 @@
+Run: output/barrier-and-bridge-expts-BRG-run-info-20260318-104637-231dde.txt
+Polybee version: 0.1.0.0
+Git branch: main
+Git commit hash: 931a192
+OpenCV version: 4.6.0
+High EMD value: 13.499981
+Final EMD between output heatmap and target heatmap: 3.810084
+Successful visit fraction (1-1000 visits): 0.97875
+Tunnel entrance crossing success rate: 100.00%
+Mean number of rebounds per tunnel entrance crossing attempt: 0.00

@@ -324,49 +324,58 @@ std::vector<PatchSpec> parse_patch_positions(const std::vector<std::string>& pat
 
 
 EvolveSpec parse_evolve_spec(const std::string& evolve_spec_str) {
-    // [E:n,w][;][H:i,o,f]]
-    std::string regex_str_p1 = R"(E:(\d+),(\d*\.?\d+))";
-    std::string regex_str_p2 = R"(H:(\d+),(\d+),(\d+))";
-    std::string regex_str_full = regex_str_p1 + ";" + regex_str_p2;
+    // [E:n,w][;][H:i,o,f]][;][B:n,w][;][X:n,w]
+    std::regex regex_e(R"(E:(\d+),(\d*\.?\d+))");
+    std::regex regex_h(R"(H:(\d+),(\d+),(\d+))");
+    std::regex regex_b(R"(B:(\d+),(\d*\.?\d+))");
+    std::regex regex_x(R"(X:(\d+),(\d*\.?\d+))");
 
-    std::regex regex_1(regex_str_p1);
-    std::regex regex_2(regex_str_p2);
-    std::regex regex_full(regex_str_full);
-
-    bool evolveEntrancePositions {true};
+    bool evolveEntrancePositions {false};
     bool evolveHivePositions {false};
+    bool evolveBridgePositions {false};
+    bool evolveBarrierPositions {false};
     int numEntrances {4};
     float entranceWidth {50.0f};
     int numHivesInsideTunnel {0};
     int numHivesOutsideTunnel {0};
     int numHivesFree {0};
+    int numBridges {0};
+    float bridgeWidth {50.0f};
+    int numBarriers {0};
+    float barrierWidth {100.0f};
 
     std::smatch match;
-    if (std::regex_match(evolve_spec_str, match, regex_full)) {
+    if (std::regex_search(evolve_spec_str, match, regex_e)) {
         evolveEntrancePositions = true;
-        evolveHivePositions = true;
         numEntrances = std::stoi(match[1]);
         entranceWidth = std::stof(match[2]);
-        numHivesInsideTunnel = std::stoi(match[3]);
-        numHivesOutsideTunnel = std::stoi(match[4]);
-        numHivesFree = std::stoi(match[5]);
-    } else if (std::regex_match(evolve_spec_str, match, regex_1)) {
-        evolveEntrancePositions = true;
-        evolveHivePositions = false;
-        numEntrances = std::stoi(match[1]);
-        entranceWidth = std::stof(match[2]);
-    } else if (std::regex_match(evolve_spec_str, match, regex_2)) {
-        evolveEntrancePositions = false;
+    }
+    if (std::regex_search(evolve_spec_str, match, regex_h)) {
         evolveHivePositions = true;
         numHivesInsideTunnel = std::stoi(match[1]);
         numHivesOutsideTunnel = std::stoi(match[2]);
         numHivesFree = std::stoi(match[3]);
-    } else {
-        pb::msg_error_and_exit("Error in parameters: evolve-spec is invalid. It should be in the format [E:n,w][;][H:i,o,f], e.g., E:4,50;H:2,2,1");
+    }
+    if (std::regex_search(evolve_spec_str, match, regex_b)) {
+        evolveBridgePositions = true;
+        numBridges = std::stoi(match[1]);
+        bridgeWidth = std::stof(match[2]);
+    }
+    if (std::regex_search(evolve_spec_str, match, regex_x)) {
+        evolveBarrierPositions = true;
+        numBarriers = std::stoi(match[1]);
+        barrierWidth = std::stof(match[2]);
     }
 
-    return EvolveSpec(evolveEntrancePositions, evolveHivePositions, numEntrances, entranceWidth,
-                      numHivesInsideTunnel, numHivesOutsideTunnel, numHivesFree);
+    if (!evolveEntrancePositions && !evolveHivePositions && !evolveBridgePositions && !evolveBarrierPositions) {
+        pb::msg_error_and_exit("Error in parameters: evolve-spec is invalid. It should be in the format [E:n,w][;][H:i,o,f][;][B:n,w][;][X:n,w], e.g., E:4,50;H:2,2,1");
+    }
+
+    return EvolveSpec(evolveEntrancePositions, evolveHivePositions, evolveBridgePositions, evolveBarrierPositions,
+                      numEntrances, entranceWidth,
+                      numHivesInsideTunnel, numHivesOutsideTunnel, numHivesFree,
+                      numBridges, bridgeWidth,
+                      numBarriers, barrierWidth);
 }
 
 
