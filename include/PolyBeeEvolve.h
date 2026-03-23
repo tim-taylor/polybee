@@ -46,12 +46,18 @@ struct PolyBeeOptimization {
     // Specification for what to evolve (tunnel entrance positions and/or hive positions, and associated parameters)
     bool  m_evolveEntrancePositions {false};
     bool  m_evolveHivePositions {false};
+    bool  m_evolveBridgePositions {false};
+    bool  m_evolveBarrierPositions {false};
 
     int   m_numEntrances {0};
     float m_entranceWidth {50.0f};
     int   m_numHivesInsideTunnel {0};
     int   m_numHivesOutsideTunnel {0};
     int   m_numHivesFree {0};
+    int   m_numBridges {0};
+    float m_bridgeWidth {50.0f};
+    int   m_numBarriers {0};
+    float m_barrierWidth {100.0f};
 
     // Island number for this problem instance
     std::size_t m_islandNum {1};
@@ -64,9 +70,10 @@ struct PolyBeeOptimization {
 
 private:
     // private help methods
-    void initialiseEntrancesAndHivesFromDecisionVector(
+    void initialiseEnvironmentFromDecisionVector(
         PolyBeeCore& core, const pagmo::vector_double& dv, const std::vector<float>& tunnelLengths,
-        std::vector<TunnelEntranceSpec>& localSpecs, std::vector<HiveSpec>& hiveSpecs) const;
+        std::vector<TunnelEntranceSpec>& localSpecs, std::vector<HiveSpec>& hiveSpecs,
+        std::vector<PatchSpec>& bridgeSpecs, std::vector<BarrierSpec>& barrierSpecs) const;
 };
 
 

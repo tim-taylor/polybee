@@ -43,6 +43,8 @@ float Params::barrierPassProb;
 
 // Patch configuration
 std::vector<PatchSpec> Params::patchSpecs;
+float Params::plantDefaultSpacing;
+float Params::plantDefaultJitter;
 
 // Flower configuration
 float Params::flowerInitialNectar;
@@ -141,6 +143,13 @@ PatchSpec::PatchSpec(float x, float y, float w, float h, float spacing, float ji
     commonInit();
 }
 
+PatchSpec::PatchSpec(float x, float y, float sz, float spacing, float jitter, bool ignore) :
+    PatchSpec(x, y, sz, sz, spacing, jitter, 1, 1, 0.0f, 0.0f)
+{
+    ignoreForSVF = ignore;
+}
+
+
 void PatchSpec::commonInit()
 {
     // Calculate numX and numY based on w, h, and spacing
@@ -167,6 +176,8 @@ void Params::initRegistry()
     REGISTRY.emplace_back("net-antibird-max-exit-attempts", "netAntibirdMaxExitAttempts", ParamType::INT, &netAntibirdMaxExitAttempts, 7, "Maximum exit attempts through antibird net before giving up");
     REGISTRY.emplace_back("net-antihail-max-exit-attempts", "netAntihailMaxExitAttempts", ParamType::INT, &netAntihailMaxExitAttempts, 11, "Maximum exit attempts through antihail net before giving up");
     REGISTRY.emplace_back("barrier-pass-prob", "barrierPassProb", ParamType::FLOAT, &barrierPassProb, 0.0f, "Probability that a bee will fly over a barrier rather than having its path blocked by it");
+    REGISTRY.emplace_back("plant-default-spacing", "plantDefaultSpacing", ParamType::FLOAT, &plantDefaultSpacing, 10.0f, "Default plant spacing for bridge patches when evolving bridge positions");
+    REGISTRY.emplace_back("plant-default-jitter", "plantDefaultJitter", ParamType::FLOAT, &plantDefaultJitter, 0.1f, "Default plant jitter (std dev) for bridge patches when evolving bridge positions");
     REGISTRY.emplace_back("flower-initial-nectar", "flowerInitialNectar", ParamType::FLOAT, &flowerInitialNectar, 100.0f, "Initial nectar amount for each flower");
     REGISTRY.emplace_back("num-bees", "numBees", ParamType::INT, &numBees, 50, "Number of bees in the simulation");
     REGISTRY.emplace_back("bee-max-dir-delta", "beeMaxDirDelta", ParamType::FLOAT, &beeMaxDirDelta, 0.4f, "Maximum change in direction (radians) per step");
@@ -186,7 +197,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("num-iterations", "numIterations", ParamType::INT, &numIterations, 100, "Number of iterations to run the simulation");
     REGISTRY.emplace_back("evolve", "bEvolve", ParamType::BOOL, &bEvolve, false, "Run optimization to match output heatmap against target heatmap");
     REGISTRY.emplace_back("evolve-objective", "evolveObjective", ParamType::INT, &evolveObjectivePvt, 0, "Optimization objective: 0=EMD to target heatmap, 1=Fraction of flowers in successful visit range");
-    REGISTRY.emplace_back("evolve-spec", "evolveSpec", ParamType::STRING, &evolveSpecPvt, "", "Specification for what to evolve (format: [E:n,w][;][H:i,o,f]] where n=num entrances, w=entrance width, i=num hives inside tunnel, o=num hives outside tunnel, f=num hives free to be inside or outside)");
+    REGISTRY.emplace_back("evolve-spec", "evolveSpec", ParamType::STRING, &evolveSpecPvt, "", "Specification for what to evolve (format: [E:n,w][;][H:i,o,f][;][B:n,w][;][X:n,w] where [E:n=num entrances, w=entrance width], [H:i=num hives inside tunnel, o=num hives outside tunnel, f=num hives free to be inside or outside], [B:n=num bridges, w=bridge width], [X:n=num barriers, w=barrier width])");
     REGISTRY.emplace_back("min-visit-count-success", "minVisitCountSuccess", ParamType::INT, &minVisitCountSuccess, 1, "Minimum number of bee visits for successful pollination");
     REGISTRY.emplace_back("max-visit-count-success", "maxVisitCountSuccess", ParamType::INT, &maxVisitCountSuccess, 1000, "Maximum number of bee visits for successful pollination");
     REGISTRY.emplace_back("num-trials-per-config", "numTrialsPerConfig", ParamType::INT, &numTrialsPerConfig, 1, "Number of trials to run for each configuration/individual in each generation");
@@ -787,6 +798,12 @@ void Params::checkConsistency()
         }
         if (evolveSpec.evolveHivePositions && (evolveSpec.numHivesInsideTunnel + evolveSpec.numHivesOutsideTunnel + evolveSpec.numHivesFree <= 0)) {
             pb::msg_error_and_exit("Parameter 'evolve-spec' specifies that hive positions should be evolved, but numHives is not greater than zero");
+        }
+        if (evolveSpec.evolveBridgePositions && evolveSpec.numBridges <= 0) {
+            pb::msg_error_and_exit("Parameter 'evolve-spec' specifies that bridge positions should be evolved, but numBridges is not greater than zero");
+        }
+        if (evolveSpec.evolveBarrierPositions && evolveSpec.numBarriers <= 0) {
+            pb::msg_error_and_exit("Parameter 'evolve-spec' specifies that barrier positions should be evolved, but numBarriers is not greater than zero");
         }
     }
 

@@ -43,13 +43,18 @@ void Environment::initialiseTunnel()
 }
 
 
-void Environment::initialiseBarriers()
+void Environment::initialiseBarriers() {
+    initialiseBarriers(Params::barrierSpecs);
+}
+
+
+void Environment::initialiseBarriers(const std::vector<BarrierSpec>& barrierSpecs)
 {
     // Calculate total number of barriers and max barrier length
     int totalBarriers = 0;
     float maxBarrierLength = 0.0f;
 
-    for (const BarrierSpec& spec : Params::barrierSpecs) {
+    for (const BarrierSpec& spec : barrierSpecs) {
         totalBarriers += spec.numRepeatsX * spec.numRepeatsY;
         if (spec.length() > maxBarrierLength) {
             maxBarrierLength = spec.length();
@@ -70,7 +75,7 @@ void Environment::initialiseBarriers()
     m_barrierGrid.resize(m_barrierGridW, std::vector<std::vector<Barrier*>>(m_barrierGridH));
 
     // initialise barriers from Params
-    for (const BarrierSpec& spec : Params::barrierSpecs)
+    for (const BarrierSpec& spec : barrierSpecs)
     {
         float startX = spec.x1;
         float startY = spec.y1;
@@ -96,13 +101,35 @@ void Environment::initialiseBarriers()
 }
 
 
-// Initialise plants from Params::patchSpecs. Also builds spatial index grid for plant locations
-// used for efficient lookup of nearby plants.
 void Environment::initialisePlants()
 {
+    initialisePlants(Params::patchSpecs, false);
+}
+
+
+// Initialise plants from the provided list of patch specs.
+//
+// If extraPlantsForEvolvingBridges is true, then we treat the provided list of patch specs as just the
+// bridge patches to be included in the environment, and we add to it the non-bridge patches specified in
+// Params::patchSpecs before initialising the plants
+//
+// If extraPlantsForEvolvingBridges is false (which it is by default), then we just initialise the plants
+// from the provided list of patch specs, which in this case should be the full list of patches to be included
+// in the environment
+//
+void Environment::initialisePlants(const std::vector<PatchSpec>& patchSpecs, bool extraPlantsForEvolvingBridges)
+{
+    std::vector<PatchSpec> allPatchSpecs = patchSpecs;
+    if (extraPlantsForEvolvingBridges) {
+        // if we're evolving bridge positions, what we've been handed is a vector of the specs of just those
+        // bridge patches, so we need to add the non-bridge patches from Params to the list of specs to
+        // be initialised
+        allPatchSpecs.insert(allPatchSpecs.end(), Params::patchSpecs.begin(), Params::patchSpecs.end());
+    }
+
     // Calculate total number of plants across all patches
     int totalPlants = 0;
-    for (const PatchSpec& spec : Params::patchSpecs) {
+    for (const PatchSpec& spec : allPatchSpecs) {
         totalPlants += spec.getNumX() * spec.getNumY() * spec.numRepeats;
     }
 
@@ -116,7 +143,7 @@ void Environment::initialisePlants()
     m_plantGrid.resize(m_plantGridW, std::vector<std::vector<Plant*>>(m_plantGridH));
 
     // initialise plant patches from Params
-    for (const PatchSpec& spec : Params::patchSpecs)
+    for (const PatchSpec& spec : allPatchSpecs)
     {
         std::normal_distribution<float> distJitter(0.0f, spec.jitter);
 
@@ -322,37 +349,35 @@ void Environment::initialiseTargetHeatmap()
 
 // Reset the environment to its initial state suitable for a new simulation run
 //
-// This method resets are tranistory state of the environment that may have changed during a run,
+// This method resets are changeable state and stochastic elements of the environment,
 // such as plant visit counts, bee positions and plant state.
 //
 // It does NOT reset fixed parameters of the environment such as positions of tunnels and barriers.
 //
 // Note, when running in optimization mode, tunnel entrance positions and hive positions are
-// reset by PolyBeeOptimization::initialiseEntrancesAndHivesFromDecisionVector
+// reset by PolyBeeOptimization::initialiseEnvironmentFromDecisionVector
 //
-void Environment::reset() {
+void Environment::resetForNewRun(const std::vector<HiveSpec>& hiveSpecs, const std::vector<PatchSpec>& bridgeSpecs) {
     // TODO - as the class is developed, ensure all relevant state is reset here
-    resetHivesAndBees();
-    resetPlants();
+    resetHivesAndBees(hiveSpecs);
+    resetPlants(bridgeSpecs);
     m_heatmap.reset();
 }
 
 
-void Environment::resetPlants() {
+void Environment::resetPlants(const std::vector<PatchSpec>& bridgeSpecs) {
     m_plantGrid.clear();
     m_allPlants.clear();
-    initialisePlants();
+    initialisePlants(bridgeSpecs, true);
 }
 
 
-void Environment::resetHivesAndBees() {
+void Environment::resetHivesAndBees(const std::vector<HiveSpec>& hiveSpecs) {
     m_hives.clear();
     m_bees.clear();
-
-    // Hives and bees will get re-initialised by initialiseHivesAndBees(), which should be called from outside
-    // this method after resetting the environment (this happens in PolyBeeOptimization::fitness() before each run)
-    // So we don't need to/should not call initialiseBees() here.
+    initialiseHivesAndBees(hiveSpecs);
 }
+
 
 void Environment::update() {
     // update bee positions

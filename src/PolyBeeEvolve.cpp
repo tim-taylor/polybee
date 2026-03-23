@@ -46,11 +46,17 @@ PolyBeeOptimization::PolyBeeOptimization(PolyBeeEvolve* ptr, const EvolveSpec& s
   m_islandNum(islandNum),
   m_evolveEntrancePositions(spec.evolveEntrancePositions),
   m_evolveHivePositions(spec.evolveHivePositions),
+  m_evolveBridgePositions(spec.evolveBridgePositions),
+  m_evolveBarrierPositions(spec.evolveBarrierPositions),
   m_numEntrances(spec.numEntrances),
   m_entranceWidth(spec.entranceWidth),
   m_numHivesInsideTunnel(spec.numHivesInsideTunnel),
   m_numHivesOutsideTunnel(spec.numHivesOutsideTunnel),
-  m_numHivesFree(spec.numHivesFree)
+  m_numHivesFree(spec.numHivesFree),
+  m_numBridges(spec.numBridges),
+  m_bridgeWidth(spec.bridgeWidth),
+  m_numBarriers(spec.numBarriers),
+  m_barrierWidth(spec.barrierWidth)
 {
     // first do some checks to make sure the parameters are consistent with each other
     if ((!m_evolveEntrancePositions) && (m_numEntrances != 0)) {
@@ -61,8 +67,16 @@ PolyBeeOptimization::PolyBeeOptimization(PolyBeeEvolve* ptr, const EvolveSpec& s
         pb::msg_error_and_exit("PolyBeeOptimization constructor: evolveHivePositions is false but numHivesInsideTunnel, numHivesOutsideTunnel, and numHivesFree are not all zero");
     }
 
-    if (!m_evolveEntrancePositions && !m_evolveHivePositions) {
-        pb::msg_error_and_exit("PolyBeeOptimization constructor: both evolveEntrancePositions and evolveHivePositions cannot be false");
+    if ((!m_evolveBridgePositions) && (m_numBridges != 0)) {
+        pb::msg_error_and_exit("PolyBeeOptimization constructor: evolveBridgePositions is false but numBridges is not zero");
+    }
+
+    if ((!m_evolveBarrierPositions) && (m_numBarriers != 0)) {
+        pb::msg_error_and_exit("PolyBeeOptimization constructor: evolveBarrierPositions is false but numBarriers is not zero");
+    }
+
+    if (!m_evolveEntrancePositions && !m_evolveHivePositions && !m_evolveBridgePositions && !m_evolveBarrierPositions) {
+        pb::msg_error_and_exit("PolyBeeOptimization constructor: all evolve positions flags cannot be false");
     }
 
     // We need to establish how many decision variables we have, which ones are integers (as opposed to float)
@@ -90,31 +104,53 @@ PolyBeeOptimization::PolyBeeOptimization(PolyBeeEvolve* ptr, const EvolveSpec& s
     // direction of hive exit (0=North, 1=East, 2=South, 3=West, 4=Random)
     // => 2F + 1I per free hive
 
-    m_numFloatVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 2 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 2;
-    m_numIntegerVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 1 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 1;
+    // For each bridge we need two float decision variables that determine the position of the bridge [0.0-1.0]
+    // along the horizontal and vertical axes of the entire environment
+    // => 2F per bridge
 
-    // Set bounds for decision variables
+    // For each barrier we need two float and one integer decision variables, where the two floats determine the
+    // position of the barrier [0.0-1.0] along the horizontal and vertical axes of the entire environment, and the
+    // int variable third variable determines the orientation of the barrier [0-35] mapping to discretized
+    // orientations in the range [0 - 2PI] (0,10,20,...350 degrees)
+    // => 2F + 1I per barrier
+
+    m_numFloatVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 2 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 2 + m_numBridges * 2 + m_numBarriers * 2;
+    m_numIntegerVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 1 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 1 + m_numBarriers * 1;
+
+    // Set bounds for decision variables.
+    // Decision variables are laid out as: [float vars...][integer vars...]
+    // within each section the order matches the order used in initialiseEnvironmentFromDecisionVector().
     m_lowerBounds.clear();
     m_upperBounds.clear();
-    for (int i = 0; i < m_numFloatVars; ++i) {
-        m_lowerBounds.push_back(0.0);
-        m_upperBounds.push_back(1.0);
-    }
-    for (int i = 0; i < m_numIntegerVars; ++i) {
-        m_lowerBounds.push_back(0.0);
-        double ub = 3.0; // 4 possible options (0=North, 1=East, 2=South, 3=West)
-        if (
-            (i >= m_numEntrances && i < m_numEntrances + m_numHivesInsideTunnel) ||
-            (i >= m_numEntrances + m_numHivesInsideTunnel && i < m_numEntrances + m_numHivesInsideTunnel + (m_numHivesOutsideTunnel*2) && (i-(m_numEntrances + m_numHivesInsideTunnel))%2 == 0) ||
-            (i >= (m_numEntrances + m_numHivesInsideTunnel + (m_numHivesOutsideTunnel*2)))
-        ){
-            ub = 4.0;
+
+    // Helper: append n copies of [lb, ub] to the bound vectors
+    auto addBounds = [&](int n, double lb, double ub) {
+        for (int i = 0; i < n; ++i) {
+            m_lowerBounds.push_back(lb);
+            m_upperBounds.push_back(ub);
         }
+    };
 
-        m_upperBounds.push_back(ub);
+    // --- Float variables [0.0, 1.0] ---
+    addBounds(m_numEntrances,            0.0, 1.0); // entrance: position along side
+    addBounds(m_numHivesInsideTunnel*2,  0.0, 1.0); // inside-tunnel hive: x, y
+    addBounds(m_numHivesOutsideTunnel*2, 0.0, 1.0); // outside-tunnel hive: x, y
+    addBounds(m_numHivesFree*2,          0.0, 1.0); // free hive: x, y
+    addBounds(m_numBridges*2,            0.0, 1.0); // bridge: x, y
+    addBounds(m_numBarriers*2,           0.0, 1.0); // barrier: x, y
+
+    // --- Integer variables ---
+    addBounds(m_numEntrances,          0.0, 3.0); // entrance side          (0=N, 1=E, 2=S, 3=W)
+    addBounds(m_numHivesInsideTunnel,  0.0, 4.0); // inside-tunnel hive dir (0=N..3=W, 4=Random)
+    for (int i = 0; i < m_numHivesOutsideTunnel; ++i) {
+        addBounds(1, 0.0, 4.0); // outside-tunnel hive direction (0=N..3=W, 4=Random)
+        addBounds(1, 0.0, 3.0); // outside-tunnel hive sector    (0=N, 1=E, 2=S, 3=W)
     }
+    addBounds(m_numHivesFree, 0.0, 4.0);  // free hive direction     (0=N..3=W, 4=Random)
+    addBounds(m_numBarriers,  0.0, 35.0); // barrier orientation     (0–35, maps to 0°–350° in 10° steps)
 
-    assert(true);
+    assert(m_lowerBounds.size() == m_numFloatVars + m_numIntegerVars);
+    assert(m_upperBounds.size() == m_numFloatVars + m_numIntegerVars);
 }
 
 
@@ -135,10 +171,12 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
         Params::tunnelH - m_entranceWidth  // West
     };
 
-    std::vector<TunnelEntranceSpec> localSpecs;
+    std::vector<TunnelEntranceSpec> entranceSpecs;
     std::vector<HiveSpec> hiveSpecs;
+    std::vector<PatchSpec> bridgeSpecs;
+    std::vector<BarrierSpec> barrierSpecs;
 
-    initialiseEntrancesAndHivesFromDecisionVector(core, dv, tunnelLengths, localSpecs, hiveSpecs);
+    initialiseEnvironmentFromDecisionVector(core, dv, tunnelLengths, entranceSpecs, hiveSpecs, bridgeSpecs, barrierSpecs);
 
     // Write config file for this configuration once at the start of the run
     if (firstCall) {
@@ -149,9 +187,14 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     for (int i = 0; i < Params::numTrialsPerConfig; ++i)
     {
         core.incrementEvaluationCount();
-        core.resetForNewRun();
-        core.getEnvironment().initialiseHivesAndBees(hiveSpecs);// we need to re-initialise the hives in the environment
-                                                                // with the new hive positions for this run
+        // for each replicate run we need to reset all parts of the simulation that have changing state,
+        // i.e. hives, bees and plants
+        core.resetForNewRun(hiveSpecs, bridgeSpecs);
+        // TODO - remove the following obsolete comments
+        //core.getEnvironment().initialisePlants(bridgeSpecs);    // we need to re-initialise the plants in the environment
+                                                                //   with the new bridge positions for this run
+        //core.getEnvironment().initialiseHivesAndBees(hiveSpecs);// we need to re-initialise the hives in the environment
+                                                                //   with the new hive positions for this run
         core.run(false); // false = do not log output files during the run
 
         double objValue = 0.0;
@@ -186,12 +229,20 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     // Output some info about the current configuration and its fitness value
     std::string msg = std::format("isl {} gen {} evl {} cnf {} mdF {:.4f} /e/ ",
         core.getIslandNum(), gen, core.evaluationCount(), config_num, medianObjValue);
-    for (int i = 0; i < localSpecs.size(); ++i) {
-        msg += std::format("e{} {:.1f},{:.1f}:{} ", i, localSpecs[i].e1, localSpecs[i].e2, localSpecs[i].side);
+    for (int i = 0; i < entranceSpecs.size(); ++i) {
+        msg += std::format("e{} {:.1f},{:.1f}:{} ", i, entranceSpecs[i].e1, entranceSpecs[i].e2, entranceSpecs[i].side);
     }
     msg += "/h/ ";
     for (int i = 0; i < hiveSpecs.size(); ++i) {
         msg += std::format("h{} {:.1f},{:.1f}:{}", i, hiveSpecs[i].x, hiveSpecs[i].y, hiveSpecs[i].direction);
+    }
+    msg += "/b/ ";
+    for (int i = 0; i < bridgeSpecs.size(); ++i) {
+        msg += std::format("b{} {:.1f},{:.1f} ", i, bridgeSpecs[i].x, bridgeSpecs[i].y);
+    }
+    msg += "/x/ ";
+    for (int i = 0; i < barrierSpecs.size(); ++i) {
+        msg += std::format("r{} {:.1f},{:.1f}:{:.0f} ", i, barrierSpecs[i].midpointX(), barrierSpecs[i].midpointY(), barrierSpecs[i].orientation());
     }
     pb::msg_info(msg);
 
@@ -201,17 +252,19 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
 
 // a private helper method for PolyBeeOptimization::fitness() that reads the decision vector and initialises
 // the tunnel entrance and hive specifications accordingly
-void PolyBeeOptimization::initialiseEntrancesAndHivesFromDecisionVector(
+void PolyBeeOptimization::initialiseEnvironmentFromDecisionVector(
     PolyBeeCore& core, const pagmo::vector_double& dv, const std::vector<float>& tunnelLengths,
-    std::vector<TunnelEntranceSpec>& localSpecs, std::vector<HiveSpec>& hiveSpecs) const
+    std::vector<TunnelEntranceSpec>& entranceSpecs, std::vector<HiveSpec>& hiveSpecs,
+    std::vector<PatchSpec>& bridgeSpecs, std::vector<BarrierSpec>& barrierSpecs) const
 {
-    // Now we need to translate the decision vector elements into specific tunnel entrance and hive position
-    // parameters.
+    // Now we need to translate the decision vector elements into specific tunnel entrance, hive position,
+    // bridge position, and barrier position specifications, which we will then use to re-initialise the environment
+    // for this run with these parameters.
     //
     // We need to read the elements in the order dictated by the following lines in the constructor:
     //
-    // m_numFloatVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 2 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 2;
-    // m_numIntegerVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 1 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 1;
+    // m_numFloatVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 2 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 2 + m_numBridges * 2 + m_numBarriers * 2;
+    // m_numIntegerVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 1 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 1 + m_numBarriers * 1;
 
     std::size_t floatVarIndex = 0;
     std::size_t intVarIndex = m_numFloatVars;
@@ -229,9 +282,9 @@ void PolyBeeOptimization::initialiseEntrancesAndHivesFromDecisionVector(
             int side = static_cast<int>(dv[intVarIndex++]);
             float e1 = static_cast<float>(dv[floatVarIndex++]) * tunnelLengths[side];
             float e2 = e1 + m_entranceWidth;
-            localSpecs.emplace_back(e1, e2, side);
+            entranceSpecs.emplace_back(e1, e2, side);
         }
-        core.getTunnel().initialiseEntrances(localSpecs);
+        core.getTunnel().initialiseEntrances(entranceSpecs);
     }
 
     if (!m_evolveHivePositions) {
@@ -301,6 +354,31 @@ void PolyBeeOptimization::initialiseEntrancesAndHivesFromDecisionVector(
             int dir = static_cast<int>(dv[intVarIndex++]);
             hiveSpecs.emplace_back(x, y, dir);
         }
+    }
+
+    // Bridges
+    if (m_evolveBridgePositions) {
+        for (int i = 0; i < m_numBridges; ++i) {
+            float x = static_cast<float>(dv[floatVarIndex++]);
+            float y = static_cast<float>(dv[floatVarIndex++]);
+            bridgeSpecs.emplace_back(x, y, m_bridgeWidth, Params::plantDefaultSpacing, Params::plantDefaultJitter, true);
+        }
+        // we don't actually initialise the bridge patches in the environment here because we need to do it at the start
+        // of each replicate run because of jitter and changeable state. So we do the initialisation at the start of
+        // each run, called in the fitness() method
+    }
+
+
+    // Barriers
+    if (m_evolveBarrierPositions) {
+        for (int i = 0; i < m_numBarriers; ++i) {
+            float x = static_cast<float>(dv[floatVarIndex++]);
+            float y = static_cast<float>(dv[floatVarIndex++]);
+            int orientation = static_cast<int>(dv[intVarIndex++]);
+            barrierSpecs.emplace_back(FromMidpoints{}, x, y, m_barrierWidth, orientation);
+        }
+        // now initialise the barriers in the environment with the new barrier specifications for this run
+        core.getEnvironment().initialiseBarriers(barrierSpecs);
     }
 }
 

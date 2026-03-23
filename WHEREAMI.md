@@ -1,3 +1,18 @@
+## 23/3/26
+
+DONE
+
+Have implemented and compiled the code for allowing user to evolve bridge and barrier positions.
+  - PolyBeeOptimization constructor
+  - fitness method
+  - initialiseEnvironmentFromDecisionVector
+
+TODO
+
+* Now need to test and debug this in practice
+* Also look into why bees sometimes get stuck at net on way out and don't jiggle back and forth,
+just stay in same pos until they eventually get through the net
+
 ## 18/3/26
 
 Working on having evolvable bridges and barrier
@@ -5,14 +20,6 @@ Working on having evolvable bridges and barrier
 DONE
 
 * have updated Params code and EvolveSpec struct to include info on bridges and barriers
-
-TODO
-
-* Need to update PolyBeeEvolve code to use this info from EvolveSpec and to instantiate
-bridges and barriers accordingly:
-  - PolyBeeOptimization constructor
-  - fitness method
-  - initialiseEntrancesAndHivesFromDecisionVector
 
 ## 11/3/26
 

@@ -65,7 +65,7 @@ public:
 
     void initialise(PolyBeeCore* pCore);
     void update();
-    void reset(); // reset environment to initial state
+    void resetForNewRun(const std::vector<HiveSpec>& hiveSpecs, const std::vector<PatchSpec>& bridgeSpecs);
 
     bool inTunnel(float x, float y) const;
 
@@ -90,7 +90,9 @@ public:
 
     PolyBeeCore* getPolyBeeCore() { assert(m_pPolyBeeCore != nullptr); return m_pPolyBeeCore; }
 
+    void initialiseBarriers(const std::vector<BarrierSpec>& barrierSpecs);
     void initialiseHivesAndBees(const std::vector<HiveSpec>& hiveSpecs);
+    void initialisePlants(const std::vector<PatchSpec>& patchSpecs, bool extraPlantsForEvolvingBridges = false);
 
     EntranceCrossingStats getEntranceCrossingStats(EntranceCrossingType type) const; // get stats on tunnel entrance crossing attempts across all bees, for current state of the environment
 
@@ -102,8 +104,8 @@ private:
     void initialiseBees(); // this should only be called from initialiseHivesAndBees
     void initialiseHeatmap();
     void initialiseTargetHeatmap();
-    void resetHivesAndBees();
-    void resetPlants();
+    void resetHivesAndBees(const std::vector<HiveSpec>& hiveSpecs);
+    void resetPlants(const std::vector<PatchSpec>& bridgeSpecs);
     pb::Pos2D envPosToPlantGridIndex(float x, float y) const;
     pb::Pos2D envPosToBarrierGridIndex(float x, float y) const;
     Plant* pickRandomPlantWeightedByDistance(const std::vector<NearbyPlantInfo>& plants) const;

@@ -40,7 +40,7 @@ public:
     // public methods
     void run(bool logIfRequested = true);
     void earlyExit();
-    void resetForNewRun();
+    void resetForNewRun(const std::vector<HiveSpec>& hiveSpecs, const std::vector<PatchSpec>& bridgeSpecs);
 
     const Environment& getEnvironment() const { return m_env; }
     Environment& getEnvironment() { return m_env; }

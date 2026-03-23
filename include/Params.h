@@ -81,6 +81,8 @@ struct TunnelEntranceSpec {
 };
 
 
+struct FromMidpoints {};    // tag struct to disambiguate constructor of BarrierSpec that takes midpoints, length, and orientation
+
 struct BarrierSpec {
     // x1,y1:x2,y2[:nrx,dx[:nry,dy]]
     float x1;               // x position of first endpoint of barrier in environment coordinates
@@ -93,20 +95,42 @@ struct BarrierSpec {
     float dy {200.0f};      // spacing between repeats along y axis
 
     BarrierSpec(float x1, float y1, float x2, float y2) :
-        x1(x1), y1(y1), x2(x2), y2(y2) { setLength(); }
+        x1(x1), y1(y1), x2(x2), y2(y2) { calcLengthAndOrientation(); }
     BarrierSpec(float x1, float y1, float x2, float y2, int numRepeatsX, float dx) :
-        x1(x1), y1(y1), x2(x2), y2(y2), numRepeatsX(numRepeatsX), dx(dx) { setLength(); }
+        x1(x1), y1(y1), x2(x2), y2(y2), numRepeatsX(numRepeatsX), dx(dx) { calcLengthAndOrientation(); }
     BarrierSpec(float x1, float y1, float x2, float y2, int numRepeatsX, float dx, int numRepeatsY, float dy) :
-        x1(x1), y1(y1), x2(x2), y2(y2), numRepeatsX(numRepeatsX), dx(dx), numRepeatsY(numRepeatsY), dy(dy) { setLength(); }
+        x1(x1), y1(y1), x2(x2), y2(y2), numRepeatsX(numRepeatsX), dx(dx), numRepeatsY(numRepeatsY), dy(dy) { calcLengthAndOrientation(); }
+
+    BarrierSpec(FromMidpoints, float midpointX, float midpointY, float length, float orientation) {
+        float halfLength = length / 2.0f;
+        float cosOrient = std::cos(orientation);
+        float sinOrient = std::sin(orientation);
+        x1 = midpointX - halfLength * cosOrient;
+        y1 = midpointY - halfLength * sinOrient;
+        x2 = midpointX + halfLength * cosOrient;
+        y2 = midpointY + halfLength * sinOrient;
+        numRepeatsX = 1;
+        dx = 0.0f;
+        numRepeatsY = 1;
+        dy = 0.0f;
+        len = length;
+        ori = orientation;
+    }
 
     // we assume that the x and y positions are set once at construction and never changed after, so we can calculate
     // the length of the barrier once at construction and just return it in the length() method
     float length() const { return len; };
+    float orientation() const { return ori; }
+    float midpointX() const { return (x1 + x2) / 2.0f; }
+    float midpointY() const { return (y1 + y2) / 2.0f; }
 
 private:
     float len;
-    void setLength() {
+    float ori;
+
+    void calcLengthAndOrientation() {
         len = std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+        ori = std::atan2(y2 - y1, x2 - x1);
     }
 };
 
@@ -133,6 +157,7 @@ struct PatchSpec {
     PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID);
     PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID, int numRepeats, float dx, float dy);
     PatchSpec(float x, float y, float w, float h, float spacing, float jitter, int speciesID, int numRepeats, float dx, float dy, bool ignore);
+    PatchSpec(float x, float y, float sz, float spacing, float jitter, bool ignore);
 
 private:
     void commonInit();
@@ -214,6 +239,8 @@ public:
 
     // Patch configuration
     static std::vector<PatchSpec> patchSpecs;
+    static float plantDefaultSpacing; // default plant spacing used for bridge patches when evolving bridge positions
+    static float plantDefaultJitter;  // default plant jitter used for bridge patches when evolving bridge positions
 
     // Flower configuration
     static float flowerInitialNectar; // initial nectar amount for each flower

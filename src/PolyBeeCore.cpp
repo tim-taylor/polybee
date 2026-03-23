@@ -119,14 +119,14 @@ void PolyBeeCore::run(bool logIfRequested)
 }
 
 
-void::PolyBeeCore::resetForNewRun()
+void::PolyBeeCore::resetForNewRun(const std::vector<HiveSpec>& hiveSpecs, const std::vector<PatchSpec>& bridgeSpecs)
 {
     m_iIteration = -1;
     m_bEarlyExitRequested = false;
     m_bPaused = false;
 
     // reset environment (including bees, heatmap etc)
-    m_env.reset();
+    m_env.resetForNewRun(hiveSpecs, bridgeSpecs);
 }
 
 
