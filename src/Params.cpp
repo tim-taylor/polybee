@@ -29,7 +29,7 @@ float Params::tunnelW;
 float Params::tunnelH;
 float Params::tunnelX;
 float Params::tunnelY;
-std::vector<TunnelEntranceSpec> Params::tunnelEntranceSpecs;
+std::vector<EntranceSpec> Params::entranceSpecs;
 
 // Tunnel exit net properties
 float Params::netAntibirdExitProb;
@@ -240,8 +240,8 @@ std::vector<HiveSpec> parse_hive_positions(const std::vector<std::string>& hive_
 
 // Helper function to parse tunnel entrance positions from strings of the form "e1,e2:s[:t]"
 // (e1 and e2 are floats, s is side int 0-3, t is optional net type int 0=NONE, 1=ANTIBIRD, 2=ANTIHAIL)
-std::vector<TunnelEntranceSpec> parse_tunnel_entrance_positions(const std::vector<std::string>& tunnel_strings) {
-    std::vector<TunnelEntranceSpec> entrances;
+std::vector<EntranceSpec> parse_tunnel_entrance_positions(const std::vector<std::string>& tunnel_strings) {
+    std::vector<EntranceSpec> entrances;
     std::string regex_str_p1 = R"((\d+|\d+\.\d+),(\d+|\d+\.\d+):([0-3]))";  // e1,e2:s
     std::string regex_str_p2 = R"(:([0-2]))";                               // :t (net type)
 
@@ -345,7 +345,7 @@ EvolveSpec parse_evolve_spec(const std::string& evolve_spec_str) {
     bool evolveHivePositions {false};
     bool evolveBridgePositions {false};
     bool evolveBarrierPositions {false};
-    int numEntrances {4};
+    int numEntrances {0};
     float entranceWidth {50.0f};
     int numHivesInsideTunnel {0};
     int numHivesOutsideTunnel {0};
@@ -525,7 +525,7 @@ void Params::initialise(int argc, char* argv[])
         }
 
         if (vm.count("tunnel-entrance")) {
-            tunnelEntranceSpecs = parse_tunnel_entrance_positions(vm["tunnel-entrance"].as<std::vector<std::string>>());
+            entranceSpecs = parse_tunnel_entrance_positions(vm["tunnel-entrance"].as<std::vector<std::string>>());
         }
 
         if (vm.count("barrier")) {
@@ -611,7 +611,7 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
 
     // print hive info
     if (!bGenerateForConfigFile) {
-        os << "Hives:" << linesep;
+        os << "~~~ Hives: ~~~~~~~~~~~~~~~~~~~~~~~~" << linesep;
     }
 
     if (!hiveSpecs.empty()) {
@@ -631,18 +631,18 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
 
     // print tunnel entrance info
     if (!bGenerateForConfigFile) {
-        os << "Tunnel Entrances:" << linesep;
+        os << "~~~ Tunnel Entrances: ~~~~~~~~~~~~~" << linesep;
     }
 
-    if (!tunnelEntranceSpecs.empty()) {
-        for (size_t i = 0; i < tunnelEntranceSpecs.size(); ++i) {
+    if (!entranceSpecs.empty()) {
+        for (size_t i = 0; i < entranceSpecs.size(); ++i) {
             os << "tunnel-entrance";
             if (!bGenerateForConfigFile) {
                 os << (i+1);
             }
-            os << valsep << coordOpen << tunnelEntranceSpecs[i].e1 << "," << tunnelEntranceSpecs[i].e2 << coordClose
-                << ":" << tunnelEntranceSpecs[i].side
-                << ":" << static_cast<int>(tunnelEntranceSpecs[i].netType) << linesep;
+            os << valsep << coordOpen << entranceSpecs[i].e1 << "," << entranceSpecs[i].e2 << coordClose
+                << ":" << entranceSpecs[i].side
+                << ":" << static_cast<int>(entranceSpecs[i].netType) << linesep;
         }
     }
     else {
@@ -653,7 +653,7 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
 
     // print barrier info
     if (!bGenerateForConfigFile) {
-        os << "Barriers:" << linesep;
+        os << "~~~ Barriers: ~~~~~~~~~~~~~~~~~~~~~" << linesep;
     }
 
     if (!barrierSpecs.empty()) {
@@ -679,7 +679,7 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
 
     // print patch info
     if (!bGenerateForConfigFile) {
-        os << "Plant Patches:" << linesep;
+        os << "~~~ Plant Patches: ~~~~~~~~~~~~~~~~" << linesep;
     }
 
     if (!patchSpecs.empty()) {
@@ -698,6 +698,42 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
                << ":" << (patchSpecs[i].ignoreForSVF ? "1" : "0")
                << linesep;
         }
+    }
+    else {
+        if (!bGenerateForConfigFile) {
+            os << "(none)" << linesep;
+        }
+    }
+
+    // print evolve spec info
+    if (!bGenerateForConfigFile) {
+        os << "~~~ Evolution Spec: ~~~~~~~~~~~~~~~" << linesep;
+    }
+
+    if (evolveSpec.evolveEntrancePositions || evolveSpec.evolveHivePositions || evolveSpec.evolveBridgePositions || evolveSpec.evolveBarrierPositions) {
+        os << "evolve-spec" << valsep;
+        if (evolveSpec.evolveEntrancePositions) {
+            os << "E:" << evolveSpec.numEntrances << "," << evolveSpec.entranceWidth;
+        }
+        if (evolveSpec.evolveHivePositions) {
+            if (evolveSpec.evolveEntrancePositions) {
+                os << ";";
+            }
+            os << "H:" << evolveSpec.numHivesInsideTunnel << "," << evolveSpec.numHivesOutsideTunnel << "," << evolveSpec.numHivesFree;
+        }
+        if (evolveSpec.evolveBridgePositions) {
+            if (evolveSpec.evolveEntrancePositions || evolveSpec.evolveHivePositions) {
+                os << ";";
+            }
+            os << "B:" << evolveSpec.numBridges << "," << evolveSpec.bridgeWidth;
+        }
+        if (evolveSpec.evolveBarrierPositions) {
+            if (evolveSpec.evolveEntrancePositions || evolveSpec.evolveHivePositions || evolveSpec.evolveBridgePositions) {
+                os << ";";
+            }
+            os << "X:" << evolveSpec.numBarriers << "," << evolveSpec.barrierWidth;
+        }
+        os << linesep;
     }
     else {
         if (!bGenerateForConfigFile) {

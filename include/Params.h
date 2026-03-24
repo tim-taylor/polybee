@@ -69,15 +69,15 @@ enum class NetType {
 };
 
 
-struct TunnelEntranceSpec {
+struct EntranceSpec {
     float e1;           // position of first edge of entrance along the specified side of tunnel, in tunnel coordinates
     float e2;           // position of second edge of entrance along the specified side of tunnel, in tunnel coordinates
     int side;           // 0=North, 1=East, 2=South, 3=West
     int id {0};         // unique ID for this entrance, assigned automatically in Tunnel::addEntrance()
     NetType netType;
 
-    TunnelEntranceSpec(float e1, float e2, int side) : e1(e1), e2(e2), side(side), netType(NetType::NONE) {}
-    TunnelEntranceSpec(float e1, float e2, int side, NetType netType) : e1(e1), e2(e2), side(side), netType(netType) {}
+    EntranceSpec(float e1, float e2, int side) : e1(e1), e2(e2), side(side), netType(NetType::NONE) {}
+    EntranceSpec(float e1, float e2, int side, NetType netType) : e1(e1), e2(e2), side(side), netType(netType) {}
 };
 
 
@@ -174,7 +174,7 @@ struct EvolveSpec {
     bool  evolveBridgePositions {false};    // whether to include bridge positions in the optimization
     bool  evolveBarrierPositions {false};   // whether to include barrier positions in the optimization
 
-    int   numEntrances {4};         // number of tunnel entrances (if evolveEntrancePositions is true)
+    int   numEntrances {0};         // number of tunnel entrances (if evolveEntrancePositions is true)
     float entranceWidth {100.0f};   // width of tunnel entrances (if evolveEntrancePositions is true)
     int   numHivesInsideTunnel {0}; // number of hives that must be placed inside tunnel (if evolveHivePositions is true)
     int   numHivesOutsideTunnel {0};// number of hives that must be placed outside tunner (if evolveHivePositions is true)
@@ -225,7 +225,7 @@ public:
     static float tunnelH;
     static float tunnelX; // top-left x position of tunnel in environment coordinates
     static float tunnelY; // top-left y position of tunnel in environment coordinates
-    static std::vector<TunnelEntranceSpec> tunnelEntranceSpecs;
+    static std::vector<EntranceSpec> entranceSpecs;
 
     // Tunnel exit net properties
     static float netAntibirdExitProb;       // probability of bee exiting through antibird net

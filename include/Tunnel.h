@@ -20,7 +20,7 @@ class Tunnel;
 
 
 struct TunnelEntranceInfo {
-    int id;     // unique ID for this entrance, assigned based on order in which entrances are specified in Params::tunnelEntranceSpecs
+    int id;     // unique ID for this entrance, assigned based on order in which entrances are specified in Params::entranceSpecs
     float x1;   // x position of first edge of entrance (in environment coordinates)
     float y1;   // y position of first edge of entrance (in environment coordinates)
     float x2;   // x position of second edge of entrance (in environment coordinates)
@@ -31,7 +31,7 @@ struct TunnelEntranceInfo {
     static int nextID; // static variable to keep track of the next ID to assign to a new entrance
 
     TunnelEntranceInfo() = delete;
-    TunnelEntranceInfo(const TunnelEntranceSpec& spec, const Tunnel* pTunnel);
+    TunnelEntranceInfo(const EntranceSpec& spec, const Tunnel* pTunnel);
 
     // probability of a bee exiting the tunnel when reaching this entrance
     float probExit() const {
@@ -81,7 +81,7 @@ public:
 
     // initialise entrances only (for resetting between simulation runs)
     void initialiseEntrances();
-    void initialiseEntrances(const std::vector<TunnelEntranceSpec>& specs);
+    void initialiseEntrances(const std::vector<EntranceSpec>& specs);
 
     /// @brief Check if the line from point (x1, y1) to point (x2, y2) intersects any tunnel entrance
     /// @param x1 x position of point 1 in environment coordinates
@@ -106,7 +106,7 @@ public:
     const pb::Pos2D*  getBoundaryNormal(int n) const { assert(n >= 0 && n < m_boundaryNormals.size()); return &(m_boundaryNormals[n]); }
 
 private:
-    void addEntrance(const TunnelEntranceSpec& spec);
+    void addEntrance(const EntranceSpec& spec);
 
     float m_x;                                      // top-left x position of tunnel in environment coordinates
     float m_y;                                      // top-left y position of tunnel in environment coordinates

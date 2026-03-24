@@ -224,6 +224,7 @@ void Environment::initialiseHivesAndBees(const std::vector<HiveSpec>& hiveSpecs)
     initialiseBees();
 }
 
+
 void Environment::initialiseHivesAndBees()
 {
     initialiseHivesAndBees(Params::hiveSpecs);

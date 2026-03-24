@@ -19,7 +19,7 @@ int TunnelEntranceInfo::nextID = 0;
 
 // TunnelEntranceInfo methods
 
-TunnelEntranceInfo::TunnelEntranceInfo(const TunnelEntranceSpec& spec, const Tunnel* pTunnel) :
+TunnelEntranceInfo::TunnelEntranceInfo(const EntranceSpec& spec, const Tunnel* pTunnel) :
     side(spec.side), netType(spec.netType)
 {
     id = nextID++;
@@ -103,8 +103,8 @@ void Tunnel::initialise(float x, float y, float width, float height, Environment
 }
 
 
-void Tunnel::addEntrance(const TunnelEntranceSpec& spec) {
-    TunnelEntranceSpec specCopy = spec;
+void Tunnel::addEntrance(const EntranceSpec& spec) {
+    EntranceSpec specCopy = spec;
     // ensure e1 <= e2
     if (specCopy.e2 < specCopy.e1) {
         std::swap(specCopy.e1, specCopy.e2);
@@ -114,18 +114,18 @@ void Tunnel::addEntrance(const TunnelEntranceSpec& spec) {
 }
 
 
-void Tunnel::initialiseEntrances(const std::vector<TunnelEntranceSpec>& specs) {
+void Tunnel::initialiseEntrances(const std::vector<EntranceSpec>& specs) {
     m_entrances.clear();
     auto numEntrances = specs.size();
     for (int i = 0; i < numEntrances; ++i) {
-        const TunnelEntranceSpec& spec = specs[i];
+        const EntranceSpec& spec = specs[i];
         addEntrance(spec);
     }
 }
 
 
 void Tunnel::initialiseEntrances() {
-    initialiseEntrances(Params::tunnelEntranceSpecs);
+    initialiseEntrances(Params::entranceSpecs);
 }
 
 

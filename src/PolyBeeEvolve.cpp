@@ -171,12 +171,16 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
         Params::tunnelH - m_entranceWidth  // West
     };
 
-    std::vector<TunnelEntranceSpec> entranceSpecs;
+    // define local vectors to hold the entrance, hive, bridge, and barrier specs that will be derived from the
+    // decision vector (in initialiseEnvironmentFromDecisionVector) and used, where appropriate, to initialise
+    // the environment for this run
+    std::vector<EntranceSpec> entranceSpecs;
     std::vector<HiveSpec> hiveSpecs;
     std::vector<PatchSpec> bridgeSpecs;
     std::vector<BarrierSpec> barrierSpecs;
 
-    initialiseEnvironmentFromDecisionVector(core, dv, tunnelLengths, entranceSpecs, hiveSpecs, bridgeSpecs, barrierSpecs);
+    initialiseEnvironmentFromDecisionVector(core, dv, tunnelLengths,
+        entranceSpecs, hiveSpecs, bridgeSpecs, barrierSpecs);
 
     // Write config file for this configuration once at the start of the run
     if (firstCall) {
@@ -189,12 +193,14 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
         core.incrementEvaluationCount();
         // for each replicate run we need to reset all parts of the simulation that have changing state,
         // i.e. hives, bees and plants
-        core.resetForNewRun(hiveSpecs, bridgeSpecs);
-        // TODO - remove the following obsolete comments
-        //core.getEnvironment().initialisePlants(bridgeSpecs);    // we need to re-initialise the plants in the environment
-                                                                //   with the new bridge positions for this run
-        //core.getEnvironment().initialiseHivesAndBees(hiveSpecs);// we need to re-initialise the hives in the environment
-                                                                //   with the new hive positions for this run
+        core.resetForNewRun(
+            // if we're evolving hive positions, use the hive specs derived from the decision vector, otherwise
+            // use the regular hive specs from Params
+            (Params::evolveSpec.evolveHivePositions ? hiveSpecs : Params::hiveSpecs),
+            // env.resetForNewRun() will treat these bridge specs as additional to the regular plant patches in
+            // Params::patchSpecs, so no need to do anything special with them here.
+            bridgeSpecs
+        );
         core.run(false); // false = do not log output files during the run
 
         double objValue = 0.0;
@@ -227,22 +233,31 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
     // Output some info about the current configuration and its fitness value
-    std::string msg = std::format("isl {} gen {} evl {} cnf {} mdF {:.4f} /e/ ",
+    std::string msg = std::format("isl {} gen {} evl {} cnf {} mdF {:.4f} ",
         core.getIslandNum(), gen, core.evaluationCount(), config_num, medianObjValue);
-    for (int i = 0; i < entranceSpecs.size(); ++i) {
-        msg += std::format("e{} {:.1f},{:.1f}:{} ", i, entranceSpecs[i].e1, entranceSpecs[i].e2, entranceSpecs[i].side);
+    if (Params::evolveSpec.evolveEntrancePositions) {
+        msg += "/e/ ";
+        for (int i = 0; i < entranceSpecs.size(); ++i) {
+            msg += std::format("e{} {:.1f},{:.1f}:{} ", i, entranceSpecs[i].e1, entranceSpecs[i].e2, entranceSpecs[i].side);
+        }
     }
-    msg += "/h/ ";
-    for (int i = 0; i < hiveSpecs.size(); ++i) {
-        msg += std::format("h{} {:.1f},{:.1f}:{}", i, hiveSpecs[i].x, hiveSpecs[i].y, hiveSpecs[i].direction);
+    if (Params::evolveSpec.evolveHivePositions) {
+        msg += "/h/ ";
+        for (int i = 0; i < hiveSpecs.size(); ++i) {
+            msg += std::format("h{} {:.1f},{:.1f}:{}", i, hiveSpecs[i].x, hiveSpecs[i].y, hiveSpecs[i].direction);
+        }
     }
-    msg += "/b/ ";
-    for (int i = 0; i < bridgeSpecs.size(); ++i) {
-        msg += std::format("b{} {:.1f},{:.1f} ", i, bridgeSpecs[i].x, bridgeSpecs[i].y);
+    if (Params::evolveSpec.evolveBridgePositions) {
+        msg += "/b/ ";
+        for (int i = 0; i < bridgeSpecs.size(); ++i) {
+            msg += std::format("b{} {:.1f},{:.1f} ", i, bridgeSpecs[i].x, bridgeSpecs[i].y);
+        }
     }
-    msg += "/x/ ";
-    for (int i = 0; i < barrierSpecs.size(); ++i) {
-        msg += std::format("r{} {:.1f},{:.1f}:{:.0f} ", i, barrierSpecs[i].midpointX(), barrierSpecs[i].midpointY(), barrierSpecs[i].orientation());
+    if (Params::evolveSpec.evolveBarrierPositions) {
+        msg += "/x/ ";
+        for (int i = 0; i < barrierSpecs.size(); ++i) {
+            msg += std::format("r{} {:.1f},{:.1f}:{:.0f} ", i, barrierSpecs[i].midpointX(), barrierSpecs[i].midpointY(), barrierSpecs[i].orientation());
+        }
     }
     pb::msg_info(msg);
 
@@ -254,7 +269,7 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
 // the tunnel entrance and hive specifications accordingly
 void PolyBeeOptimization::initialiseEnvironmentFromDecisionVector(
     PolyBeeCore& core, const pagmo::vector_double& dv, const std::vector<float>& tunnelLengths,
-    std::vector<TunnelEntranceSpec>& entranceSpecs, std::vector<HiveSpec>& hiveSpecs,
+    std::vector<EntranceSpec>& entranceSpecs, std::vector<HiveSpec>& hiveSpecs,
     std::vector<PatchSpec>& bridgeSpecs, std::vector<BarrierSpec>& barrierSpecs) const
 {
     // Now we need to translate the decision vector elements into specific tunnel entrance, hive position,
@@ -272,7 +287,7 @@ void PolyBeeOptimization::initialiseEnvironmentFromDecisionVector(
     // Tunnel entrances
     if (!m_evolveEntrancePositions) {
         // If we are not evolving tunnel entrance positions, then the entrance(s) should be instantiated according to
-        // the regular Params::tunnelEntranceSpecs. This has already been done by the Tunnel::initialiseEntrances()
+        // the regular Params::entranceSpecs. This has already been done by the Tunnel::initialiseEntrances()
         // method, which is called by Tunnel::initialise(), which is called by Environment::initialise(), which itself
         // is called from the PolyBeeCore constructor, so we don't need to do anything here.
         assert(!core.getTunnel().getEntrances().empty()); // there should be some entrances already initialised in the tunnel
@@ -361,6 +376,8 @@ void PolyBeeOptimization::initialiseEnvironmentFromDecisionVector(
         for (int i = 0; i < m_numBridges; ++i) {
             float x = static_cast<float>(dv[floatVarIndex++]);
             float y = static_cast<float>(dv[floatVarIndex++]);
+            // TODO the coords in dv are currently in [0.0, 1.0] relative to the whole environment, so
+            // we need to convert them to actual coordinates in the environment before adding them to the bridge specs,
             bridgeSpecs.emplace_back(x, y, m_bridgeWidth, Params::plantDefaultSpacing, Params::plantDefaultJitter, true);
         }
         // we don't actually initialise the bridge patches in the environment here because we need to do it at the start
@@ -368,13 +385,16 @@ void PolyBeeOptimization::initialiseEnvironmentFromDecisionVector(
         // each run, called in the fitness() method
     }
 
-
     // Barriers
     if (m_evolveBarrierPositions) {
         for (int i = 0; i < m_numBarriers; ++i) {
             float x = static_cast<float>(dv[floatVarIndex++]);
             float y = static_cast<float>(dv[floatVarIndex++]);
             int orientation = static_cast<int>(dv[intVarIndex++]);
+            // TODO the coords in dv are currently in [0.0, 1.0] relative to the whole environment, so
+            // we need to convert them to actual coordinates in the environment before adding them to the barrier specs.
+            // Likewise, the orientation is currently an integer in [0,35] that needs to be mapped into discretized
+            // orientations in the range [0 - 2PI] (0,10,20,...350 degrees).
             barrierSpecs.emplace_back(FromMidpoints{}, x, y, m_barrierWidth, orientation);
         }
         // now initialise the barriers in the environment with the new barrier specifications for this run

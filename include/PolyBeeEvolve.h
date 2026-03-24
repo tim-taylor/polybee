@@ -72,7 +72,7 @@ private:
     // private help methods
     void initialiseEnvironmentFromDecisionVector(
         PolyBeeCore& core, const pagmo::vector_double& dv, const std::vector<float>& tunnelLengths,
-        std::vector<TunnelEntranceSpec>& localSpecs, std::vector<HiveSpec>& hiveSpecs,
+        std::vector<EntranceSpec>& localSpecs, std::vector<HiveSpec>& hiveSpecs,
         std::vector<PatchSpec>& bridgeSpecs, std::vector<BarrierSpec>& barrierSpecs) const;
 };
 
