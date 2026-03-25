@@ -194,9 +194,11 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
         // for each replicate run we need to reset all parts of the simulation that have changing state,
         // i.e. hives, bees and plants
         core.resetForNewRun(
+            //
             // if we're evolving hive positions, use the hive specs derived from the decision vector, otherwise
             // use the regular hive specs from Params
             (Params::evolveSpec.evolveHivePositions ? hiveSpecs : Params::hiveSpecs),
+            //
             // env.resetForNewRun() will treat these bridge specs as additional to the regular plant patches in
             // Params::patchSpecs, so no need to do anything special with them here.
             bridgeSpecs
@@ -266,140 +268,239 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
 
 
 // a private helper method for PolyBeeOptimization::fitness() that reads the decision vector and initialises
-// the tunnel entrance and hive specifications accordingly
+// Translates a decision vector into entrance, hive, bridge, and barrier specifications, then
+// applies them to the environment ready for the next evaluation run.
 void PolyBeeOptimization::initialiseEnvironmentFromDecisionVector(
     PolyBeeCore& core, const pagmo::vector_double& dv, const std::vector<float>& tunnelLengths,
     std::vector<EntranceSpec>& entranceSpecs, std::vector<HiveSpec>& hiveSpecs,
     std::vector<PatchSpec>& bridgeSpecs, std::vector<BarrierSpec>& barrierSpecs) const
 {
-    // Now we need to translate the decision vector elements into specific tunnel entrance, hive position,
-    // bridge position, and barrier position specifications, which we will then use to re-initialise the environment
-    // for this run with these parameters.
-    //
-    // We need to read the elements in the order dictated by the following lines in the constructor:
-    //
-    // m_numFloatVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 2 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 2 + m_numBridges * 2 + m_numBarriers * 2;
-    // m_numIntegerVars = m_numEntrances * 1 + m_numHivesInsideTunnel * 1 + m_numHivesOutsideTunnel * 2 + m_numHivesFree * 1 + m_numBarriers * 1;
+    // Float vars occupy dv[0 .. m_numFloatVars-1]; integer vars follow immediately after.
+    // The four helpers below advance these indices in the same order as the bounds were built
+    // in the constructor, so the cursor moves correctly across all four groups.
+    std::size_t floatIdx = 0;
+    std::size_t intIdx   = m_numFloatVars;
 
-    std::size_t floatVarIndex = 0;
-    std::size_t intVarIndex = m_numFloatVars;
+    initialiseEntrancesFromDV(core, dv, tunnelLengths, floatIdx, intIdx, entranceSpecs);
+    initialiseHivesFromDV    (core, dv,                floatIdx, intIdx, hiveSpecs);
+    initialiseBridgesFromDV  (core, dv,                floatIdx,         bridgeSpecs);
+    initialiseBarriersFromDV (core, dv,                floatIdx, intIdx, barrierSpecs);
+}
 
-    // Tunnel entrances
+
+void PolyBeeOptimization::initialiseEntrancesFromDV(
+    PolyBeeCore& core, const pagmo::vector_double& dv, const std::vector<float>& tunnelLengths,
+    std::size_t& floatIdx, std::size_t& intIdx,
+    std::vector<EntranceSpec>& entranceSpecs) const
+{
     if (!m_evolveEntrancePositions) {
-        // If we are not evolving tunnel entrance positions, then the entrance(s) should be instantiated according to
-        // the regular Params::entranceSpecs. This has already been done by the Tunnel::initialiseEntrances()
-        // method, which is called by Tunnel::initialise(), which is called by Environment::initialise(), which itself
-        // is called from the PolyBeeCore constructor, so we don't need to do anything here.
-        assert(!core.getTunnel().getEntrances().empty()); // there should be some entrances already initialised in the tunnel
-    }
-    else {
-        for (int i = 0; i < m_numEntrances; ++i) {
-            int side = static_cast<int>(dv[intVarIndex++]);
-            float e1 = static_cast<float>(dv[floatVarIndex++]) * tunnelLengths[side];
-            float e2 = e1 + m_entranceWidth;
-            entranceSpecs.emplace_back(e1, e2, side);
-        }
-        core.getTunnel().initialiseEntrances(entranceSpecs);
+        // Entrances were already set up from Params::entranceSpecs during environment initialisation.
+        assert(!core.getTunnel().getEntrances().empty());
+        return;
     }
 
+    for (int i = 0; i < m_numEntrances; ++i) {
+        int   side = static_cast<int>(dv[intIdx++]);
+        float e1   = static_cast<float>(dv[floatIdx++]) * tunnelLengths[side];
+        float e2   = e1 + m_entranceWidth;
+        entranceSpecs.emplace_back(e1, e2, side);
+    }
+    core.getTunnel().initialiseEntrances(entranceSpecs);
+}
+
+
+void PolyBeeOptimization::initialiseHivesFromDV(
+    PolyBeeCore& core, const pagmo::vector_double& dv,
+    std::size_t& floatIdx, std::size_t& intIdx,
+    std::vector<HiveSpec>& hiveSpecs) const
+{
     if (!m_evolveHivePositions) {
-        // If we are not evolving hive positions, then the hive(s) should be instantiated according to the
-        // regular Params::hiveSpecs. This has already been done by the Environment::initialiseHives() method,
-        // which is called from Environment::initialise(), which itself is called from the PolyBeeCore constructor,
-        // so we don't need to do anything here.
-        assert(!core.getHives().empty()); // there should be some hives already initialised in the environment
+        // Hives were already set up from Params::hiveSpecs during environment initialisation.
+        assert(!core.getHives().empty());
+        return;
     }
-    else {
-        float sf = 0.98f;               // scale factor for hive position variables to add a safety margin so that hives are not placed right up against the tunnel walls or the borders of the environment
-        float mf = (1.0f - sf) / 2.0f;  // left and right (or top and bottom) margin scale factor for hive position variables
 
-        // Hives inside tunnel
-        for (int i = 0; i < m_numHivesInsideTunnel; ++i) {
-            float lx = mf * Params::tunnelW + static_cast<float>(dv[floatVarIndex++]) * Params::tunnelW * sf;
-            float ly = mf * Params::tunnelH + static_cast<float>(dv[floatVarIndex++]) * Params::tunnelH * sf;
-            int dir = static_cast<int>(dv[intVarIndex++]);
-            float x = Params::tunnelX + lx;
-            float y = Params::tunnelY + ly;
-            hiveSpecs.emplace_back(x, y, dir);
+    // sf/mf add a small safety margin so positions never land right on a wall or border
+    const float sf = 0.98f;
+    const float mf = (1.0f - sf) / 2.0f;
+
+    // Inside-tunnel hives
+    for (int i = 0; i < m_numHivesInsideTunnel; ++i) {
+        float lx  = mf * Params::tunnelW + static_cast<float>(dv[floatIdx++]) * Params::tunnelW * sf;
+        float ly  = mf * Params::tunnelH + static_cast<float>(dv[floatIdx++]) * Params::tunnelH * sf;
+        int   dir = static_cast<int>(dv[intIdx++]);
+        hiveSpecs.emplace_back(Params::tunnelX + lx, Params::tunnelY + ly, dir);
+    }
+
+    // Outside-tunnel hives – the sector integer picks which region of the environment to place the hive in
+    const float RregionLeft   = Params::tunnelX + Params::tunnelW;
+    const float RregionWidth  = Params::envW - RregionLeft;
+    const float TregionHeight = Params::tunnelY;
+    const float BregionTop    = Params::tunnelY + Params::tunnelH;
+    const float BregionHeight = Params::envH - BregionTop;
+
+    for (int i = 0; i < m_numHivesOutsideTunnel; ++i) {
+        float _x    = static_cast<float>(dv[floatIdx++]);
+        float _y    = static_cast<float>(dv[floatIdx++]);
+        int   dir    = static_cast<int>(dv[intIdx++]);
+        int   sector = static_cast<int>(dv[intIdx++]);
+
+        float x, y;
+        switch (sector) {
+            case 0: // North (top)
+                x = mf * Params::envW    + _x * Params::envW    * sf;
+                y = mf * TregionHeight   + _y * TregionHeight   * sf;
+                break;
+            case 1: // East (right)
+                x = RregionLeft + mf * RregionWidth  + _x * RregionWidth  * sf;
+                y = Params::tunnelY + mf * Params::tunnelH + _y * Params::tunnelH * sf;
+                break;
+            case 2: // South (bottom)
+                x = mf * Params::envW    + _x * Params::envW    * sf;
+                y = BregionTop + mf * BregionHeight  + _y * BregionHeight  * sf;
+                break;
+            case 3: // West (left)
+                x = mf * Params::tunnelX + _x * Params::tunnelX * sf;
+                y = Params::tunnelY + mf * Params::tunnelH + _y * Params::tunnelH * sf;
+                break;
+            default:
+                pb::msg_error_and_exit(std::format("Invalid sector value {} for outside-tunnel hive in decision vector", sector));
         }
+        hiveSpecs.emplace_back(x, y, dir);
+    }
 
-        // Hives outside tunnel
-        float LregionWidth = Params::tunnelX;
-        float RregionLeft = Params::tunnelX + Params::tunnelW;
-        float RregionWidth = Params::envW - RregionLeft;
-        float TregionHeight = Params::tunnelY;
-        float BregionTop = Params::tunnelY + Params::tunnelH;
-        float BregionHeight = Params::envH - BregionTop;
+    // Free hives (can be placed anywhere in the environment)
+    for (int i = 0; i < m_numHivesFree; ++i) {
+        float x   = mf * Params::envW + static_cast<float>(dv[floatIdx++]) * Params::envW * sf;
+        float y   = mf * Params::envH + static_cast<float>(dv[floatIdx++]) * Params::envH * sf;
+        int   dir = static_cast<int>(dv[intIdx++]);
+        hiveSpecs.emplace_back(x, y, dir);
+    }
+    // Hives are not initialised in the environment here: they are re-initialised along with the bees
+    // in the call to core.resetForNewRun() in fitness().
+}
 
-        for (int i = 0; i < m_numHivesOutsideTunnel; ++i) {
-            float _x = static_cast<float>(dv[floatVarIndex++]);
-            float _y = static_cast<float>(dv[floatVarIndex++]);
-            int dir = static_cast<int>(dv[intVarIndex++]);
-            int sector = static_cast<int>(dv[intVarIndex++]);
 
-            float x, y;
-            switch (sector) {
-                case 0: // North (top)
-                    x = mf * Params::envW + _x * Params::envW * sf;
-                    y = mf * TregionHeight + _y * TregionHeight * sf;
-                    break;
-                case 1: // East (right)
-                    x = RregionLeft + mf * RregionWidth + _x * RregionWidth * sf;
-                    y = Params::tunnelY + mf * Params::tunnelH + _y * Params::tunnelH * sf;
-                    break;
-                case 2: // South (bottom)
-                    x = mf * Params::envW + _x * Params::envW * sf;
-                    y = BregionTop + mf * BregionHeight + _y * BregionHeight * sf;
-                    break;
-                case 3: // West (left)
-                    x = mf * Params::tunnelX + _x * Params::tunnelX * sf;
-                    y = Params::tunnelY + mf * Params::tunnelH + _y * Params::tunnelH * sf;
-                    break;
-                default:
-                    pb::msg_error_and_exit(std::format("Invalid sector value {} for hive position specified in decision vector", sector));
+void PolyBeeOptimization::initialiseBridgesFromDV(
+    PolyBeeCore& core, const pagmo::vector_double& dv,
+    std::size_t& floatIdx,
+    std::vector<PatchSpec>& bridgeSpecs) const
+{
+    if (!m_evolveBridgePositions) return;
+
+    const float sz    = m_bridgeWidth;
+    const float delta = 20.0f; // shift distance for Moore-neighbourhood repair
+
+    // 8 Moore-neighbourhood offsets listed in a fixed order so we can rotate the
+    // starting offset by bridge index i to avoid a consistent directional bias
+    const std::pair<float,float> mooreOffsets[8] = {
+        {-delta, -delta}, { 0.0f, -delta}, { delta, -delta},
+        {-delta,  0.0f },                  { delta,  0.0f },
+        {-delta,  delta}, { 0.0f,  delta}, { delta,  delta}
+    };
+
+    const Tunnel& tunnel = core.getTunnel();
+
+    // Returns true if the bridge rect [bx, bx+sz] x [by, by+sz] clips a tunnel wall segment
+    // (i.e. any of its 4 edges crosses the tunnel boundary outside of an entrance opening).
+    // A crossing through an entrance is allowed (withinBounds=true); a wall hit is not (withinBounds=false).
+    auto clipsWall = [&](float bx, float by) -> bool {
+        float r = bx + sz;
+        float b = by + sz;
+        auto hitsWall = [&](float x1, float y1, float x2, float y2) {
+            auto info = tunnel.intersectsTunnelBoundary(x1, y1, x2, y2);
+            return info.intersects && !info.withinBounds;
+        };
+        return hitsWall(bx, by, r,  by)   // top edge of bridge
+            || hitsWall(r,  by, r,  b )   // right edge of bridge
+            || hitsWall(r,  b,  bx, b )   // bottom edge of bridge
+            || hitsWall(bx, b,  bx, by);  // left edge of bridge
+    };
+
+    // Returns true if the bridge rect [bx, bx+sz] x [by, by+sz] overlaps a given PatchSpec,
+    // checking every repeat of the patch.
+    auto overlapsPatch = [&](float bx, float by, const PatchSpec& patch) -> bool {
+        for (int k = 0; k < patch.numRepeats; ++k) {
+            float px = patch.x + k * patch.dx;
+            float py = patch.y + k * patch.dy;
+            if (bx < px + patch.w &&    // if the top of p is above the bottom of b
+                px < bx + sz &&         // and the bottom of p is below the top of b
+                by < py + patch.h &&    // and the left of p is to the left of the right of b
+                py < by + sz) {         // and the right of p is to the right of the left of b
+                return true;            // then the rects overlap
             }
+        }
+        return false;
+    };
 
-            hiveSpecs.emplace_back(x, y, dir);
+    // Returns true if (bx, by) is a valid placement: no tunnel wall clip and no overlap with
+    // any existing plant patch or previously placed bridge.
+    auto isValid = [&](float bx, float by) -> bool {
+        if (clipsWall(bx, by)) return false;
+        for (const auto& patch : Params::patchSpecs) {
+            if (overlapsPatch(bx, by, patch)) return false;
+        }
+        for (const auto& bridge : bridgeSpecs) {
+            if (overlapsPatch(bx, by, bridge)) return false;
+        }
+        return true;
+    };
+
+    for (int i = 0; i < m_numBridges; ++i) {
+        float fx = static_cast<float>(dv[floatIdx++]); // x as fraction in [0,1]
+        float fy = static_cast<float>(dv[floatIdx++]); // y as fraction in [0,1]
+        float x  = fx * (Params::envW - sz);           // convert to env coordinates
+        float y  = fy * (Params::envH - sz);
+
+        if (isValid(x, y)) {
+            bridgeSpecs.emplace_back(x, y, sz, Params::plantDefaultSpacing, Params::plantDefaultJitter, true);
+            continue;
         }
 
-        // Free hives
-        for (int i = 0; i < m_numHivesFree; ++i) {
-            float x = mf * Params::envW + static_cast<float>(dv[floatVarIndex++]) * Params::envW * sf;
-            float y = mf * Params::envH + static_cast<float>(dv[floatVarIndex++]) * Params::envH * sf;
-            int dir = static_cast<int>(dv[intVarIndex++]);
-            hiveSpecs.emplace_back(x, y, dir);
+        // Try the 8 Moore-neighbourhood positions, rotating the starting point by i
+        // so that no single direction is consistently favoured across all bridges
+        bool placed = false;
+        for (int j = 0; j < 8; ++j) {
+            const auto& [ox, oy] = mooreOffsets[(i + j) % 8];
+            if (isValid(x + ox, y + oy)) {
+                bridgeSpecs.emplace_back(x + ox, y + oy, sz, Params::plantDefaultSpacing, Params::plantDefaultJitter, true);
+                placed = true;
+                break;
+            }
         }
+        // If no valid position was found in the neighbourhood, the bridge is ditched
+        /*
+        if (!placed) {
+            pb::msg_info(std::format("Bridge {} ditched: no valid placement found near ({:.1f},{:.1f})", i, x, y));
+        }
+        */
     }
+    // Bridge patches are not initialised in the environment here: they are re-initialised along
+    // with all patches in the call to core.resetForNewRun() in fitness().
+}
 
-    // Bridges
-    if (m_evolveBridgePositions) {
-        for (int i = 0; i < m_numBridges; ++i) {
-            float x = static_cast<float>(dv[floatVarIndex++]);
-            float y = static_cast<float>(dv[floatVarIndex++]);
-            // TODO the coords in dv are currently in [0.0, 1.0] relative to the whole environment, so
-            // we need to convert them to actual coordinates in the environment before adding them to the bridge specs,
-            bridgeSpecs.emplace_back(x, y, m_bridgeWidth, Params::plantDefaultSpacing, Params::plantDefaultJitter, true);
-        }
-        // we don't actually initialise the bridge patches in the environment here because we need to do it at the start
-        // of each replicate run because of jitter and changeable state. So we do the initialisation at the start of
-        // each run, called in the fitness() method
-    }
 
-    // Barriers
-    if (m_evolveBarrierPositions) {
-        for (int i = 0; i < m_numBarriers; ++i) {
-            float x = static_cast<float>(dv[floatVarIndex++]);
-            float y = static_cast<float>(dv[floatVarIndex++]);
-            int orientation = static_cast<int>(dv[intVarIndex++]);
-            // TODO the coords in dv are currently in [0.0, 1.0] relative to the whole environment, so
-            // we need to convert them to actual coordinates in the environment before adding them to the barrier specs.
-            // Likewise, the orientation is currently an integer in [0,35] that needs to be mapped into discretized
-            // orientations in the range [0 - 2PI] (0,10,20,...350 degrees).
-            barrierSpecs.emplace_back(FromMidpoints{}, x, y, m_barrierWidth, orientation);
-        }
-        // now initialise the barriers in the environment with the new barrier specifications for this run
-        core.getEnvironment().initialiseBarriers(barrierSpecs);
+void PolyBeeOptimization::initialiseBarriersFromDV(
+    PolyBeeCore& core, const pagmo::vector_double& dv,
+    std::size_t& floatIdx, std::size_t& intIdx,
+    std::vector<BarrierSpec>& barrierSpecs) const
+{
+    if (!m_evolveBarrierPositions) return;
+
+    float halfWidth = m_barrierWidth / 2.0f;
+
+    for (int i = 0; i < m_numBarriers; ++i) {
+        float fx          = static_cast<float>(dv[floatIdx++]); // x expressed as a fraction
+        float fy          = static_cast<float>(dv[floatIdx++]); // y expressed as a fraction
+        int   discOri     = static_cast<int>(dv[intIdx++]);     // discrete orientation in [0,35] mapping to 0°–350° in 10° steps
+
+        float x           = halfWidth + (fx * (Params::envW - m_barrierWidth));   // convert to actual env coordinates
+        float y           = halfWidth + (fy * (Params::envH - m_barrierWidth));   // convert to actual env coordinates
+        float orientation = (discOri / 36.0f) * std::numbers::pi_v<float> * 2.0f; // map integer in [0,35] to radians in [0,2PI]
+
+        barrierSpecs.emplace_back(FromMidpoints{}, x, y, m_barrierWidth, orientation);
     }
+    core.getEnvironment().initialiseBarriers(barrierSpecs);
 }
 
 

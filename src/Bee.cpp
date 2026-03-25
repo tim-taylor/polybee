@@ -176,49 +176,55 @@ void Bee::forage()
 bool Bee::normalForagingUpdate()
 {
     // Normal foraging update when not trying to cross tunnel entrance
-    pb::PosAndDir2D desiredMove;
+    ForageNextStepInfo forageNextStepInfo;
 
     // work out where bee would like to go next, following "forage nearest flower" strategy
     // or step in random direction if no nearby flowers found
-    auto desiredMoveOpt = forageNearestFlower();
+    auto forageNextStepInfoOpt = forageNearestFlower();
 
-    if (desiredMoveOpt.has_value()) {
+    if (forageNextStepInfoOpt.has_value()) {
         float rnd = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine);
         if (rnd < Params::beeProbVisitNearestFlower) {
             // move towards nearest unvisited flower
-            desiredMove = desiredMoveOpt.value();
+            forageNextStepInfo = forageNextStepInfoOpt.value();
         }
         else {
             // move in random direction with a fixed step length
             // (N.B. we are not yet considering Levy flights here)
-            desiredMove = moveInRandomDirection();
+            forageNextStepInfo.desiredMove = moveInRandomDirection();
         }
     }
     else {
         // no nearby unvisited flowers found, so move in random direction with a fixed step length
         // (N.B. we are not yet considering Levy flights here)
-        desiredMove = moveInRandomDirection();
+        forageNextStepInfo.desiredMove = moveInRandomDirection();
     }
 
-    // keep within bounds of environment
-    keepMoveWithinEnvironment(desiredMove);
+    // keep within bounds of environment (we don't need to do this if the bee has already landed on a flower)
+    if (!forageNextStepInfo.landedOnFlower) {
+        keepMoveWithinEnvironment(forageNextStepInfo.desiredMove);
+    }
 
     // check if new position would involve crossing tunnel boundary
-    bool newPosInTunnel = m_pEnv->inTunnel(desiredMove.x, desiredMove.y);
+    bool newPosInTunnel = m_pEnv->inTunnel(forageNextStepInfo.desiredMove.x, forageNextStepInfo.desiredMove.y);
     if ((m_inTunnel && newPosInTunnel) || (!m_inTunnel && !newPosInTunnel)) {
         // no boundary crossing, so we can just move to the new position at this point
-        m_angle = desiredMove.angle;
-        m_pos.x = desiredMove.x;
-        m_pos.y = desiredMove.y;
-        if (m_state == BeeState::ON_FLOWER) {
-            // bee has just landed on its target flower. Its state has already been updated in forageNearestFlower(),
-            // so its bout has successfully finished and our work here is done
+        m_angle = forageNextStepInfo.desiredMove.angle;
+        m_pos.x = forageNextStepInfo.desiredMove.x;
+        m_pos.y = forageNextStepInfo.desiredMove.y;
+
+        if (forageNextStepInfo.landedOnFlower) {
+            // bee has just landed on its target flower, so we just need to update the state
+            // of the bee and of the flower to reflect this
+            forageNextStepInfo.pTargetFlower->incrementVisitCount();
+            addToRecentlyVisitedPlants(forageNextStepInfo.pTargetFlower);
+            switchToOnFlower(forageNextStepInfo.pTargetFlower);
             return false; // bee is no longer foraging
         }
     }
     else {
         // desired move crosses tunnel boundary, so we need to figure out if bee can enter/exit the tunnel at this point
-        attemptToCrossTunnelBoundaryWhileForaging(desiredMove);
+        attemptToCrossTunnelBoundaryWhileForaging(forageNextStepInfo.desiredMove);
     }
 
     // nudge bee away from tunnel walls if too close, to avoid any numerical issues
@@ -249,6 +255,11 @@ bool Bee::normalForagingUpdate()
 //
 void Bee::attemptToCrossTunnelBoundaryWhileForaging(pb::PosAndDir2D& desiredMove)
 {
+    // TODO - temp code
+    if (m_state != BeeState::FORAGING) {
+        pb::msg_error_and_exit(std::format("Logic error: expected bee to be in FORAGING state when attempting to cross tunnel boundary, but it is in state {}.", static_cast<int>(m_state)));
+    }
+
     assert(m_state == BeeState::FORAGING);
 
     auto intersectInfo = m_pEnv->getTunnel().intersectsTunnelBoundary(m_pos.x, m_pos.y, desiredMove.x, desiredMove.y);
@@ -462,7 +473,7 @@ float Bee::alignAngleWithLine(float desiredAngle, float line_dx, float line_dy) 
 //
 // Note, this method modifies the desiredMove parameter in place.
 //
-void Bee::keepMoveWithinEnvironment(pb::PosAndDir2D& desiredMove)
+void Bee::keepMoveWithinEnvironment(pb::PosAndDir2D& desiredMove) const
 {
     pb::Pos2D LR(0,1);
     pb::Pos2D TB(1,0);
@@ -560,39 +571,36 @@ void Bee::nudgeAwayFromTunnelWalls()
 // Note, this method is not const because it uses m_distDir which updates its internal state
 // each time it is called.
 //
-std::optional<pb::PosAndDir2D> Bee::forageNearestFlower()
+std::optional<ForageNextStepInfo> Bee::forageNearestFlower()
 {
-    pb::PosAndDir2D result;
+    ForageNextStepInfo result;
 
     auto plantInfo = m_pEnv->selectNearbyUnvisitedPlant(m_pos.x, m_pos.y, m_recentlyVisitedPlants);
 
     if (plantInfo.has_value()) {
         Plant* pPlant = plantInfo.value();
+
         // found a nearby plant to forage from
+        result.hasFlowerTarget = true;
+        result.pTargetFlower = pPlant;
+
         float dx = pPlant->x() - m_pos.x;
         float dy = pPlant->y() - m_pos.y;
         float angleToPlant = std::atan2(dy, dx); // angle from bee to plant
 
-        result.angle = angleToPlant;
+        result.desiredMove.angle = angleToPlant;
 
         float distToPlantSq = (dx * dx + dy * dy);
         if (distToPlantSq <= (Params::beeStepLength * Params::beeStepLength)) {
             // plant is within one step length, so just go directly to it
-            result.x = pPlant->x();
-            result.y = pPlant->y();
-
-            // record that we've visited this plant (and remove oldest visited plant if necessary
-            // to keep memory length within limit)
-            pPlant->incrementVisitCount();
-            addToRecentlyVisitedPlants(pPlant);
-
-            // and switch to ON_FLOWER state
-            switchToOnFlower(pPlant);
+            result.desiredMove.x = pPlant->x();
+            result.desiredMove.y = pPlant->y();
+            result.landedOnFlower = true;
         }
         else {
             // plant is further away than one step length, so just head in its direction
-            result.x = m_pos.x + Params::beeStepLength * std::cos(angleToPlant);
-            result.y = m_pos.y + Params::beeStepLength * std::sin(angleToPlant);
+            result.desiredMove.x = m_pos.x + Params::beeStepLength * std::cos(angleToPlant);
+            result.desiredMove.y = m_pos.y + Params::beeStepLength * std::sin(angleToPlant);
         }
 
         return result;

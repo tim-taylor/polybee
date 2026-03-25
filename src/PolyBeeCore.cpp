@@ -119,7 +119,15 @@ void PolyBeeCore::run(bool logIfRequested)
 }
 
 
-void::PolyBeeCore::resetForNewRun(const std::vector<HiveSpec>& hiveSpecs, const std::vector<PatchSpec>& bridgeSpecs)
+// Reset the environment to its initial state suitable for a new simulation run
+//
+// This method resets are changeable state and stochastic elements of the environment,
+// including anything that might change between two runs with the same fixed environment parameters,
+// such as if we run two runs with the same tunnel and barrier configuration but different random seeds
+//
+void::PolyBeeCore::resetForNewRun(
+    const std::vector<HiveSpec>& hiveSpecs,
+    const std::vector<PatchSpec>& bridgeSpecs)
 {
     m_iIteration = -1;
     m_bEarlyExitRequested = false;

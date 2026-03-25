@@ -50,6 +50,9 @@ void Environment::initialiseBarriers() {
 
 void Environment::initialiseBarriers(const std::vector<BarrierSpec>& barrierSpecs)
 {
+    m_allBarriers.clear();
+    m_barrierGrid.clear();
+
     // Calculate total number of barriers and max barrier length
     int totalBarriers = 0;
     float maxBarrierLength = 0.0f;
@@ -351,14 +354,16 @@ void Environment::initialiseTargetHeatmap()
 // Reset the environment to its initial state suitable for a new simulation run
 //
 // This method resets are changeable state and stochastic elements of the environment,
-// such as plant visit counts, bee positions and plant state.
-//
-// It does NOT reset fixed parameters of the environment such as positions of tunnels and barriers.
+// including anything that might change between two runs with the same fixed environment parameters,
+// such as if we run two runs with the same tunnel and barrier configuration but different random seeds.
 //
 // Note, when running in optimization mode, tunnel entrance positions and hive positions are
 // reset by PolyBeeOptimization::initialiseEnvironmentFromDecisionVector
 //
-void Environment::resetForNewRun(const std::vector<HiveSpec>& hiveSpecs, const std::vector<PatchSpec>& bridgeSpecs) {
+void Environment::resetForNewRun(
+    const std::vector<HiveSpec>& hiveSpecs,
+    const std::vector<PatchSpec>& bridgeSpecs)
+{
     // TODO - as the class is developed, ensure all relevant state is reset here
     resetHivesAndBees(hiveSpecs);
     resetPlants(bridgeSpecs);
@@ -399,9 +404,10 @@ bool Environment::inTunnel(float x, float y) const {
 
 
 // Find an unvisited plant nearby to the given position (x,y).
-// Returns std::nullopt if no unvisited plant is found that is both:
+// Returns std::nullopt if no unvisited plant is found that is:
 // * within visual range, and
-// * not not obstructed by a barrier
+// * not obstructed by a barrier, and
+// * not obstructed by the tunnel walls
 //
 // The 'visited' parameter is a list of plants that have recently been visited by the bee.
 //
@@ -422,12 +428,18 @@ std::optional<Plant*> Environment::selectNearbyUnvisitedPlant(float x, float y, 
 
         float distSq = pb::distanceSq(x, y, pPlant->x(), pPlant->y()); // squared distance to plant
 
+        // check if plant is within visual range
         if (distSq <= rangeSq) {
-            // Plant is within visual range...
-            if (!pathObstructedByBarrier(x, y, pPlant->x(), pPlant->y())) {
-                // ... and is not obstructed by a barrier. So add it to the list!
-                visiblePlants.emplace_back(pPlant, std::sqrt(distSq));
+            // ... next check if it is obstructed by the tunnel walls
+            if (m_tunnel.intersectsTunnelBoundary(x, y, pPlant->x(), pPlant->y()).intersects) {
+                continue; // Skip plants that are obstructed by the tunnel
             }
+            // ... finally, check if it is obstructed by a barrier.
+            if (pathObstructedByBarrier(x, y, pPlant->x(), pPlant->y())) {
+                continue; // Skip plants that are obstructed by a barrier
+            }
+
+            visiblePlants.emplace_back(pPlant, std::sqrt(distSq));
         }
     }
 
@@ -523,7 +535,7 @@ std::optional<float> Environment::distanceToNearestObstructingBarrier(float x1, 
 //
 // These are selected purely based upon being present in the local 3x3 grid. This method
 // does NOT take into account whether the plant is within the bee's visual range, nor
-// whether or not it is objstructed by a barrier
+// whether or not it is obstructed by a barrier
 //
 std::vector<Plant*> Environment::getNearbyPlants(float x, float y) const
 {

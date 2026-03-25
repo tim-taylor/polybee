@@ -72,8 +72,28 @@ private:
     // private help methods
     void initialiseEnvironmentFromDecisionVector(
         PolyBeeCore& core, const pagmo::vector_double& dv, const std::vector<float>& tunnelLengths,
-        std::vector<EntranceSpec>& localSpecs, std::vector<HiveSpec>& hiveSpecs,
+        std::vector<EntranceSpec>& entranceSpecs, std::vector<HiveSpec>& hiveSpecs,
         std::vector<PatchSpec>& bridgeSpecs, std::vector<BarrierSpec>& barrierSpecs) const;
+
+    void initialiseEntrancesFromDV(
+        PolyBeeCore& core, const pagmo::vector_double& dv, const std::vector<float>& tunnelLengths,
+        std::size_t& floatIdx, std::size_t& intIdx,
+        std::vector<EntranceSpec>& entranceSpecs) const;
+
+    void initialiseHivesFromDV(
+        PolyBeeCore& core, const pagmo::vector_double& dv,
+        std::size_t& floatIdx, std::size_t& intIdx,
+        std::vector<HiveSpec>& hiveSpecs) const;
+
+    void initialiseBridgesFromDV(
+        PolyBeeCore& core, const pagmo::vector_double& dv,
+        std::size_t& floatIdx,
+        std::vector<PatchSpec>& bridgeSpecs) const;
+
+    void initialiseBarriersFromDV(
+        PolyBeeCore& core, const pagmo::vector_double& dv,
+        std::size_t& floatIdx, std::size_t& intIdx,
+        std::vector<BarrierSpec>& barrierSpecs) const;
 };
 
 

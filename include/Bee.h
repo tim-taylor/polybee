@@ -78,6 +78,19 @@ struct CrossingInfo
 };
 
 
+struct ForageNextStepInfo
+{
+    pb::PosAndDir2D desiredMove;
+    bool hasFlowerTarget {false};
+    Plant* pTargetFlower {nullptr}; // this should be set if hasFlowerTarget is true
+    bool landedOnFlower {false};
+
+    ForageNextStepInfo() : desiredMove(), hasFlowerTarget(false), pTargetFlower(nullptr), landedOnFlower(false) {}
+    ForageNextStepInfo(const pb::PosAndDir2D& desiredMove, bool hasFlowerTarget, Plant* pTargetFlower, bool landedOnFlower)
+        : desiredMove(desiredMove), hasFlowerTarget(hasFlowerTarget), pTargetFlower(pTargetFlower), landedOnFlower(landedOnFlower) {}
+};
+
+
 /**
  * The Bee class ...
  */
@@ -100,8 +113,6 @@ public:
     const std::vector<pb::Pos2D>& path() const { return m_path; }
     BeeState state() const { return m_state; }
     const TunnelEntranceInfo* entranceUsed() const { return m_pLastTunnelEntrance; }
-    //const std::vector<CrossingInfo>& tunnelExitRecords() const { return m_tunnelExitRecords; }
-    //const std::vector<CrossingInfo>& tunnelEntryRecords() const { return m_tunnelEntryRecords; }
     const std::vector<CrossingInfo>& entranceCrossingRecords() const { return m_entranceCrossingRecords; }
 
     // Setters
@@ -118,10 +129,10 @@ private:
     void returnToHiveOutsideTunnel();
     void stayOnFlower();
     void stayInHive();
-    void keepMoveWithinEnvironment(pb::PosAndDir2D& desiredMove);
+    void keepMoveWithinEnvironment(pb::PosAndDir2D& desiredMove) const;
     void nudgeAwayFromTunnelWalls();
     float alignAngleWithLine(float desiredAngle, float line_dx, float line_dy) const;
-    std::optional<pb::PosAndDir2D> forageNearestFlower();
+    std::optional<ForageNextStepInfo> forageNearestFlower();
     pb::PosAndDir2D moveInRandomDirection(int attemptNumber = 0);
     void addToRecentlyVisitedPlants(Plant* pPlant);
     bool lineIntersectsTunnel(float x1, float y1, float x2, float y2) const;
