@@ -374,6 +374,7 @@ void Environment::resetForNewRun(
 void Environment::resetPlants(const std::vector<PatchSpec>& bridgeSpecs) {
     m_plantGrid.clear();
     m_allPlants.clear();
+    m_plantsForSVFCalc.clear();
     initialisePlants(bridgeSpecs, true);
 }
 

@@ -116,9 +116,7 @@ void Tunnel::addEntrance(const EntranceSpec& spec) {
 
 void Tunnel::initialiseEntrances(const std::vector<EntranceSpec>& specs) {
     m_entrances.clear();
-    auto numEntrances = specs.size();
-    for (int i = 0; i < numEntrances; ++i) {
-        const EntranceSpec& spec = specs[i];
+    for (const EntranceSpec& spec : specs) {
         addEntrance(spec);
     }
 }

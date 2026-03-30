@@ -235,7 +235,7 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     int config_num = eval_in_gen / Params::numTrialsPerConfig;
 
     // Output some info about the current configuration and its fitness value
-    std::string msg = std::format("isl {} gen {} evl {} cnf {} mdF {:.4f} ",
+    std::string msg = std::format("isl {} gen {} evl {} cnf {} mdF {:.5f} ",
         core.getIslandNum(), gen, core.evaluationCount(), config_num, medianObjValue);
     if (Params::evolveSpec.evolveEntrancePositions) {
         msg += "/e/ ";
@@ -258,7 +258,7 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     if (Params::evolveSpec.evolveBarrierPositions) {
         msg += "/x/ ";
         for (int i = 0; i < barrierSpecs.size(); ++i) {
-            msg += std::format("r{} {:.1f},{:.1f}:{:.0f} ", i, barrierSpecs[i].midpointX(), barrierSpecs[i].midpointY(), barrierSpecs[i].orientation());
+            msg += std::format("r{} {:.1f},{:.1f},{:.1f},{:.1f} ", i, barrierSpecs[i].x1, barrierSpecs[i].y1, barrierSpecs[i].x2, barrierSpecs[i].y2);
         }
     }
     pb::msg_info(msg);

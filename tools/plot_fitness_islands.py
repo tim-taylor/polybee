@@ -43,6 +43,8 @@ def parse_arguments():
                              '1=Flower visit count success fraction')
     parser.add_argument('--show-means', action='store_true', default=False,
                         help='Include mean data and labels in plot (off by default)')
+    parser.add_argument('--title', type=str, default=None,
+                        help='Optional title to display above the plot')
     return parser.parse_args()
 
 
@@ -96,12 +98,13 @@ def calculate_rolling_average(scores, window_size=10):
 class InteractivePlot:
     """Interactive plot with toggle controls for islands and metrics."""
 
-    def __init__(self, island_data, all_islands, objective_type=0, show_means=False):
+    def __init__(self, island_data, all_islands, objective_type=0, show_means=False, title=None):
         self.island_data = island_data
         self.all_islands = all_islands
         self.score_name = OBJECTIVE_LABELS[objective_type]['name']
         self.score_short = OBJECTIVE_LABELS[objective_type]['short']
         self.show_means = show_means
+        self.title = title
         self.num_islands = len(all_islands)
 
         # Combine all islands' data for archipelago-level statistics
@@ -142,8 +145,9 @@ class InteractivePlot:
 
         self.ax.set_xlabel('Generation', fontsize=12, fontweight='bold')
         self.ax.set_ylabel(self.score_name, fontsize=12, fontweight='bold')
-        self.ax.set_title(f'Archipelago ({self.num_islands} Islands) - {self.score_name}s',
-                         fontsize=14, fontweight='bold')
+        base_title = f'Archipelago ({self.num_islands} Islands) - {self.score_name}s'
+        full_title = f'{self.title}\n{base_title}' if self.title else base_title
+        self.ax.set_title(full_title, fontsize=14, fontweight='bold')
         self.ax.grid(True, alpha=0.3, linestyle='--')
 
     def create_plots(self):
@@ -547,7 +551,7 @@ def main():
     print_summary(island_data, all_islands, archipelago_scores, args.type, args.show_means)
 
     # Create and show interactive plot
-    plot = InteractivePlot(island_data, all_islands, args.type, args.show_means)
+    plot = InteractivePlot(island_data, all_islands, args.type, args.show_means, args.title)
     plot.show()
 
 
