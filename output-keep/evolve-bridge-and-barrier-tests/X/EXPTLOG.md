@@ -1,7 +1,7 @@
 # Purpose
 
 To plot results of an evolutionary run using the `evolve-bridge-and-barrier-tests-X.cfg` config
-file, which does an initial evolutionary test of evolving bridge positions.
+file, which does an initial evolutionary test of evolving barrier positions.
 It uses flower-min/max-visit-count-success as the objective function rather than EMD distance.
 
 The evolutionary run uses 3 islands each running the sga algorithm, with migration period 20.

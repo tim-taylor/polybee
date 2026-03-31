@@ -1,0 +1,39 @@
+# Purpose
+
+To plot results of an evolutionary run using the `evolve-bridge-and-barrier-tests-EHBX.cfg` config
+file, which does an initial evolutionary test of evolving entrance, hive, barrier and bridge positions.
+It uses flower-min/max-visit-count-success as the objective function rather than EMD distance.
+
+The evolutionary run uses 3 islands each running the sga algorithm, with migration period 20.
+
+# Code
+
+Run the experiment with the following command:
+
+```
+./run-release -c config-files/evolve-bridge-and-barrier-tests-EHBX.cfg | tee out-evolve-bridge-and-barrier-tests-EHBX.txt
+```
+
+From the output of the above, make a CSV file containing island number, generation number and fitness score for each evaluation:
+
+```
+gawk '/INFO: isl/ {print $3","$5","$11}' out-evolve-bridge-and-barrier-tests-EHBX.txt > out-evolve-bridge-and-barrier-tests-EHBX.csv
+```
+
+Now plot this data:
+
+```
+~/polybee/tools/plot_fitness_islands.py --type 1 --title "Evolve Entrance + Hive + Bridge + Barrier Positions " out-evolve-bridge-and-barrier-tests-EHBX.csv
+```
+
+and then save the plot via the GUI of the `plot_fitness_islands.py` script, and rename it:
+
+```
+mv ~/Figure_1.png out-evolve-bridge-and-barrier-tests-EHBX.png
+```
+
+and to create a config file of the winning design:
+
+```
+~/polybee/tools/best_individual_to_cfg.py out-evolve-bridge-and-barrier-tests-EHBX.txt
+```

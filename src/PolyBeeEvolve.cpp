@@ -246,7 +246,7 @@ pagmo::vector_double PolyBeeOptimization::fitness(const pagmo::vector_double &dv
     if (Params::evolveSpec.evolveHivePositions) {
         msg += "/h/ ";
         for (int i = 0; i < hiveSpecs.size(); ++i) {
-            msg += std::format("h{} {:.1f},{:.1f}:{}", i, hiveSpecs[i].x, hiveSpecs[i].y, hiveSpecs[i].direction);
+            msg += std::format("h{} {:.1f},{:.1f}:{} ", i, hiveSpecs[i].x, hiveSpecs[i].y, hiveSpecs[i].direction);
         }
     }
     if (Params::evolveSpec.evolveBridgePositions) {
