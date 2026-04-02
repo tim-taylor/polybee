@@ -1,0 +1,12 @@
+ Write a script in the tools directory that takes an output log file from an evolutionary run of polybee such as the .txt files in the
+  subdirectories of output-keep/evolve-bridge-and-barrier-tests. The goal of the script is to produce a run configuration (.cfg) file that
+  represents the best individual found in the evolutionary run. It should use the paramater values at the top of the log file as the foundation of
+  the config file, but with "evolve" set to "false" and "visualise" set to true. It should also set "bee-path-record-len" to 100. The trick is to
+  set some or all of hive parameters, tunnel-entrance parameters, patch parameters (for bridges) and barrier parameters according to the values
+  specified by the best individual found in the evolutionary run, depending on which of these were evolvable parameters during the evolutionary
+  run (as determined by the value of the "evolve-spec" parameter at the top of the file). To extract the evolved values for these things for the
+  best individual, the script should look at the "Overall best fitness" value at the end of the run (which currently is displayed in the second
+  last line of the log file), and then search earlier on in the log file for the first occurence of an individual that has that exact fitness
+  value. The found line contains the parameter values that can be used in the output config file. For entrances, assume netType is 0. For bridges
+  (which are specified as additional patches), the bridge width is obtained from the "evolve-spec" param at the top of the log file, and the plant
+  spacing is obtained from the parameter "plant-default-spacing".
