@@ -86,6 +86,7 @@ int Params::migrationPeriod;
 int Params::migrationNumReplace;
 int Params::migrationNumSelect;
 bool Params::useDiverseAlgorithms;
+bool Params::bridgeOverlapsAllowed;
 
 // Logging and output
 int Params::heatmapCellSize;
@@ -207,6 +208,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("migration-period", "migrationPeriod", ParamType::INT, &migrationPeriod, 10, "Period (number of generations) between each migration event when using multiple islands");
     REGISTRY.emplace_back("migration-num-replace", "migrationNumReplace", ParamType::INT, &migrationNumReplace, 1, "Number of individuals on an Island that can be replaced by migrants at each migration event");
     REGISTRY.emplace_back("use-diverse-algorithms", "useDiverseAlgorithms", ParamType::BOOL, &useDiverseAlgorithms, false, "Use diverse optimisation algorithms on each island (when num-islands > 1)");
+    REGISTRY.emplace_back("bridge-overlaps-allowed", "bridgeOverlapsAllowed", ParamType::BOOL, &bridgeOverlapsAllowed, false, "If false, attempt to resolve bridge/patch overlaps by shifting the bridge; if no valid position is found the bridge is removed");
     REGISTRY.emplace_back("migration-num-select", "migrationNumSelect", ParamType::INT, &migrationNumSelect, 1, "Number of individuals on an Island that can be selected for migration at each migration event");
     REGISTRY.emplace_back("target-heatmap-filename", "strTargetHeatmapFilename", ParamType::STRING, &strTargetHeatmapFilename, "", "CSV file containing target heatmap for optimization");
     REGISTRY.emplace_back("heatmap-cell-size", "heatmapCellSize", ParamType::INT, &heatmapCellSize, 10, "Size of each cell in the heatmap of bee positions");

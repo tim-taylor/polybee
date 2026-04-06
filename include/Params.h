@@ -282,6 +282,7 @@ public:
     static int migrationNumReplace; // number of individuals on an Island that can be replaced by migrants at each migration event
     static int migrationNumSelect; // number of individuals on an Island that can be selected for migration at each migration event
     static bool useDiverseAlgorithms; // use diverse optimisation algorithms on each island (when num-islands > 1)
+    static bool bridgeOverlapsAllowed; // if false, attempt to resolve overlaps of bridges with patches/other bridges by shifting; if unsuccessful, remove the bridge
 
     // Logging and output
     static int heatmapCellSize; // size of each cell in the heatmap of bee positions

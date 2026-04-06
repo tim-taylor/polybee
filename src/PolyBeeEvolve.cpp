@@ -437,8 +437,7 @@ void PolyBeeOptimization::initialiseBridgesFromDV(
     // any existing plant patch or previously placed bridge.
     auto isValid = [&](float bx, float by) -> bool {
         if (clipsWall(bx, by)) return false;
-        bool bridgeOverlapsAllowed = false; // TODO: add this to Params??
-        if (!bridgeOverlapsAllowed) {
+        if (!Params::bridgeOverlapsAllowed) {
             // check if proposed bridge overlaps with any of the main crop patches
             for (const auto& patch : Params::patchSpecs) {
                 if (overlapsPatch(bx, by, patch)) return false;
