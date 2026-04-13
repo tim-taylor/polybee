@@ -26,7 +26,7 @@ gawk '/INFO: isl/ {print $3","$5","$11}' out-evolve-bridge-and-barrier-tests-B-f
 Now plot this data:
 
 ```
-~/polybee/tools/plot_fitness_islands.py --type 1 --title "Evolve Barrier Positions (Free Pos)" out-evolve-bridge-and-barrier-tests-B-free.csv
+~/polybee/tools/plot_fitness_islands.py --type 1 --title "Evolve Bridge Positions (Free Pos)" out-evolve-bridge-and-barrier-tests-B-free.csv
 ```
 
 and then save the plot via the GUI of the `plot_fitness_islands.py` script, and rename it:

@@ -23,11 +23,17 @@ gawk '/INFO: isl/ {print $3","$5","$11}' out-evolve-bridge-and-barrier-tests-X.t
 Now plot this data:
 
 ```
-~/polybee/tools/plot_fitness_islands.py --type 1 out-evolve-bridge-and-barrier-tests-X.csv
+~/polybee/tools/plot_fitness_islands.py --type 1 --title "Evolve Barrier Positions" out-evolve-bridge-and-barrier-tests-X.csv
 ```
 
 and then save the plot via the GUI of the `plot_fitness_islands.py` script, and rename it:
 
 ```
 mv ~/Figure_1.png out-evolve-bridge-and-barrier-tests-X.png
+```
+
+and to create a config file of the winning design:
+
+```
+~/polybee/tools/best_individual_to_cfg.py out-evolve-bridge-and-barrier-tests-X.txt
 ```
