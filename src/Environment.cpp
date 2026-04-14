@@ -33,6 +33,7 @@ void Environment::initialise(PolyBeeCore* pCore)
     }
     initialiseHeatmap();
     initialiseTargetHeatmap();
+    initialiseFlowmap();
 }
 
 
@@ -346,8 +347,27 @@ void Environment::initialiseTargetHeatmap()
         }
     }
 
+    // Check that the normalised data sums to 1.0
+    double sum = 0.0;
+    for (const auto& col : transposed) {
+        for (double v : col) {
+            sum += v;
+        }
+    }
+    constexpr double NORMALISATION_TOLERANCE = 1e-4;
+    if (std::abs(sum - 1.0) > NORMALISATION_TOLERANCE) {
+        pb::msg_error_and_exit(std::format(
+            "Target heatmap data does not sum to 1.0 (sum = {:.8f}, tolerance = {:.0e}): {}",
+            sum, NORMALISATION_TOLERANCE, filename));
+    }
+
     // Store the transposed data
     m_rawTargetHeatmapNormalised = std::move(transposed);
+}
+
+
+void Environment::initialiseFlowmap() {
+    m_flowmap.initialise(&m_bees);
 }
 
 

@@ -80,6 +80,7 @@ Bee::Bee(Hive* pHive, Environment* pEnv) :
     m_pPolyBeeCore = m_pEnv->getPolyBeeCore();
 
     m_pos = m_pHive->pos();
+    m_prevPos = m_pos;
     m_distDir.param(std::uniform_real_distribution<float>::param_type(-Params::beeMaxDirDelta, Params::beeMaxDirDelta));
     m_colorHue = m_pPolyBeeCore->m_uniformProbDistrib(m_pPolyBeeCore->m_rngEngine) * 360.0f;
     m_inTunnel = m_pEnv->inTunnel(m_pos.x, m_pos.y);
@@ -108,6 +109,7 @@ void Bee::setDirAccordingToHive()
 
 
 void Bee::update() {
+    m_prevPos = m_pos;
     switch (m_state)
     {
     case BeeState::FORAGING:

@@ -12,6 +12,7 @@
 #include "Tunnel.h"
 #include "Plant.h"
 #include "Heatmap.h"
+#include "Flowmap.h"
 #include "utils.h"
 #include <vector>
 #include <optional>
@@ -104,6 +105,7 @@ private:
     void initialiseBees(); // this should only be called from initialiseHivesAndBees
     void initialiseHeatmap();
     void initialiseTargetHeatmap();
+    void initialiseFlowmap();
     void resetHivesAndBees(const std::vector<HiveSpec>& hiveSpecs);
     void resetPlants(const std::vector<PatchSpec>& bridgeSpecs);
     pb::Pos2D envPosToPlantGridIndex(float x, float y) const;
@@ -131,6 +133,8 @@ private:
 
     Heatmap m_heatmap;
     std::vector<std::vector<double>> m_rawTargetHeatmapNormalised;  // target heatmap for use in PolyBeeEvolve, and for calculating EMD in one-off runs
+
+    Flowmap m_flowmap;
 
     PolyBeeCore* m_pPolyBeeCore { nullptr };
 };

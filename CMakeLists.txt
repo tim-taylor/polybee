@@ -97,6 +97,7 @@ set(SOURCE_FILES
     src/Tunnel.cpp
     src/Params.cpp
     src/Heatmap.cpp
+    src/Flowmap.cpp
     src/LocalVis.cpp
     src/utils.cpp)
 

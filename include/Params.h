@@ -286,6 +286,7 @@ public:
 
     // Logging and output
     static int heatmapCellSize; // size of each cell in the heatmap of bee positions
+    static int flowmapCellSize; // size of each cell in the flowmap of bee movements
     static std::string logDir; // directory for output files
     static std::string logFilenamePrefix; // prefix for output file names
     static bool logging; // determines whether output files are written at the end of a run

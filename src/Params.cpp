@@ -90,6 +90,7 @@ bool Params::bridgeOverlapsAllowed;
 
 // Logging and output
 int Params::heatmapCellSize;
+int Params::flowmapCellSize;
 std::string Params::logDir;
 std::string Params::logFilenamePrefix;
 bool Params::logging;
@@ -212,6 +213,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("migration-num-select", "migrationNumSelect", ParamType::INT, &migrationNumSelect, 1, "Number of individuals on an Island that can be selected for migration at each migration event");
     REGISTRY.emplace_back("target-heatmap-filename", "strTargetHeatmapFilename", ParamType::STRING, &strTargetHeatmapFilename, "", "CSV file containing target heatmap for optimization");
     REGISTRY.emplace_back("heatmap-cell-size", "heatmapCellSize", ParamType::INT, &heatmapCellSize, 10, "Size of each cell in the heatmap of bee positions");
+    REGISTRY.emplace_back("flowmap-cell-size", "flowmapCellSize", ParamType::INT, &flowmapCellSize, 10, "Size of each cell in the flowmap of bee movements");
     REGISTRY.emplace_back("visualise", "bVis", ParamType::BOOL, &bVis, true, "Determines whether graphical output is displayed");
     REGISTRY.emplace_back("vis-cell-size", "visCellSize", ParamType::FLOAT, &visCellSize, 1.0f, "Size of an individual cell for visualisation");
     REGISTRY.emplace_back("vis-delay-per-step", "visDelayPerStep", ParamType::INT, &visDelayPerStep, 100, "Delay (in milliseconds) per step when visualising");

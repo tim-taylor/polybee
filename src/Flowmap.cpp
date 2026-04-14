@@ -1,0 +1,79 @@
+/**
+ * @file
+ *
+ * Implementation of the Flowmap class
+ */
+
+#include "Flowmap.h"
+
+#include "Params.h"
+#include "Bee.h"
+#include "utils.h"
+
+
+Flowmap::Flowmap() :  m_numCellsX(0), m_numCellsY(0), m_cellSize(0), m_pBees{nullptr} {
+}
+
+
+void Flowmap::initialise(std::vector<Bee>* bees) {
+    m_pBees = bees;
+    m_cellSize = Params::flowmapCellSize;
+    m_numCellsX = Params::envW / m_cellSize;
+    m_numCellsY = Params::envH / m_cellSize;
+
+    if (static_cast<int>(Params::envW) % m_cellSize != 0) {
+        pb::msg_warning(std::format("env-w ({0}) is not a multiple of flowmap-cell-size ({1}). The Flowmap will extend beyond the environment width.",
+            Params::envW, m_cellSize));
+        ++m_numCellsX;
+    }
+    if (static_cast<int>(Params::envH) % m_cellSize != 0) {
+        pb::msg_warning(std::format("env-h ({0}) is not a multiple of flowmap-cell-size ({1}). The Flowmap will extend beyond the environment height.",
+            Params::envH, m_cellSize));
+        ++m_numCellsY;
+    }
+
+    // ensure we start with an empty Flowmap
+    m_cells.clear();
+
+    // size the Flowmap as required and initialise all counts to zero
+    m_cells.resize(m_numCellsX);
+    for (int x = 0; x < m_numCellsX; ++x) {
+        m_cells[x].resize(m_numCellsY, 0);  // initialize all counts to zero
+    }
+}
+
+
+void Flowmap::reset() {
+    // reset all counts to zero
+    for (int x = 0; x < m_numCellsX; ++x) {
+        std::fill(m_cells[x].begin(), m_cells[x].end(), 0);
+    }
+}
+
+
+void Flowmap::update() {
+    assert(m_pBees != nullptr);
+
+    // update counts based on current bee positions
+    for (const Bee& bee : *m_pBees) {
+        // Handle bees exactly on upper boundaries by placing them in the last valid cell
+        int cellX = static_cast<int>(bee.x()) / m_cellSize;
+        int cellY = static_cast<int>(bee.y()) / m_cellSize;
+
+        // Clamp to valid cell indices (handles bees exactly at envW or envH)
+        if (cellX >= m_numCellsX) cellX = m_numCellsX - 1;
+        if (cellY >= m_numCellsY) cellY = m_numCellsY - 1;
+
+        // TODO - do flow calculations here - see steps suggested by ChatGPT
+
+        /*
+        if (cellX >= 0 && cellX < m_numCellsX && cellY >= 0 && cellY < m_numCellsY) {
+            m_cells[cellX][cellY]++;
+        }
+        else {
+            // This should not happen if bees are correctly constrained within the environment
+            pb::msg_error_and_exit(std::format("Bee at position ({}, {}) is out of bounds for the Flowmap.", bee.x(), bee.y()));
+        }
+        */
+    }
+}

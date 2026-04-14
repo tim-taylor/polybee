@@ -97,7 +97,6 @@ struct ForageNextStepInfo
 class Bee {
 
 public:
-    //Bee(pb::Pos2D pos, float angle, Hive* pHive, Environment* pEnv);
     Bee(Hive* pHive, Environment* pEnv);
     ~Bee() {}
 
@@ -145,7 +144,8 @@ private:
     void unsetTryingToCrossEntranceState();
     void recordCurrentCrossingInfo(bool success);
 
-    pb::Pos2D m_pos;    // position of bee in environment coordinates
+    pb::Pos2D m_pos;     // position of bee in environment coordinates
+    pb::Pos2D m_prevPos; // position of bee in the previous iteration
     float m_angle;      // direction of travel in radians
     float m_energy;     // energy level of the bee
     float m_colorHue;   // hue value for coloring the bee in visualisation (between 0.0 and 360.0)
@@ -164,18 +164,17 @@ private:
     TryingToCrossEntranceState m_tryCrossState;
 
     CrossingInfo m_currentCrossingInfo;
-    std::vector<CrossingInfo> m_entranceCrossingRecords;  // record of the bee's attempts to enter or exit the tunnel, for calculating stats
-    //std::vector<CrossingInfo> m_tunnelEntryRecords; // record of the bee's attempts to enter the tunnel, for calculating stats
+    std::vector<CrossingInfo> m_entranceCrossingRecords; // record of the bee's attempts to enter or exit the tunnel, for calculating stats
 
-    std::vector<Plant*> m_recentlyVisitedPlants; // the last N plants visited by the bee
-    std::vector<pb::Pos2D> m_path;               // record of the path taken by the bee
+    std::vector<Plant*> m_recentlyVisitedPlants;         // the last N plants visited by the bee
+    std::vector<pb::Pos2D> m_path;                       // record of the path taken by the bee
 
-    Hive* m_pHive { nullptr };                  // pointer to the hive the bee belongs to
-    Environment* m_pEnv { nullptr };            // pointer to the environment the bee is in
-    PolyBeeCore* m_pPolyBeeCore { nullptr };    // pointer to the PolyBeeCore instance
+    Hive* m_pHive { nullptr };                           // pointer to the hive the bee belongs to
+    Environment* m_pEnv { nullptr };                     // pointer to the environment the bee is in
+    PolyBeeCore* m_pPolyBeeCore { nullptr };             // pointer to the PolyBeeCore instance
     std::uniform_real_distribution<float> m_distDir;
 
-    static const float m_sTunnelWallBuffer;     // minimum distance to keep from tunnel walls
+    static const float m_sTunnelWallBuffer;              // minimum distance to keep from tunnel walls
 };
 
 #endif /* _BEE_H */
