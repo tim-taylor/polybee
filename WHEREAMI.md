@@ -1,12 +1,14 @@
+## 15/4/26
+TODO
+* Add code to output flowmap at end of run
+
+DONE
+* Continue work on Flowmap::update
+* Add code to visualise flowmap
+
 ## 14/4/26
 
 In process of implementing flowmap of bee's movements
-
-TODO
-
-* Continue work on Flowmap::update
-* Add code to visualise flowmap
-* Add code to output flowmap at end of run
 
 ## 23/3/26
 

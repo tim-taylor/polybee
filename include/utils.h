@@ -55,6 +55,7 @@ namespace Polybee {
         Pos2D(float x = 0.0f, float y = 0.0f) : x(x), y(y) {}
 
         Pos2D operator+(const Pos2D& other) const { return Pos2D(x + other.x, y + other.y); }
+        Pos2D operator-(const Pos2D& other) const { return Pos2D(x - other.x, y - other.y); }
         Pos2D operator*(float scalar) const { return Pos2D(x * scalar, y * scalar); }
 
         float length() const;

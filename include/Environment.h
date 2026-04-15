@@ -72,6 +72,7 @@ public:
 
     Tunnel& getTunnel() { return m_tunnel; }
     const Heatmap& getHeatmap() const { return m_heatmap; }
+    Flowmap& getFlowmap() { return m_flowmap; }
     const std::vector<std::vector<double>>& getRawTargetHeatmapNormalised() const { return m_rawTargetHeatmapNormalised; }
     const std::vector<Bee>& getBees() const { return m_bees; }
     const std::vector<Hive>& getHives() const { return m_hives; }

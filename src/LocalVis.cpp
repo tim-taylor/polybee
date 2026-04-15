@@ -31,6 +31,7 @@
 #include "raymath.h"
 #include "Params.h"
 #include "PolyBeeCore.h"
+#include "Flowmap.h"
 #include <format>
 #include <chrono>
 #include <thread>
@@ -195,6 +196,12 @@ void LocalVis::updateDrawFrame()
         // draw heatmap
         if (showHeatmap()) {
             drawHeatmap();
+        }
+
+        // draw flowmap
+        if (m_bShowFlowmap) {
+            m_pPolyBeeCore->m_env.getFlowmap().calculateFlow();
+            drawFlowmap();
         }
 
         if (m_bShowHelpOverlay) {
@@ -436,6 +443,10 @@ void LocalVis::processKeyboardInput()
         m_bShowSVF = !m_bShowSVF;
     }
 
+    if (IsKeyPressed(KEY_F)) {
+        m_bShowFlowmap = !m_bShowFlowmap;
+    }
+
     if (IsKeyPressed(KEY_ONE)) {
         m_trailColourMode = TrailColourMode::RANDOM;
     }
@@ -493,6 +504,7 @@ void LocalVis::showHelpOverlay()
         "T:\tToggle bee trails on/off\n"
         "E:\tToggle EMD display on/off\n"
         "S:\tToggle SVF display on/off\n"
+        "F:\tToggle flowmap display on/off\n"
         "\n"
         "1:\tBee trail colour random\n"
         "2:\tBee trail colour by entrance used\n"
@@ -700,6 +712,56 @@ void LocalVis::drawHeatmap()
         auto end = std::chrono::high_resolution_clock::now();
         m_currentEMDTime = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
     }
+
+}
+
+
+void LocalVis::drawFlowmap()
+{
+    const Flowmap& flowmap = m_pPolyBeeCore->m_env.getFlowmap();
+    const auto& cells = flowmap.cells();
+
+    int numCellsX = flowmap.size_x();
+    int numCellsY = flowmap.size_y();
+    int cellW = envToDisplayN(Params::envW) / numCellsX;
+    int cellH = envToDisplayN(Params::envH) / numCellsY;
+
+    int maxCount = flowmap.max_count();
+
+    for (int x = 0; x < numCellsX; ++x) {
+        for (int y = 0; y < numCellsY; ++y) {
+            const FlowmapCell& cell = cells[x][y];
+
+            if (cell.strength <= 0.0f || cell.count == 0) {
+                continue;
+            }
+
+            // Centre of the cell in display coordinates
+            float cx = DISPLAY_MARGIN_LEFT + m_displayOffset.x + x * cellW + cellW * 0.5f;
+            float cy = DISPLAY_MARGIN_TOP  + m_displayOffset.y + y * cellH + cellH * 0.5f;
+
+            // Half-length of the line: fill most of the cell
+            float halfLen = std::min(cellW, cellH) * 0.45f;
+
+            float dx = halfLen * std::cos(cell.axis);
+            float dy = halfLen * std::sin(cell.axis);
+
+            // Thickness: scale strength (0..1) to a visible range
+            float thickness = 1.0f + cell.strength * 4.0f;
+
+            // Grayscale: very light grey at count=0, full black at count=maxCount
+            float countFraction = (maxCount > 0) ? static_cast<float>(cell.count) / static_cast<float>(maxCount) : 0.0f;
+            float shadeMax = 75.0f; // maximum shade (when count is min)
+            unsigned char shade = static_cast<unsigned char>(shadeMax * (1.0f - countFraction));
+            Color lineColor { shade, shade, shade, 255 };
+
+            //std::cout << std::format("pos = ({}, {}), count = {}, maxCount = {}, shade = {}", x, y, cell.count, maxCount, static_cast<int>(shade)) << std::endl;
+
+            DrawLineEx({ cx - dx, cy - dy }, { cx + dx, cy + dy }, thickness, lineColor);
+        }
+    }
+
+    //std::cout << "---------" << std::endl;
 
     /*
     // Draw color scale legend

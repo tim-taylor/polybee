@@ -45,6 +45,7 @@ public:
 private:
     void drawBees();
     void drawHeatmap();
+    void drawFlowmap();
     void drawTunnel();
     void drawBarriers();
     void drawPatches();
@@ -66,6 +67,7 @@ private:
     bool m_bShowEMD { true };   // Earth Mover's Distance between current heatmap and target heatmap
     bool m_bShowSVF { false };  // Successful Visits Fraction
     bool m_bShowHelpOverlay { false };
+    bool m_bShowFlowmap { false };
 
     TrailColourMode m_trailColourMode { TrailColourMode::RANDOM };
 

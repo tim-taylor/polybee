@@ -388,6 +388,7 @@ void Environment::resetForNewRun(
     resetHivesAndBees(hiveSpecs);
     resetPlants(bridgeSpecs);
     m_heatmap.reset();
+    m_flowmap.reset();
 }
 
 
@@ -413,6 +414,7 @@ void Environment::update() {
     }
 
     m_heatmap.update();
+    m_flowmap.update();
 }
 
 

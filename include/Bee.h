@@ -106,6 +106,7 @@ public:
     float x() const { return m_pos.x; }
     float y() const { return m_pos.y; }
     float angle() const { return m_angle; }
+    pb::Pos2D deltaMovement() const { return m_pos - m_prevPos; }
     static float visualRange() { return Params::beeVisualRange; }
     float colorHue() const { return m_colorHue; }
     bool inTunnel() const { return m_inTunnel; }
