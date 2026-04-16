@@ -1,5 +1,6 @@
 ## 15/4/26
 TODO
+* Investigate why bees are preferring left/right to up/down when foraging over a patch
 * Add code to output flowmap at end of run
 
 DONE
