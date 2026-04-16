@@ -2,6 +2,10 @@
  * @file
  *
  * Implementation of the Flowmap class
+ *
+ * The double-angle method for calculating the predominant movement axis and strength in each cell
+ * is based on the approach described online by Google search results and on ChatGPT:
+ * https://chatgpt.com/share/69e0b16d-3edc-8396-84af-43de63a8a9ac
  */
 
 #include "Flowmap.h"
