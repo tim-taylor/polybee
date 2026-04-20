@@ -149,6 +149,7 @@ void Environment::initialisePlants(const std::vector<PatchSpec>& patchSpecs, boo
     // initialise plant patches from Params
     for (const PatchSpec& spec : allPatchSpecs)
     {
+        // define a distribution for the jitter in plant positions, mean is 0.0 and std dev is spec.jitter
         std::normal_distribution<float> distJitter(0.0f, spec.jitter);
 
         float first_patch_topleft_plant_x = spec.x + ((spec.w - ((spec.getNumX() - 1) * spec.spacing)) / 2.0f);
@@ -407,14 +408,16 @@ void Environment::resetHivesAndBees(const std::vector<HiveSpec>& hiveSpecs) {
 }
 
 
-void Environment::update() {
+void Environment::update(int timestep) {
     // update bee positions
     for (Bee& bee : m_bees) {
         bee.update();
     }
 
     m_heatmap.update();
-    m_flowmap.update();
+    if (Params::flowmapUpdatePeriod > 0 && timestep % Params::flowmapUpdatePeriod == 0) {
+        m_flowmap.update();
+    }
 }
 
 
@@ -623,7 +626,7 @@ Plant* Environment::pickRandomPlantWeightedByDistance(const std::vector<NearbyPl
     float cumulativeWeight = 0.0f;
     for (const NearbyPlantInfo& info : plants) {
         cumulativeWeight += std::max(0.0f, (maxPossibleDistance - info.dist));
-        if (randValue <= cumulativeWeight) {
+        if (cumulativeWeight >= randValue) {
             return info.pPlant;
         }
     }

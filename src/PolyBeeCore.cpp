@@ -98,7 +98,7 @@ void PolyBeeCore::run(bool logIfRequested)
     while (!stopCriteriaReached()) {
         if (!m_bPaused) {
             ++m_iIteration;
-            m_env.update(); // update environment state, including bee positions and heatmap
+            m_env.update(m_iIteration); // update environment state, including bee positions and heatmap
         }
 
         if (Params::bVis && m_pLocalVis) {

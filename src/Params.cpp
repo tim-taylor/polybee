@@ -91,6 +91,7 @@ bool Params::bridgeOverlapsAllowed;
 // Logging and output
 int Params::heatmapCellSize;
 int Params::flowmapCellSize;
+int Params::flowmapUpdatePeriod;
 std::string Params::logDir;
 std::string Params::logFilenamePrefix;
 bool Params::logging;
@@ -214,6 +215,7 @@ void Params::initRegistry()
     REGISTRY.emplace_back("target-heatmap-filename", "strTargetHeatmapFilename", ParamType::STRING, &strTargetHeatmapFilename, "", "CSV file containing target heatmap for optimization");
     REGISTRY.emplace_back("heatmap-cell-size", "heatmapCellSize", ParamType::INT, &heatmapCellSize, 10, "Size of each cell in the heatmap of bee positions");
     REGISTRY.emplace_back("flowmap-cell-size", "flowmapCellSize", ParamType::INT, &flowmapCellSize, 10, "Size of each cell in the flowmap of bee movements");
+    REGISTRY.emplace_back("flowmap-update-period", "flowmapUpdatePeriod", ParamType::INT, &flowmapUpdatePeriod, 1, "How often (every N iterations) the flowmap update method is called; 0 means never");
     REGISTRY.emplace_back("visualise", "bVis", ParamType::BOOL, &bVis, true, "Determines whether graphical output is displayed");
     REGISTRY.emplace_back("vis-cell-size", "visCellSize", ParamType::FLOAT, &visCellSize, 1.0f, "Size of an individual cell for visualisation");
     REGISTRY.emplace_back("vis-delay-per-step", "visDelayPerStep", ParamType::INT, &visDelayPerStep, 100, "Delay (in milliseconds) per step when visualising");
@@ -798,6 +800,11 @@ void Params::checkConsistency()
             // Path exists but is not a directory
             pb::msg_error_and_exit(std::format("Log directory path '{}' exists but is not a directory", logDir));
         }
+    }
+
+    // check flowmap-update-period is not negative
+    if (flowmapUpdatePeriod < 0) {
+        pb::msg_error_and_exit(std::format("Parameter 'flowmap-update-period' must be >= 0, but is {}", flowmapUpdatePeriod));
     }
 
     // check barrier-pass-prob is in valid range

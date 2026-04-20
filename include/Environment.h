@@ -65,7 +65,7 @@ public:
     ~Environment() {}
 
     void initialise(PolyBeeCore* pCore);
-    void update();
+    void update(int timestep);
     void resetForNewRun(const std::vector<HiveSpec>& hiveSpecs, const std::vector<PatchSpec>& bridgeSpecs);
 
     bool inTunnel(float x, float y) const;

@@ -1,0 +1,12 @@
+When I run the simulation and look at the visualised flowmap, I see that over time the predominant direction of travel of bees over the plant patches in left/right. I would not expect such an apparently pronounced preference for travel in this direction over other directions. In particular, as the plants are evenly spaced in both x and y directions, I would expect the bees to be travelling up/down as much as left/right. Can you figure out why I am seeing this?
+
+
+I found the bug. In Flowmap::update(), when a bee is stationary — on a flower (BeeState::ON_FLOWER) or in the hive (BeeState::IN_HIVE) — deltaMovement() returns (0,0). Then std::atan2(0.0f, 0.0f) returns 0.0f, which is recorded as a horizontal movement (angle 0 = left/right direction). Over many steps of bees sitting on flowers, this biases every plant-cell's average toward the horizontal axis.
+
+The fix is straightforward: skip the flowmap update for any bee with zero net movement.
+
+      74          pb::Pos2D deltaMovement = bee.deltaMovement();
+      75 +        if (deltaMovement.x == 0.0f && deltaMovement.y == 0.0f) {
+      76 +            continue; // bee didn't move this step (e.g. on flower or in hive) — no direction to record
+      77 +        }
+      78          float theta = std::atan2(deltaMovement.y, deltaMovement.x);

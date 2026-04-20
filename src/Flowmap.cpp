@@ -72,6 +72,9 @@ void Flowmap::update() {
         if (cellY >= m_numCellsY) cellY = m_numCellsY - 1;
 
         pb::Pos2D deltaMovement = bee.deltaMovement();
+        if (deltaMovement.x == 0.0f && deltaMovement.y == 0.0f) {
+            continue; // bee didn't move this step (e.g. on flower or in hive) — no direction to record
+        }
         float theta = std::atan2(deltaMovement.y, deltaMovement.x);
 
         m_cells[cellX][cellY].thetas.push_back(theta);
