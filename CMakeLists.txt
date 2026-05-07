@@ -110,6 +110,9 @@ configure_file(
 # add the executable
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 
+# Enforce C++20 on the target directly (more robust than CMAKE_CXX_STANDARD alone)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
+
 # include directories
 target_include_directories(${PROJECT_NAME} PRIVATE
     "${PROJECT_SOURCE_DIR}/include"
