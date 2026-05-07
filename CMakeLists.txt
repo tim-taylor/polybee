@@ -55,7 +55,7 @@ if(POLICY CMP0144) # See https://forum.qt.io/topic/158929/install-boost-with-cma
   cmake_policy(SET CMP0144 NEW)
 endif()
 
-find_package(Boost 1.83 REQUIRED COMPONENTS program_options serialization)
+find_package(Boost 1.75 REQUIRED COMPONENTS program_options serialization)
 
 ## OpenCV (for EMD calculation)
 find_package(OpenCV REQUIRED)
