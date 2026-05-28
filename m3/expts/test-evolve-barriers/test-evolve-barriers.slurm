@@ -9,20 +9,19 @@
 #SBATCH --mail-type=ALL
 
 PB_BASE_DIR=/projects/tf31/projects/polybee
-PB_EXEC=$PB_BASE_DIR/build/bin/release/polybee
+PB_EXEC=${PB_BASE_DIR}/build/bin/release/polybee
 
-CONFIG_FILE=
+EXPT_NAME="test-evolve-barriers"
+EXPT_FILE="${PB_BASE_DIR}/m3/expts/${EXPT_NAME}/"
+CONFIG_FILE="${EXPT_DIR}/${EXPT_NAME}.cfg"
 
-THIS_JOB_ID=${SLURM_ARRAY_JOB_ID}"_"${SLURM_ARRAY_TASK_ID}
-
-date
-echo "Job "$THIS_JOB_ID" has started!"
-
-
-
-$PB_EXEC -c $CONFIG_FILE --log-filename-prefix "test-evolve-barriers-"$THIS_JOB_ID
+THIS_JOB_ID="${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}"
 
 date
-echo "Job "$THIS_JOB_ID" has ended!"
+echo "Job ${THIS_JOB_ID} has started!"
 
-# $EB_EXEC -c {bname}.cfg.json'''.format(bname=basename, nruns=numruns), file=f)
+module load linux-rocky9-sapphirerapids/gcc
+$PB_EXEC -c ${CONFIG_FILE} --log-filename-prefix "${EXPT_NAME}-${THIS_JOB_ID}"
+
+date
+echo "Job ${THIS_JOB_ID} has ended!"
