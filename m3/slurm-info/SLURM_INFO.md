@@ -86,6 +86,12 @@ module load modulefile
 myExe.exe ${SLURM_ARRAY_TASK_ID} # equivalent to SGE's ${SGE_TASK_ID}
 ```
 
+**project charging and accounting**
+
+Each project is assigned a share on the resources on the system. To charge usage towards your project, please set the project ID in the account entry of your job scripts as follows:
+
+`#SBATCH --account=tf31`
+
 **getting emails**
 
 You can ask for an email to be sent at different stages of your job's lifecycle. Set --mail-user to your email address:
@@ -104,6 +110,20 @@ By default, Slurm saves all of the output of your job (that would ordinarily be 
 
 where <JOBID> is the number corresponding to your job's ID. This file will be placed in whichever directory you ran sbatch from. You can change this by specifying `--output`. You can optionally redirect all error output using `--error`.
 
+## DIRECTORIES AND WHERE TO STORE DATA
+
+Within your `$HOME` directory there are links to the project′s primary and scratch folders on M3s parallel file system:
+
+* `/home/ttay0006/tf31`
+* `/home/ttay0006/tf31_scratch`
+* `/home/ttay0006/tf31_scratch2`
+
+Please store your **primary data** under the `tf31` and **reproducible data** under the `scratch` or `scratch2` spaces.
+
+The `user_info` command may be used to view the current usage and quota of these folders.
+
+For details, see: https://docs.erc.monash.edu/M3/Files/KeyDirectories
+
 ## EXECUTION AND OTHER COMMANDS
 
 **To run a slurm file:**
@@ -113,14 +133,18 @@ where <JOBID> is the number corresponding to your job's ID. This file will be pl
 **To view a summary of currently queued and running jobs:**
 
 `show_job`
+
 or
+
 `squeue --me` # for more control of what is displayed
 
 **To view a summary of past jobs, how long they ran for and max memory used, etc:**
 
 `mon_sacct`
 
-You can also run `jobstats JOB_ID` to get a report of your CPU and GPU usage.
+To get a report of your CPU and GPU usage, you can also run:
+
+`jobstats JOB_ID`
 
 ## SOURCES OF FURTHER INFORMATION
 
