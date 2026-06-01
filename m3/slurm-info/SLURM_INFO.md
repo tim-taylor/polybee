@@ -102,6 +102,12 @@ You also need to specify which events should trigger an email. See the --mail-ty
 
 `--mail-type=ALL`
 
+Available options are: NONE, BEGIN, END, FAIL, REQUEUE, ALL, INVALID_DEPEND, STAGE_OUT, TIME_LIMIT, TIME_LIMIT_50, TIME_LIMIT_80, TIME_LIMIT_90, ARRAY_TASKS.
+
+Multiple type values may be specified in a comma separated list.
+
+For full info on these, see https://slurm.schedmd.com/sbatch.html
+
 **changing output files**
 
 By default, Slurm saves all of the output of your job (that would ordinarily be printed to the terminal) to a single file called:
