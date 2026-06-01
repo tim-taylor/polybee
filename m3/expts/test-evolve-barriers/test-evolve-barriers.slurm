@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name="test-evolve-barriers-1"
 #SBATCH --array=1-3
-#SBATCH --time=1-12:00:00
+#SBATCH --time=2-00:00:00
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=8G
 #SBATCH --constraint=intel
