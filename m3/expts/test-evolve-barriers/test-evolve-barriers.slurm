@@ -18,7 +18,6 @@ EXPT_NAME="test-evolve-barriers"
 EXPT_DIR="${PB_BASE_DIR}/m3/expts/${EXPT_NAME}"
 CONFIG_FILE="${EXPT_DIR}/${EXPT_NAME}.cfg"
 
-# GCC_MODULE="linux-rocky9-sapphirerapids/gcc"
 GCC_MODULE="linux-rocky9-cascadelake/gcc/15.2.0-gcc-11.5.0"
 
 THIS_JOB_ID="${SLURM_ARRAY_JOB_ID}_${SLURM_ARRAY_TASK_ID}"
@@ -36,6 +35,9 @@ cd ${PB_BASE_DIR}
 
 echo "Running command: ${RUN_CMD}"
 ${RUN_CMD}
+
+echo "Moving output files to ${EXPT_DIR}"
+mv ${PB_BASE_DIR}/output/${EXPT_NAME}-${SLURM_ARRAY_JOB_ID}* ${EXPT_DIR}
 
 echo -n "*** Job ${THIS_JOB_ID} ended at "; date
 
