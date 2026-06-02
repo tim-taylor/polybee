@@ -270,17 +270,16 @@ def main():
     plant_spacing = params.get('plant-default-spacing', '10')
     plant_jitter  = params.get('plant-default-jitter', '0.1')
 
-    # --- Find overall best fitness from second-to-last non-empty line ---
-    nonempty = [l.rstrip() for l in lines if l.strip()]
-    if len(nonempty) < 2:
-        print("Error: log file too short to contain 'Overall best fitness'", file=sys.stderr)
-        sys.exit(1)
+    # --- Find overall best fitness from the last occurrence of the marker ---
+    best_fitness_pat = re.compile(r'Overall best fitness: ([+-]?\d+\.\d+)')
+    m = None
+    for raw in lines:
+        hit = best_fitness_pat.search(raw)
+        if hit:
+            m = hit
 
-    second_last = nonempty[-2]
-    m = re.search(r'Overall best fitness: ([+-]?\d+\.\d+)', second_last)
     if not m:
-        print(f"Error: could not parse 'Overall best fitness' from:\n  {second_last}",
-              file=sys.stderr)
+        print("Error: could not find 'Overall best fitness' in log file", file=sys.stderr)
         sys.exit(1)
 
     best_fitness = m.group(1)
