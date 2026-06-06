@@ -144,6 +144,10 @@ or
 
 `squeue --me` # for more control of what is displayed
 
+**To cancel/kill a jobs:**
+
+`scancel <JOBID>`
+
 **To view a summary of past jobs, how long they ran for and max memory used, etc:**
 
 `mon_sacct`

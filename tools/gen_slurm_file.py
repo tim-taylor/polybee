@@ -36,7 +36,7 @@ def generate_slurm(name, replicates, time_limit):
     return f"""\
 #!/bin/bash
 #SBATCH --job-name="{name}"
-#SBATCH --output="out-{name}.txt"
+#SBATCH --output="out-{name}-%A_%a.txt"
 #SBATCH --array=1-{replicates}
 #SBATCH --time={time_limit}
 #SBATCH --cpus-per-task=1
@@ -52,7 +52,7 @@ PB_BASE_DIR=/projects/tf31/projects/polybee
 PB_EXEC=${{PB_BASE_DIR}}/build/bin/release/polybee
 
 EXPT_NAME="{name}"
-EXPT_DIR="${{PB_BASE_DIR}}/m3/expts/${{EXPT_NAME}}"
+EXPT_DIR="${{PB_BASE_DIR}}/m3/expts/test-evolve-barriers/${{EXPT_NAME}}"
 CONFIG_FILE="${{EXPT_DIR}}/${{EXPT_NAME}}.cfg"
 
 GCC_MODULE="linux-rocky9-cascadelake/gcc/15.2.0-gcc-11.5.0"
