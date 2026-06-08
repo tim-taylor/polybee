@@ -270,7 +270,8 @@ def main():
     plant_spacing = params.get('plant-default-spacing', '10')
     plant_jitter  = params.get('plant-default-jitter', '0.1')
 
-    # --- Find overall best fitness from the last occurrence of the marker ---
+    # --- Find overall best fitness (last occurrence of the marker) ---
+    # Multi-island format: "Overall best fitness: -0.39400"
     best_fitness_pat = re.compile(r'Overall best fitness: ([+-]?\d+\.\d+)')
     m = None
     for raw in lines:
@@ -278,16 +279,28 @@ def main():
         if hit:
             m = hit
 
-    if not m:
-        print("Error: could not find 'Overall best fitness' in log file", file=sys.stderr)
-        sys.exit(1)
+    if m:
+        best_fitness = m.group(1)
+        print(f"Overall best fitness: {best_fitness}")
+    else:
+        # Single-island format: "Champion fitness: -0.453" (no brackets; last occurrence)
+        champion_pat = re.compile(r'^Champion fitness: ([+-]?\d+\.\d+)\s*$')
+        for raw in lines:
+            hit = champion_pat.search(raw.rstrip())
+            if hit:
+                m = hit
+        if not m:
+            print("Error: could not find best fitness in log file", file=sys.stderr)
+            sys.exit(1)
+        best_fitness = m.group(1)
+        print(f"Champion fitness: {best_fitness}")
 
-    best_fitness = m.group(1)
-    print(f"Overall best fitness: {best_fitness}")
+    # Normalise to 5 decimal places to match the mdF field format in INFO lines
+    best_fitness_norm = f"{float(best_fitness):.5f}"
 
     # --- Find first log line that matches this fitness value ---
     fitness_pat = re.compile(
-        r'INFO: isl \d+ gen \d+ evl \d+ cnf \d+ mdF ' + re.escape(best_fitness) + r' ')
+        r'INFO: isl \d+ gen \d+ evl \d+ cnf \d+ mdF ' + re.escape(best_fitness_norm) + r' ')
     best_line = None
     for raw in lines:
         if fitness_pat.search(raw):
