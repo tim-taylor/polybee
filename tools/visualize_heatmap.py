@@ -15,14 +15,17 @@ Or on Ubuntu/Debian:
 Usage:
     ./visualize_heatmap.py <input_csv_file>
     ./visualize_heatmap.py <input_csv_file> --save-only
+    ./visualize_heatmap.py <input_csv_file> -c polybee.cfg
 """
 
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import argparse
 import os
 from matplotlib.colors import LinearSegmentedColormap
+
 
 def create_polybee_colormap():
     """
@@ -42,6 +45,156 @@ def create_polybee_colormap():
                                             [c for _, c in colors],
                                             N=256)
 
+
+def parse_config(config_file):
+    """Read env dimensions and overlay elements from a polybee config file."""
+    env_width = None
+    env_height = None
+    tunnel = {}
+    entrances = []   # list of {'e1', 'e2', 'side'}
+    crop_patches = []  # list of {'x','y','w','h','repeat','spacing','direction'}
+    hive = None      # (x, y, direction)
+
+    try:
+        with open(config_file) as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#') or '=' not in line:
+                    continue
+                key, _, value = line.partition('=')
+                key = key.strip()
+                value = value.strip()
+
+                if key == 'env-width':
+                    env_width = float(value)
+                elif key == 'env-height':
+                    env_height = float(value)
+                elif key == 'tunnel-x':
+                    tunnel['x'] = float(value)
+                elif key == 'tunnel-y':
+                    tunnel['y'] = float(value)
+                elif key == 'tunnel-width':
+                    tunnel['width'] = float(value)
+                elif key == 'tunnel-height':
+                    tunnel['height'] = float(value)
+                elif key == 'tunnel-entrance':
+                    # Format: e1,e2:side[:nettype]
+                    # e1,e2 are offsets from the tunnel corner along the specified side.
+                    parts = value.split(':')
+                    if len(parts) >= 2:
+                        ab = parts[0].split(',')
+                        if len(ab) >= 2:
+                            try:
+                                entrances.append({
+                                    'e1': float(ab[0]),
+                                    'e2': float(ab[1]),
+                                    'side': int(parts[1]),
+                                })
+                            except ValueError:
+                                pass
+                elif key == 'patch':
+                    # Format: x,y,w,h:type:p2:p3:repeat:spacing,direction:flag
+                    # Draw crop rows when repeat (8th param) > 1 and spacing (9th param) > 0.
+                    parts = value.split(':')
+                    if len(parts) < 6:
+                        continue
+                    geom = parts[0].split(',')
+                    if len(geom) < 4:
+                        continue
+                    try:
+                        x, y, w, h = (float(geom[0]), float(geom[1]),
+                                      float(geom[2]), float(geom[3]))
+                        repeat = float(parts[4])
+                        spacing_dir = parts[5].split(',')
+                        spacing = float(spacing_dir[0])
+                        direction = int(spacing_dir[1]) if len(spacing_dir) > 1 else 0
+                    except ValueError:
+                        continue
+                    if repeat > 1 and spacing > 0:
+                        crop_patches.append({
+                            'x': x, 'y': y, 'w': w, 'h': h,
+                            'repeat': int(repeat),
+                            'spacing': spacing,
+                            'direction': direction,
+                        })
+                elif key == 'hive':
+                    # Format: x,y:direction
+                    parts = value.split(':')
+                    if len(parts) >= 2:
+                        xy = parts[0].split(',')
+                        if len(xy) >= 2:
+                            try:
+                                hive = (float(xy[0]), float(xy[1]), int(parts[1]))
+                            except ValueError:
+                                pass
+    except OSError as e:
+        print(f"Error reading config file: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    if env_width is None or env_height is None:
+        print("Error: env-width or env-height not found in config file", file=sys.stderr)
+        sys.exit(1)
+
+    return env_width, env_height, tunnel, entrances, crop_patches, hive
+
+
+def _draw_tunnel(ax, tunnel, entrances):
+    """Draw the tunnel outline with entrance gaps."""
+    if not all(k in tunnel for k in ('x', 'y', 'width', 'height')):
+        return
+    tx, ty = tunnel['x'], tunnel['y']
+    tw, th = tunnel['width'], tunnel['height']
+
+    # Each entry: (fixed_coord, range_start, range_end, horizontal, side_index)
+    # For North/South (horizontal=True), e1/e2 are x-offsets from tunnel_x.
+    # For East/West  (horizontal=False), e1/e2 are y-offsets from tunnel_y.
+    walls = [
+        (ty,      tx, tx + tw, True,  0),  # North (top)
+        (tx + tw, ty, ty + th, False, 1),  # East (right)
+        (ty + th, tx, tx + tw, True,  2),  # South (bottom)
+        (tx,      ty, ty + th, False, 3),  # West (left)
+    ]
+
+    for fixed, start, end, horizontal, side_idx in walls:
+        origin = tx if horizontal else ty
+        gaps = sorted(
+            (origin + e['e1'], origin + e['e2'])
+            for e in entrances if e['side'] == side_idx
+        )
+        pos = start
+        for gap_a, gap_b in gaps:
+            if pos < gap_a:
+                pts = ([pos, gap_a], [fixed, fixed]) if horizontal else ([fixed, fixed], [pos, gap_a])
+                ax.plot(*pts, color='black', lw=2, zorder=3)
+            pos = max(pos, gap_b)
+        if pos < end:
+            pts = ([pos, end], [fixed, fixed]) if horizontal else ([fixed, fixed], [pos, end])
+            ax.plot(*pts, color='black', lw=2, zorder=3)
+
+
+def _draw_crop_rows(ax, crop_patches):
+    """Draw semi-transparent rectangles for each crop row repeat."""
+    for patch in crop_patches:
+        x, y, w, h = patch['x'], patch['y'], patch['w'], patch['h']
+        for i in range(patch['repeat']):
+            xi = x + i * patch['spacing'] if patch['direction'] == 0 else x
+            yi = y if patch['direction'] == 0 else y + i * patch['spacing']
+            ax.add_patch(mpatches.Rectangle(
+                (xi, yi), w, h,
+                linewidth=2, edgecolor='#a8a8a8', facecolor='none', zorder=2,
+            ))
+
+
+def _draw_hive(ax, hive):
+    """Draw a small labelled square at the hive midpoint."""
+    hx, hy, _ = hive
+    size = 20  # env units
+    ax.add_patch(mpatches.Rectangle(
+        (hx - size / 2, hy - size / 2), size, size,
+        linewidth=2, edgecolor='#e8e8e8', facecolor='none', zorder=4,
+    ))
+
+
 def load_heatmap(filename):
     """Load heatmap data from CSV file."""
     try:
@@ -51,23 +204,50 @@ def load_heatmap(filename):
         print(f"Error loading CSV file: {e}", file=sys.stderr)
         sys.exit(1)
 
-def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None):
-    """
-    Visualize the heatmap data.
 
-    Args:
-        data: 2D numpy array containing the heatmap values
-        title: Title for the plot
-        save_only: If True, save to file without displaying
-        output_file: Output filename (only used if save_only is True)
-    """
-    fig, ax = plt.subplots(figsize=(10, 8))
+def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
+                      env_width=None, env_height=None,
+                      tunnel=None, entrances=None, crop_patches=None, hive=None):
+    nrows, ncols = data.shape
+    scale = min(10.0 / max(nrows, ncols), 0.7)  # inches per cell, capped so figure stays reasonable
+    top_margin = 1.0    # title
+    bottom_margin = 1.5  # x-axis tick labels + axis label
+    fig_w = ncols * scale + 2.5
+    fig_h = min(nrows * scale + top_margin + bottom_margin, 9.0)  # cap height for small screens
+    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
 
     # Create custom colormap matching LocalVis.cpp
     cmap = create_polybee_colormap()
 
-    # Create heatmap with custom blue-to-red colormap
-    im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='auto')
+    # When env dimensions are known, use extent to label axes in env units.
+    # extent=[left, right, bottom, top] with top=0 so row 0 is at the top.
+    if env_width is not None and env_height is not None:
+        extent = [0, env_width, env_height, 0]
+        cell_w = env_width / ncols
+        cell_h = env_height / nrows
+        xlabel = 'X (env units)'
+        ylabel = 'Y (env units)'
+    else:
+        extent = None
+        cell_w = 1.0
+        cell_h = 1.0
+        xlabel = 'X coordinate'
+        ylabel = 'Y coordinate'
+
+    # aspect='equal' keeps cells square; extent sets the axis coordinate range
+    im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='equal', extent=extent)
+
+    if env_width is not None and env_height is not None:
+        ax.set_xticks(np.arange(0, env_width + 1, 50))
+        ax.set_yticks(np.arange(0, env_height + 1, 50))
+
+        # Draw environment overlays
+        if crop_patches:
+            _draw_crop_rows(ax, crop_patches)
+        if tunnel:
+            _draw_tunnel(ax, tunnel, entrances or [])
+        if hive is not None:
+            _draw_hive(ax, hive)
 
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax)
@@ -75,21 +255,20 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None):
 
     # Set title and labels
     ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
-    ax.set_xlabel('X coordinate', fontsize=12)
-    ax.set_ylabel('Y coordinate', fontsize=12)
+    ax.set_xlabel(xlabel, fontsize=12)
+    ax.set_ylabel(ylabel, fontsize=12)
 
     # Add grid for better readability
     ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
 
     # Add text annotations for each cell (optional, only for small heatmaps)
-    height, width = data.shape
-    if height <= 20 and width <= 20:  # Only annotate if heatmap is small enough
-        for i in range(height):
-            for j in range(width):
-                text = ax.text(j, i, f'{data[i, j]:.2f}',
-                             ha="center", va="center", color="black", fontsize=8)
+    if nrows <= 20 and ncols <= 20:  # Only annotate if heatmap is small enough
+        for i in range(nrows):
+            for j in range(ncols):
+                ax.text((j + 0.5) * cell_w, (i + 0.5) * cell_h, f'{data[i, j]:.2f}',
+                        ha="center", va="center", color="black", fontsize=8)
 
-    plt.tight_layout()
+    plt.tight_layout(pad=1.2)
 
     if save_only:
         plt.savefig(output_file, dpi=150, bbox_inches='tight')
@@ -97,6 +276,7 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None):
         plt.close()
     else:
         plt.show()
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -114,6 +294,13 @@ Examples:
     parser.add_argument('--save-only',
                        action='store_true',
                        help='Save to PNG file without displaying on screen')
+    parser.add_argument('--config', '-c',
+                       metavar='CFG',
+                       help='Polybee config file; if supplied, axes are labelled in env units '
+                            'and tunnel, crop rows, and hive are drawn as overlays')
+    parser.add_argument('--title', '-t',
+                       metavar='TITLE',
+                       help='Title for the plot (default: input filename without extension)')
 
     args = parser.parse_args()
 
@@ -125,15 +312,28 @@ Examples:
     # Load the heatmap data
     data = load_heatmap(args.input_file)
 
-    # Get the basename without extension for the title and output file
+    env_width, env_height = None, None
+    tunnel, entrances, crop_patches, hive = {}, [], [], None
+    if args.config:
+        env_width, env_height, tunnel, entrances, crop_patches, hive = parse_config(args.config)
+
+    # Get the basename without extension for the default title and output file
     basename = os.path.splitext(os.path.basename(args.input_file))[0]
+    title = args.title if args.title else basename
 
     if args.save_only:
         # Generate output filename: replace .csv with .png
         output_file = os.path.splitext(args.input_file)[0] + '.png'
-        visualize_heatmap(data, title=basename, save_only=True, output_file=output_file)
+        visualize_heatmap(data, title=title, save_only=True, output_file=output_file,
+                          env_width=env_width, env_height=env_height,
+                          tunnel=tunnel, entrances=entrances,
+                          crop_patches=crop_patches, hive=hive)
     else:
-        visualize_heatmap(data, title=basename, save_only=False)
+        visualize_heatmap(data, title=title, save_only=False,
+                          env_width=env_width, env_height=env_height,
+                          tunnel=tunnel, entrances=entrances,
+                          crop_patches=crop_patches, hive=hive)
+
 
 if __name__ == '__main__':
     main()
