@@ -14,7 +14,7 @@ The output config has:
     bridge (if bridges were evolved)
 
 Usage:
-    ./best_individual_to_cfg.py <logfile> [-o <output.cfg>]
+    ./best_individual_to_cfg.py <logfile> [-o <output.cfg>] [-f <fitness>]
 """
 
 import argparse
@@ -34,6 +34,10 @@ def parse_args():
     parser.add_argument('-o', '--output',
                         help='Output .cfg file path (default: same directory as input, '
                              'with "out-" prefix replaced by "best-" and .cfg extension)')
+    parser.add_argument('-f', '--fitness', type=float,
+                        help='Best fitness value as a negative number (e.g. -0.73490). '
+                             'If supplied, skips searching the log for the champion fitness '
+                             'and uses this value directly to locate the individual.')
     return parser.parse_args()
 
 
@@ -270,33 +274,39 @@ def main():
     plant_spacing = params.get('plant-default-spacing', '10')
     plant_jitter  = params.get('plant-default-jitter', '0.1')
 
-    # --- Find overall best fitness (last occurrence of the marker) ---
-    # Multi-island format: "Overall best fitness: -0.39400"
-    best_fitness_pat = re.compile(r'Overall best fitness: ([+-]?\d+\.\d+)')
-    m = None
-    for raw in lines:
-        hit = best_fitness_pat.search(raw)
-        if hit:
-            m = hit
-
-    if m:
-        best_fitness = m.group(1)
-        print(f"Overall best fitness: {best_fitness}")
+    # --- Determine best fitness value ---
+    if args.fitness is not None:
+        # User supplied the fitness value directly; skip log search
+        best_fitness_norm = f"{args.fitness:.5f}"
+        print(f"Using supplied fitness value: {best_fitness_norm}")
     else:
-        # Single-island format: "Champion fitness: -0.453" (no brackets; last occurrence)
-        champion_pat = re.compile(r'^Champion fitness: ([+-]?\d+\.\d+)\s*$')
+        # --- Find overall best fitness (last occurrence of the marker) ---
+        # Multi-island format: "Overall best fitness: -0.39400"
+        best_fitness_pat = re.compile(r'Overall best fitness: ([+-]?\d+\.\d+)')
+        m = None
         for raw in lines:
-            hit = champion_pat.search(raw.rstrip())
+            hit = best_fitness_pat.search(raw)
             if hit:
                 m = hit
-        if not m:
-            print("Error: could not find best fitness in log file", file=sys.stderr)
-            sys.exit(1)
-        best_fitness = m.group(1)
-        print(f"Champion fitness: {best_fitness}")
 
-    # Normalise to 5 decimal places to match the mdF field format in INFO lines
-    best_fitness_norm = f"{float(best_fitness):.5f}"
+        if m:
+            best_fitness = m.group(1)
+            print(f"Overall best fitness: {best_fitness}")
+        else:
+            # Single-island format: "Champion fitness: -0.453" (no brackets; last occurrence)
+            champion_pat = re.compile(r'^Champion fitness: ([+-]?\d+\.\d+)\s*$')
+            for raw in lines:
+                hit = champion_pat.search(raw.rstrip())
+                if hit:
+                    m = hit
+            if not m:
+                print("Error: could not find best fitness in log file", file=sys.stderr)
+                sys.exit(1)
+            best_fitness = m.group(1)
+            print(f"Champion fitness: {best_fitness}")
+
+        # Normalise to 5 decimal places to match the mdF field format in INFO lines
+        best_fitness_norm = f"{float(best_fitness):.5f}"
 
     # --- Find first log line that matches this fitness value ---
     fitness_pat = re.compile(
@@ -308,7 +318,7 @@ def main():
             break
 
     if best_line is None:
-        print(f"Error: no log line found with mdF {best_fitness}", file=sys.stderr)
+        print(f"Error: no log line found with mdF {best_fitness_norm}", file=sys.stderr)
         sys.exit(1)
 
     print(f"Best individual line:\n  {best_line}")
