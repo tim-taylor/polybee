@@ -8,6 +8,7 @@
 #define _FLOWMAP_H
 
 #include <vector>
+#include <ostream>
 
 class Bee;
 
@@ -39,10 +40,13 @@ public:
     void update();          // update counts with current positions of bees
     void calculateFlow();   // calculate predominant movement axis and strength for each cell
 
+    void print(std::ostream& os) const;
+
     int size_x() const { return m_numCellsX; }
     int size_y() const { return m_numCellsY; }
     int cell_size() const { return m_cellSize; }
     int max_count() const; // return the maximum count of any cell (for scaling visualisation)
+    bool empty() const { return max_count() == 0; }
     const std::vector<std::vector<FlowmapCell>>& cells() const { return m_cells; }
 
 private:

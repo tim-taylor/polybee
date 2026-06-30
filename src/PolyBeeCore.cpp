@@ -143,6 +143,28 @@ void PolyBeeCore::writeOutputFiles() const
     // write config to file
     writeConfigFile();
 
+    // write flowmap to file if it has been calculated
+    const Flowmap& flowmap = m_env.getFlowmapConst();
+    if (!flowmap.empty()) {
+        std::string flowmapFilename = std::format("{0}/{1}flowmap-{2}.csv",
+            Params::logDir,
+            Params::logFilenamePrefix.empty() ? "" : (Params::logFilenamePrefix + "-"),
+            m_timestampStr);
+        std::ofstream flowmapFile(flowmapFilename);
+        if (!flowmapFile) {
+            pb::msg_warning(
+                std::format("Unable to open flowmap output file {} for writing. Flowmap will not be saved to file, printing to stdout instead.",
+                    flowmapFilename));
+            std::cout << "~~~~~~~~~~ FLOWMAP OUTPUT ~~~~~~~~~~\n";
+            flowmap.print(std::cout);
+        }
+        else {
+            flowmap.print(flowmapFile);
+            flowmapFile.close();
+            pb::msg_info(std::format("Flowmap output written to file: {}", flowmapFilename));
+        }
+    }
+
     // write heatmap to file
     const Heatmap& heatmap = m_env.getHeatmap();
     std::string heatmapFilename = std::format("{0}/{1}heatmap-{2}.csv",

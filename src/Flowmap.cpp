@@ -123,3 +123,18 @@ int Flowmap::max_count() const {
     return maxCount;
 }
 
+
+void Flowmap::print(std::ostream& os) const
+{
+    for (int y = 0; y < m_numCellsY; ++y) {
+        for (int x = 0; x < m_numCellsX; ++x) {
+            const auto& cell = m_cells[x][y];
+            os << std::format("{:.5f}:{:.5f}:{}", cell.axis, cell.strength, cell.count);
+            if (x < m_numCellsX - 1) {
+                os << ",";
+            }
+        }
+        os << std::endl;
+    }
+}
+
