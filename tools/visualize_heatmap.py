@@ -6,6 +6,10 @@ The CSV file should contain numeric values representing a normalized heatmap.
 The script displays the heatmap on screen with the option to save it.
 Use --save-only to skip the display and save directly to a PNG file.
 
+Optionally superimpose a flowmap (produced by Flowmap::print) over the heatmap.
+The flowmap CSV contains cells in "axis:strength:count" format and is assumed to
+cover the same environment dimensions as the heatmap (cell sizes may differ).
+
 Dependencies:
     pip install matplotlib numpy
 
@@ -16,14 +20,17 @@ Usage:
     ./visualize_heatmap.py <input_csv_file>
     ./visualize_heatmap.py <input_csv_file> --save-only
     ./visualize_heatmap.py <input_csv_file> -c polybee.cfg
+    ./visualize_heatmap.py <input_csv_file> -c polybee.cfg -f flowmap.csv
 """
 
+import math
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import argparse
 import os
+from matplotlib.collections import LineCollection
 from matplotlib.colors import LinearSegmentedColormap
 
 
@@ -195,6 +202,103 @@ def _draw_hive(ax, hive):
     ))
 
 
+def load_flowmap(filename):
+    """
+    Load a flowmap CSV produced by Flowmap::print.
+
+    Returns (cells, fm_rows, fm_cols) where cells is a 2-D list indexed
+    [row][col], each entry a (axis, strength, count) tuple.
+    """
+    cells = []
+    try:
+        with open(filename) as f:
+            for lineno, line in enumerate(f, 1):
+                line = line.rstrip('\n')
+                if not line:
+                    continue
+                row = []
+                for token in line.split(','):
+                    parts = token.split(':')
+                    if len(parts) != 3:
+                        print(f"Error: {filename}:{lineno}: expected 'axis:strength:count', got {token!r}",
+                              file=sys.stderr)
+                        sys.exit(1)
+                    try:
+                        row.append((float(parts[0]), float(parts[1]), int(parts[2])))
+                    except ValueError as e:
+                        print(f"Error: {filename}:{lineno}: {e}", file=sys.stderr)
+                        sys.exit(1)
+                cells.append(row)
+    except OSError as e:
+        print(f"Error reading flowmap file: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    if not cells:
+        print(f"Error: flowmap file is empty: {filename}", file=sys.stderr)
+        sys.exit(1)
+
+    fm_rows = len(cells)
+    fm_cols = len(cells[0])
+    return cells, fm_rows, fm_cols
+
+
+def _draw_flowmap(ax, cells, fm_rows, fm_cols,
+                  env_width=None, env_height=None,
+                  heatmap_nrows=None, heatmap_ncols=None):
+    """
+    Superimpose flowmap lines over the heatmap axes using the same logic as
+    LocalVis::drawFlowmap().
+
+    Axes are in env units when env_width/env_height are given, otherwise in
+    heatmap-cell-index units.
+    """
+    if env_width is not None and env_height is not None:
+        fm_cell_w = env_width / fm_cols
+        fm_cell_h = env_height / fm_rows
+    elif heatmap_nrows is not None and heatmap_ncols is not None:
+        fm_cell_w = heatmap_ncols / fm_cols
+        fm_cell_h = heatmap_nrows / fm_rows
+    else:
+        fm_cell_w = 1.0
+        fm_cell_h = 1.0
+
+    max_count = max((cell[2] for row in cells for cell in row), default=0)
+    if max_count == 0:
+        return
+
+    segments = []
+    colors = []
+    linewidths = []
+
+    for r in range(fm_rows):
+        for c in range(fm_cols):
+            axis, strength, count = cells[r][c]
+            if strength <= 0.0 or count == 0:
+                continue
+
+            cx = (c + 0.5) * fm_cell_w
+            cy = (r + 0.5) * fm_cell_h
+
+            half_len = min(fm_cell_w, fm_cell_h) * 0.45
+            dx = half_len * math.cos(axis)
+            dy = half_len * math.sin(axis)
+
+            segments.append([(cx - dx, cy - dy), (cx + dx, cy + dy)])
+
+            count_fraction = count / max_count
+            shade = (75.0 / 255.0) * (1.0 - count_fraction)
+            colors.append((shade, shade, shade, 1.0))
+
+            linewidths.append(1.0 + strength * 4.0)
+
+    if not segments:
+        return
+
+    lc = LineCollection(segments, colors=colors, linewidths=linewidths,
+                        capstyle='round', zorder=5)
+    ax.add_collection(lc)
+
+
 def load_heatmap(filename):
     """Load heatmap data from CSV file."""
     try:
@@ -207,7 +311,8 @@ def load_heatmap(filename):
 
 def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
                       env_width=None, env_height=None,
-                      tunnel=None, entrances=None, crop_patches=None, hive=None):
+                      tunnel=None, entrances=None, crop_patches=None, hive=None,
+                      flowmap=None):
     nrows, ncols = data.shape
     scale = min(10.0 / max(nrows, ncols), 0.7)  # inches per cell, capped so figure stays reasonable
     top_margin = 1.0    # title
@@ -249,6 +354,12 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
         if hive is not None:
             _draw_hive(ax, hive)
 
+    if flowmap is not None:
+        cells, fm_rows, fm_cols = flowmap
+        _draw_flowmap(ax, cells, fm_rows, fm_cols,
+                      env_width=env_width, env_height=env_height,
+                      heatmap_nrows=nrows, heatmap_ncols=ncols)
+
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax)
     cbar.set_label('Normalized Value', rotation=270, labelpad=20)
@@ -284,8 +395,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s heatmap.csv                    # Display heatmap interactively
-  %(prog)s heatmap.csv --save-only        # Save to heatmap.png without displaying
+  %(prog)s heatmap.csv                          # Display heatmap interactively
+  %(prog)s heatmap.csv --save-only              # Save to heatmap.png without displaying
+  %(prog)s heatmap.csv -c polybee.cfg -f flowmap.csv   # Overlay flowmap
         """
     )
 
@@ -298,6 +410,9 @@ Examples:
                        metavar='CFG',
                        help='Polybee config file; if supplied, axes are labelled in env units '
                             'and tunnel, crop rows, and hive are drawn as overlays')
+    parser.add_argument('--flowmap', '-f',
+                       metavar='FLOWMAP_CSV',
+                       help='Flowmap CSV file (from Flowmap::print) to superimpose over the heatmap')
     parser.add_argument('--title', '-t',
                        metavar='TITLE',
                        help='Title for the plot (default: input filename without extension)')
@@ -317,6 +432,13 @@ Examples:
     if args.config:
         env_width, env_height, tunnel, entrances, crop_patches, hive = parse_config(args.config)
 
+    flowmap = None
+    if args.flowmap:
+        if not os.path.isfile(args.flowmap):
+            print(f"Error: Flowmap file not found: {args.flowmap}", file=sys.stderr)
+            sys.exit(1)
+        flowmap = load_flowmap(args.flowmap)
+
     # Get the basename without extension for the default title and output file
     basename = os.path.splitext(os.path.basename(args.input_file))[0]
     title = args.title if args.title else basename
@@ -327,12 +449,14 @@ Examples:
         visualize_heatmap(data, title=title, save_only=True, output_file=output_file,
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
-                          crop_patches=crop_patches, hive=hive)
+                          crop_patches=crop_patches, hive=hive,
+                          flowmap=flowmap)
     else:
         visualize_heatmap(data, title=title, save_only=False,
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
-                          crop_patches=crop_patches, hive=hive)
+                          crop_patches=crop_patches, hive=hive,
+                          flowmap=flowmap)
 
 
 if __name__ == '__main__':

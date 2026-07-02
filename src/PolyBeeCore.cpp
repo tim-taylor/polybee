@@ -109,6 +109,10 @@ void PolyBeeCore::run(bool logIfRequested)
     // log output files if the user has requested it AND the caller of the method has requested it,
     // AND this is the master island (islandNum == 0) [don't repeat output files for every island]
     if (logIfRequested && Params::logging && m_islandNum == 0) {
+        // first ensure that the flowmap has been calculated before writing it to file
+        Flowmap& flowmap = m_env.getFlowmap();
+        flowmap.calculateFlow();
+        // now write output files
         writeOutputFiles();
     }
 
