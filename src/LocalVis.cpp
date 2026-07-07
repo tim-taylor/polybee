@@ -716,6 +716,10 @@ void LocalVis::drawHeatmap()
 }
 
 
+// Draws each flowmap cell as a line oriented along its dominant axis, with line
+// thickness denoting count fraction (thicker = higher count relative to the
+// cell with the highest count) and line shade denoting strength of alignment
+// (darker = stronger alignment to the dominant axis).
 void LocalVis::drawFlowmap()
 {
     const Flowmap& flowmap = m_pPolyBeeCore->m_env.getFlowmap();
@@ -746,13 +750,13 @@ void LocalVis::drawFlowmap()
             float dx = halfLen * std::cos(cell.axis);
             float dy = halfLen * std::sin(cell.axis);
 
-            // Thickness: scale strength (0..1) to a visible range
-            float thickness = 1.0f + cell.strength * 4.0f;
-
-            // Grayscale: very light grey at count=0, full black at count=maxCount
+            // Thickness: scale count fraction (0..1) to a visible range
             float countFraction = (maxCount > 0) ? static_cast<float>(cell.count) / static_cast<float>(maxCount) : 0.0f;
-            float shadeMax = 75.0f; // maximum shade (when count is min)
-            unsigned char shade = static_cast<unsigned char>(shadeMax * (1.0f - countFraction));
+            float thickness = 1.0f + countFraction * 4.0f;
+
+            // Grayscale: very light grey at strength=0, full black at strength=1
+            float shadeMax = 75.0f; // maximum shade (when strength is min)
+            unsigned char shade = static_cast<unsigned char>(shadeMax * (1.0f - cell.strength));
             Color lineColor { shade, shade, shade, 255 };
 
             //std::cout << std::format("pos = ({}, {}), count = {}, maxCount = {}, shade = {}", x, y, cell.count, maxCount, static_cast<int>(shade)) << std::endl;

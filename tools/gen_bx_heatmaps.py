@@ -1,5 +1,41 @@
 #!/usr/bin/env python3
-"""Generate bridge and barrier heatmap CSVs from one or more polybee config files."""
+"""Generate bridge and barrier heatmap CSVs from one or more polybee config files.
+
+What it does:
+    Scans one or more polybee .cfg files for `patch` and `barrier` entries and
+    builds normalised 2D occupancy heatmaps of where "bridge" patches (patch
+    type 10 with no repeat) and barriers are located within the environment.
+    Each config's bridges/barriers are reduced to a single (x, y) centre point,
+    all points from all configs are pooled, and each is binned into a grid of
+    `--cell-size` x `--cell-size` cells covering the environment dimensions
+    (taken from the first config's env-width/env-height; other configs with
+    differing dimensions are still processed but generate a warning). Two CSV
+    grids are written: one for bridge density, one for barrier density. Each
+    cell value is the count of points in that cell divided by the total number
+    of points of that kind, so each output grid sums to 1.0 (or is all zeros
+    if no points of that kind were found).
+
+    This is typically used to build a "ground truth" heatmap of bridge/barrier
+    placement across many randomly generated config files, for comparison
+    against simulated bee-visitation heatmaps (see visualize_heatmap's flowmap
+    overlay).
+
+Usage:
+    ./gen_bx_heatmaps.py CONFIG [CONFIG ...] [--cell-size N] [--basename NAME]
+
+    CONFIG           One or more polybee .cfg files to process (glob-expand
+                     with your shell to pass many, e.g. runs/*/polybee.cfg).
+    --cell-size N    Cell size in environment units (default: 30). Should
+                     match the cell size used by whatever heatmap you are
+                     comparing against.
+    --basename NAME  Basename for output CSV files (default: heatmap).
+                     Writes NAME_bridges.csv and NAME_barriers.csv in the
+                     current directory.
+
+Example:
+    ./gen_bx_heatmaps.py polybee.cfg --cell-size 30 --basename m3
+    # -> writes m3_bridges.csv and m3_barriers.csv
+"""
 
 import argparse
 import csv

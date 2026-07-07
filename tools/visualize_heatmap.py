@@ -244,14 +244,22 @@ def load_flowmap(filename):
 
 def _draw_flowmap(ax, cells, fm_rows, fm_cols,
                   env_width=None, env_height=None,
-                  heatmap_nrows=None, heatmap_ncols=None):
+                  heatmap_nrows=None, heatmap_ncols=None,
+                  use_color=False, strength_th=0.0, count_th=0.0):
     """
     Superimpose flowmap lines over the heatmap axes using the same logic as
     LocalVis::drawFlowmap().
 
     Axes are in env units when env_width/env_height are given, otherwise in
     heatmap-cell-index units.
+
+    When use_color is True, lines are coloured by strength of alignment using
+    the polybee colormap instead of a grayscale shade.
+
+    Cells are only drawn if their strength is >= strength_th and their count
+    fraction (count / max_count) is >= count_th.
     """
+    cmap = create_polybee_colormap() if use_color else None
     if env_width is not None and env_height is not None:
         fm_cell_w = env_width / fm_cols
         fm_cell_h = env_height / fm_rows
@@ -276,6 +284,10 @@ def _draw_flowmap(ax, cells, fm_rows, fm_cols,
             if strength <= 0.0 or count == 0:
                 continue
 
+            count_fraction = count / max_count
+            if strength < strength_th or count_fraction < count_th:
+                continue
+
             cx = (c + 0.5) * fm_cell_w
             cy = (r + 0.5) * fm_cell_h
 
@@ -285,11 +297,13 @@ def _draw_flowmap(ax, cells, fm_rows, fm_cols,
 
             segments.append([(cx - dx, cy - dy), (cx + dx, cy + dy)])
 
-            count_fraction = count / max_count
-            shade = (75.0 / 255.0) * (1.0 - count_fraction)
-            colors.append((shade, shade, shade, 1.0))
+            if use_color:
+                colors.append(cmap(strength))
+            else:
+                shade = (75.0 / 255.0) * (1.0 - strength)
+                colors.append((shade, shade, shade, 1.0))
 
-            linewidths.append(1.0 + strength * 4.0)
+            linewidths.append(1.0 + count_fraction * 4.0)
 
     if not segments:
         return
@@ -319,7 +333,7 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
     bottom_margin = 1.5  # x-axis tick labels + axis label
     fig_w = ncols * scale + 2.5
     fig_h = min(nrows * scale + top_margin + bottom_margin, 9.0)  # cap height for small screens
-    fig, ax = plt.subplots(figsize=(fig_w, fig_h))
+    _, ax = plt.subplots(figsize=(fig_w, fig_h))
 
     # Create custom colormap matching LocalVis.cpp
     cmap = create_polybee_colormap()
