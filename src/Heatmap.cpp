@@ -2,6 +2,23 @@
  * @file
  *
  * Implementation of the Heatmap class
+ *
+ * A Heatmap tracks how much time bees spend in each cell of a grid overlaid
+ * on the environment. Each simulation step, update() increments the count for
+ * whichever cell each bee currently occupies; print() dumps the raw counts,
+ * and printNormalised() dumps the counts divided by the total (so cells sum
+ * to 1.0), both in CSV format (one row per grid row).
+ *
+ * If constructed with calcNormalised = true, the normalised heatmap is kept
+ * up to date automatically as update() is called, and the class can then
+ * compute the Earth Mover's Distance (EMD) between this heatmap and another
+ * (e.g. a target distribution), via emd(). This is used by PolyBeeEvolve to
+ * score how closely a simulated bee-visitation heatmap matches a desired
+ * target. Two convenience reference distributions are also precomputed in
+ * initialise() for this purpose: a uniform target (equal density in every
+ * cell) and an anti-target (all density in the single top-left cell), and
+ * m_highEmd records the EMD between those two as a reference "worst case"
+ * distance.
  */
 
 #include "Heatmap.h"
