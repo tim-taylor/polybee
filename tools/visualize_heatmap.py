@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """
-Visualize a normalized heatmap from a CSV file.
+Visualize a heatmap from a CSV file.
 
-The CSV file should contain numeric values representing a normalized heatmap.
+The CSV file should contain a 2D grid of numeric values (normalized or not
+-- e.g. raw counts, or an angular-delta heatmap from gen_angdelta-heatmap.py).
 The script displays the heatmap on screen with the option to save it.
 Use --save-only to skip the display and save directly to a PNG file.
 
-If the heatmap CSV is NOT normalized (e.g. raw counts or an angular-delta
-heatmap from gen_angdelta-heatmap.py), pass --not-norm N to fix the colour
-scale to run from 0 to N instead of auto-scaling to the data's own range.
+By default the colour scale auto-scales to the min/max values found in the
+CSV. Pass --color-scale-max N to fix the colour scale to run from 0 to N
+instead -- useful when you want multiple heatmaps rendered on the same
+scale, or when the data has a known theoretical maximum (e.g. pi/2 for
+angular deltas).
 
 Optionally superimpose a flowmap (produced by Flowmap::print) over the heatmap.
 The flowmap CSV contains cells in "axis:strength:count" format and is assumed to
@@ -25,7 +28,7 @@ Usage:
     ./visualize_heatmap.py <input_csv_file> --save-only
     ./visualize_heatmap.py <input_csv_file> -c polybee.cfg
     ./visualize_heatmap.py <input_csv_file> -c polybee.cfg -f flowmap.csv
-    ./visualize_heatmap.py <input_csv_file> --not-norm 1.5708
+    ./visualize_heatmap.py <input_csv_file> --color-scale-max 1.5708
 """
 
 import math
@@ -331,7 +334,7 @@ def load_heatmap(filename):
 def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
                       env_width=None, env_height=None,
                       tunnel=None, entrances=None, crop_patches=None, hive=None,
-                      flowmap=None, notnorm_max=None):
+                      flowmap=None, color_scale_max=None):
     nrows, ncols = data.shape
     scale = min(10.0 / max(nrows, ncols), 0.7)  # inches per cell, capped so figure stays reasonable
     top_margin = 1.0    # title
@@ -359,9 +362,9 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
         ylabel = 'Y coordinate'
 
     # aspect='equal' keeps cells square; extent sets the axis coordinate range
-    if notnorm_max is not None:
+    if color_scale_max is not None:
         im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='equal', extent=extent,
-                       vmin=0.0, vmax=notnorm_max)
+                       vmin=0.0, vmax=color_scale_max)
     else:
         im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='equal', extent=extent)
 
@@ -385,7 +388,7 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
 
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax)
-    cbar.set_label('Value' if notnorm_max is not None else 'Normalized Value', rotation=270, labelpad=20)
+    cbar.set_label('Value' if color_scale_max is not None else 'Normalized Value', rotation=270, labelpad=20)
 
     # Set title and labels
     ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
@@ -414,19 +417,19 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Visualize a normalized heatmap from a CSV file.',
+        description='Visualize a heatmap from a CSV file.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
   %(prog)s heatmap.csv                          # Display heatmap interactively
   %(prog)s heatmap.csv --save-only              # Save to heatmap.png without displaying
   %(prog)s heatmap.csv -c polybee.cfg -f flowmap.csv   # Overlay flowmap
-  %(prog)s angdelta-heatmap.csv --not-norm 1.5708       # Non-normalized data, fixed 0-N colour scale
+  %(prog)s angdelta-heatmap.csv --color-scale-max 1.5708   # Fixed 0-N colour scale instead of auto-scaling
         """
     )
 
     parser.add_argument('input_file',
-                       help='Input CSV file containing normalized heatmap data')
+                       help='Input CSV file containing a 2D grid of heatmap values')
     parser.add_argument('--save-only',
                        action='store_true',
                        help='Save to PNG file without displaying on screen')
@@ -440,10 +443,10 @@ Examples:
     parser.add_argument('--title', '-t',
                        metavar='TITLE',
                        help='Title for the plot (default: input filename without extension)')
-    parser.add_argument('--not-norm',
+    parser.add_argument('--color-scale-max',
                        type=float, metavar='N',
-                       help='Indicates the heatmap is NOT normalized. The colour scale is fixed '
-                            'to run from 0 to N instead of auto-scaling to the data range.')
+                       help='Fix the colour scale to run from 0 to N instead of auto-scaling to '
+                            'the data range.')
 
     args = parser.parse_args()
 
@@ -452,8 +455,8 @@ Examples:
         print(f"Error: File not found: {args.input_file}", file=sys.stderr)
         sys.exit(1)
 
-    if args.not_norm is not None and args.not_norm <= 0.0:
-        print(f"Error: --not-norm must be a positive number, got {args.not_norm}", file=sys.stderr)
+    if args.color_scale_max is not None and args.color_scale_max <= 0.0:
+        print(f"Error: --color-scale-max must be a positive number, got {args.color_scale_max}", file=sys.stderr)
         sys.exit(1)
 
     # Load the heatmap data
@@ -482,13 +485,13 @@ Examples:
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
-                          flowmap=flowmap, notnorm_max=args.not_norm)
+                          flowmap=flowmap, color_scale_max=args.color_scale_max)
     else:
         visualize_heatmap(data, title=title, save_only=False,
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
-                          flowmap=flowmap, notnorm_max=args.not_norm)
+                          flowmap=flowmap, color_scale_max=args.color_scale_max)
 
 
 if __name__ == '__main__':
