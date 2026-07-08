@@ -6,6 +6,10 @@ The CSV file should contain numeric values representing a normalized heatmap.
 The script displays the heatmap on screen with the option to save it.
 Use --save-only to skip the display and save directly to a PNG file.
 
+If the heatmap CSV is NOT normalized (e.g. raw counts or an angular-delta
+heatmap from gen_angdelta-heatmap.py), pass --not-norm N to fix the colour
+scale to run from 0 to N instead of auto-scaling to the data's own range.
+
 Optionally superimpose a flowmap (produced by Flowmap::print) over the heatmap.
 The flowmap CSV contains cells in "axis:strength:count" format and is assumed to
 cover the same environment dimensions as the heatmap (cell sizes may differ).
@@ -21,6 +25,7 @@ Usage:
     ./visualize_heatmap.py <input_csv_file> --save-only
     ./visualize_heatmap.py <input_csv_file> -c polybee.cfg
     ./visualize_heatmap.py <input_csv_file> -c polybee.cfg -f flowmap.csv
+    ./visualize_heatmap.py <input_csv_file> --not-norm 1.5708
 """
 
 import math
@@ -326,7 +331,7 @@ def load_heatmap(filename):
 def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
                       env_width=None, env_height=None,
                       tunnel=None, entrances=None, crop_patches=None, hive=None,
-                      flowmap=None):
+                      flowmap=None, notnorm_max=None):
     nrows, ncols = data.shape
     scale = min(10.0 / max(nrows, ncols), 0.7)  # inches per cell, capped so figure stays reasonable
     top_margin = 1.0    # title
@@ -354,7 +359,11 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
         ylabel = 'Y coordinate'
 
     # aspect='equal' keeps cells square; extent sets the axis coordinate range
-    im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='equal', extent=extent)
+    if notnorm_max is not None:
+        im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='equal', extent=extent,
+                       vmin=0.0, vmax=notnorm_max)
+    else:
+        im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='equal', extent=extent)
 
     if env_width is not None and env_height is not None:
         ax.set_xticks(np.arange(0, env_width + 1, 50))
@@ -376,7 +385,7 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
 
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax)
-    cbar.set_label('Normalized Value', rotation=270, labelpad=20)
+    cbar.set_label('Value' if notnorm_max is not None else 'Normalized Value', rotation=270, labelpad=20)
 
     # Set title and labels
     ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
@@ -412,6 +421,7 @@ Examples:
   %(prog)s heatmap.csv                          # Display heatmap interactively
   %(prog)s heatmap.csv --save-only              # Save to heatmap.png without displaying
   %(prog)s heatmap.csv -c polybee.cfg -f flowmap.csv   # Overlay flowmap
+  %(prog)s angdelta-heatmap.csv --not-norm 1.5708       # Non-normalized data, fixed 0-N colour scale
         """
     )
 
@@ -430,12 +440,20 @@ Examples:
     parser.add_argument('--title', '-t',
                        metavar='TITLE',
                        help='Title for the plot (default: input filename without extension)')
+    parser.add_argument('--not-norm',
+                       type=float, metavar='N',
+                       help='Indicates the heatmap is NOT normalized. The colour scale is fixed '
+                            'to run from 0 to N instead of auto-scaling to the data range.')
 
     args = parser.parse_args()
 
     # Check if input file exists
     if not os.path.isfile(args.input_file):
         print(f"Error: File not found: {args.input_file}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.not_norm is not None and args.not_norm <= 0.0:
+        print(f"Error: --not-norm must be a positive number, got {args.not_norm}", file=sys.stderr)
         sys.exit(1)
 
     # Load the heatmap data
@@ -464,13 +482,13 @@ Examples:
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
-                          flowmap=flowmap)
+                          flowmap=flowmap, notnorm_max=args.not_norm)
     else:
         visualize_heatmap(data, title=title, save_only=False,
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
-                          flowmap=flowmap)
+                          flowmap=flowmap, notnorm_max=args.not_norm)
 
 
 if __name__ == '__main__':
