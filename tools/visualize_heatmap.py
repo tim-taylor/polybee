@@ -3,7 +3,7 @@
 Visualize a heatmap from a CSV file.
 
 The CSV file should contain a 2D grid of numeric values (normalized or not
--- e.g. raw counts, or an angular-delta heatmap from gen_angdelta-heatmap.py).
+-- e.g. raw counts, or an angular-delta heatmap from gen_angdelta_data.py).
 The script displays the heatmap on screen with the option to save it.
 Use --save-only to skip the display and save directly to a PNG file.
 
