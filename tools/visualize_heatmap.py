@@ -322,9 +322,21 @@ def _draw_flowmap(ax, cells, fm_rows, fm_cols,
 
 
 def load_heatmap(filename):
-    """Load heatmap data from CSV file."""
+    """Load heatmap data from CSV file as a 2-D (rows x cols) array.
+
+    np.loadtxt silently squeezes a single-row or single-column grid down to
+    a 1-D array, which is ambiguous (a 1x3 grid and a 3x1 grid both come out
+    as shape (3,)). Row/column counts are taken from the raw file text
+    instead, and the loaded data is reshaped to match.
+    """
     try:
-        data = np.loadtxt(filename, delimiter=',')
+        with open(filename) as f:
+            lines = [line for line in (raw.strip() for raw in f) if line]
+        if not lines:
+            raise ValueError("file is empty")
+        ncols = len(lines[0].split(','))
+        nrows = len(lines)
+        data = np.loadtxt(filename, delimiter=',').reshape(nrows, ncols)
         return data
     except Exception as e:
         print(f"Error loading CSV file: {e}", file=sys.stderr)

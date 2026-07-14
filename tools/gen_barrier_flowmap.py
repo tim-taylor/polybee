@@ -192,6 +192,10 @@ def main():
     )
     args = parser.parse_args()
 
+    if args.cell_size <= 0:
+        print(f"Error: --cell-size must be positive, got {args.cell_size}", file=sys.stderr)
+        sys.exit(1)
+
     all_barriers = []
     env_width = None
     env_height = None

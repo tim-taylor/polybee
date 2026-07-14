@@ -35,11 +35,9 @@ def load_csv_data(filename):
     """
     try:
         data = np.loadtxt(filename, delimiter=',')
-        if data.ndim > 1:
-            values = data.flatten()
-        else:
-            values = data
-        return values
+        # np.loadtxt returns a 0-d array for a file containing a single
+        # value; atleast_1d avoids a downstream len()/indexing crash on that.
+        return np.atleast_1d(data).flatten()
 
     except Exception as e:
         print(f"Error loading CSV file '{filename}': {e}", file=sys.stderr)

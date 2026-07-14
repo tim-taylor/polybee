@@ -149,9 +149,13 @@ def plot_statistics(filenames, data, use_means=False, ylabel=None, title=None):
                     textcoords="offset points",
                     ha='center', va='bottom', fontsize=8)
 
-    # Add extra headroom above the highest whisker + label
+    # Add extra headroom above the highest whisker + label. Margin is
+    # proportional to |max_top| so this also works for all-negative data,
+    # where max_top * 1.15 would move the wrong way / a hardcoded 1.0 top
+    # would be far above the actual (negative) data range.
     max_top = max(v + s for v, s in zip(values, stdevs))
-    ax.set_ylim(top=max_top * 1.15 if max_top > 0 else 1.0)
+    margin = abs(max_top) * 0.15 if max_top != 0 else 0.1
+    ax.set_ylim(top=max_top + margin)
 
     plt.tight_layout()
     plt.show()

@@ -48,6 +48,10 @@ with open(input_file, 'r') as f:
                     # Skip any malformed lines
                     continue
 
+if not generations:
+    print(f"Error: no valid data found in {input_file}", file=sys.stderr)
+    sys.exit(1)
+
 generations = np.array(generations)
 emd_scores = np.array(emd_scores)
 
@@ -140,8 +144,8 @@ plt.tight_layout()
 # Print summary statistics
 print("\nSummary Statistics:")
 print(f"Total individuals evaluated: {len(emd_scores)}")
-print(f"Number of generations: {final_gen + 1}")
-print(f"Population size per generation: ~{len(emd_scores) // (final_gen + 1)}")
+print(f"Number of generations: {len(unique_gens)}")
+print(f"Population size per generation: ~{len(emd_scores) // len(unique_gens)}")
 print(f"\nEMD Score Range:")
 print(f"  Min: {overall_min:.4f}")
 print(f"  Max: {np.max(emd_scores):.4f}")

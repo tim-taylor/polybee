@@ -4,7 +4,7 @@
 What it does:
     Scans one or more polybee .cfg files for `patch` and `barrier` entries and
     builds normalised 2D occupancy heatmaps of where "bridge" patches (patch
-    type 10 with no repeat) and barriers are located within the environment.
+    species 0 with no repeat) and barriers are located within the environment.
     Each config's bridges/barriers are reduced to a single (x, y) centre point,
     all points from all configs are pooled, and each is binned into a grid of
     `--cell-size` x `--cell-size` cells covering the environment dimensions
@@ -63,12 +63,14 @@ def parse_config(filepath):
             elif key == 'env-height':
                 env_height = float(value)
             elif key == 'patch':
-                # Format: x,y,w,h:type:p2:p3:repeat:p5:p6
-                # Bridge: type == 10, repeat (parts[4]) <= 1
+                # Format: x,y,w,h:spacing:jitter:species:repeat:dx,dy:ignore
+                # Bridge: species (parts[3]) == 0, repeat (parts[4]) <= 1
+                # (see Params.cpp parse_patch_positions and
+                # best_individual_to_cfg.py's bridge patch writer)
                 parts = value.split(':')
                 if len(parts) < 5:
                     continue
-                if parts[1].strip() != '10':
+                if parts[3].strip() != '0':
                     continue
                 try:
                     repeat = float(parts[4].strip())
@@ -139,6 +141,10 @@ def main():
         help='Basename for output CSV files (default: heatmap)'
     )
     args = parser.parse_args()
+
+    if args.cell_size <= 0:
+        print(f"Error: --cell-size must be positive, got {args.cell_size}", file=sys.stderr)
+        sys.exit(1)
 
     all_bridges = []
     all_barriers = []

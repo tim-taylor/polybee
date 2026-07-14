@@ -113,8 +113,14 @@ class InteractivePlot:
             for gen in island_data[island]:
                 self.archipelago_scores[gen].extend(island_data[island][gen])
 
-        # Generate distinct colors for each island
-        self.colors = plt.cm.tab10(np.linspace(0, 1, max(10, self.num_islands)))
+        # Generate distinct colors for each island. tab10 only has 10 discrete
+        # colors, so sampling it at >10 points (via np.linspace) collides on
+        # duplicates; fall back to a continuously-interpolated colormap once
+        # there are more than 10 islands.
+        if self.num_islands <= 10:
+            self.colors = plt.cm.tab10(np.linspace(0, 1, 10))
+        else:
+            self.colors = plt.cm.hsv(np.linspace(0, 1, self.num_islands, endpoint=False))
 
         # Store plot elements for toggling
         self.island_plots = {}  # island -> {'mean': line, 'median': line, 'min': line, 'individual': scatter, 'rolling': line}
@@ -493,8 +499,8 @@ def print_summary(island_data, all_islands, archipelago_scores, objective_type=0
     print(f"{'='*60}")
     print(f"Objective: {score_name}")
     print(f"Total evaluations across all islands: {len(all_scores)}")
-    print(f"Number of generations: {final_gen + 1}")
-    print(f"Average evaluations per generation: ~{len(all_scores) // (final_gen + 1)}")
+    print(f"Number of generations: {len(unique_gens)}")
+    print(f"Average evaluations per generation: ~{len(all_scores) // len(unique_gens)}")
     print(f"\n{score_name} Range (Archipelago):")
     print(f"  Min: {np.min(all_scores):.4f}")
     print(f"  Max: {np.max(all_scores):.4f}")

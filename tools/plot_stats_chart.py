@@ -55,6 +55,10 @@ def load_stats_data(filename):
                 print(f"Error: Required column '{col}' not found in CSV file", file=sys.stderr)
                 sys.exit(1)
 
+        # fill_between/plot below assume ascending x order; sort defensively
+        # in case the CSV rows aren't already in that order.
+        df = df.sort_values(x_column).reset_index(drop=True)
+
         return df, x_column
     except Exception as e:
         print(f"Error loading CSV file: {e}", file=sys.stderr)

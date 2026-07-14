@@ -44,9 +44,6 @@ def calculate_grid_dimensions(num_images):
     if num_images == 1:
         return (1, 1)
 
-    # A4 aspect ratio (portrait)
-    page_aspect_ratio = A4_WIDTH_INCHES / A4_HEIGHT_INCHES  # ~0.71
-
     best_rows = 1
     best_cols = num_images
     best_size = 0.0
@@ -68,8 +65,7 @@ def calculate_grid_dimensions(num_images):
         # (assuming square-ish images, use the smaller dimension)
         image_size = min(width_per_image, height_per_image)
 
-        # Prefer layouts that better match the page aspect ratio
-        # and maximize the image size
+        # Prefer the layout that maximizes per-image size
         if image_size > best_size:
             best_size = image_size
             best_rows = rows
@@ -202,6 +198,10 @@ def load_images(image_files):
 
         try:
             img = Image.open(filepath)
+            # PIL lazily decodes pixel data on first access; force it now so
+            # a corrupt/truncated image is caught here and skipped, rather
+            # than crashing later when the figure is rendered.
+            img.load()
             # Convert to RGB if needed (in case of RGBA)
             if img.mode == 'RGBA':
                 img = img.convert('RGB')

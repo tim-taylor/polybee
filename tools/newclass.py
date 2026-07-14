@@ -28,6 +28,7 @@ def main():
         print("Requested output files already exist! Aborting", file=sys.stderr)
         sys.exit(1)
 
+    cppFile = None
     try:
         cppFile = open(cppFilename, 'w')
         print("""/**
@@ -43,11 +44,13 @@ def main():
             hfn=hFilename,
             cn=className), file=cppFile)
     except IOError as e:
-        print("Unable to open file {} for writing: {}".format(cppFilename, str(e), file=sys.stderr))
+        print("Unable to open file {} for writing: {}".format(cppFilename, str(e)), file=sys.stderr)
         sys.exit(1)
     finally:
-        cppFile.close()
+        if cppFile is not None:
+            cppFile.close()
 
+    hFile = None
     try:
         hFile = open(hFilename, 'w')
         print("""/**
@@ -73,10 +76,11 @@ public:
                             ig="_"+hFilename.upper().replace(".","_"),
                             cn=className), file=hFile)
     except IOError as e:
-        print("Unable to open file {} for writing: {}".format(hFilename, str(e), file=sys.stderr))
+        print("Unable to open file {} for writing: {}".format(hFilename, str(e)), file=sys.stderr)
         sys.exit(1)
     finally:
-        hFile.close()
+        if hFile is not None:
+            hFile.close()
 
 
 ##-------------------------------------------------------##
