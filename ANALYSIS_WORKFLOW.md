@@ -17,3 +17,19 @@ for N in `seq 1 $NUM_REPS`; do gawk '/INFO: isl/ {print $3","$5","$11}' out-${EX
 
 for N in `seq 1 $NUM_REPS`; do ~/polybee/tools/plot_fitness.py --type 1 --one-island --ymin -0.78 --ymax -0.50 --minimal --save-only --title "${RUN_TITLE} (Run ${N})" --basename ${EXPT_BASENAME} fitness-${EXPT_BASENAME}_$N.csv; done
 ```
+
+**NEXT** extend plot_fitness.py so that it can be given multiple fitness files - in which case it plots median value across all files for each generation, and error bars showing the interquartile range
+
+```
+for N in `seq 1 $NUM_REPS`; do ~/polybee/tools/best_individual_to_cfg.py out-${EXPT_BASENAME}-*_$N.txt; done
+```
+
+
+
+# NOTES
+
+Testing this stuff with data in:
+
+```
+/home/tim/tmp/polybee-data/evolve-20X-10B-400gen-400pop-100epi-2000its
+```
