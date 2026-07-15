@@ -17,6 +17,8 @@ Or on Ubuntu/Debian:
 
 Usage:
     ./plot_fitness_islands.py [-t {0,1}] <input_csv_file>
+    ./plot_fitness_islands.py <input_csv_file> --ymin 0 --ymax 2
+    ./plot_fitness_islands.py <input_csv_file> --minimal
 """
 
 import matplotlib.pyplot as plt
@@ -45,6 +47,17 @@ def parse_arguments():
                         help='Include mean data and labels in plot (off by default)')
     parser.add_argument('--title', type=str, default=None,
                         help='Optional title to display above the plot')
+    parser.add_argument('--ymin', type=float, default=None,
+                        help='Minimum value for the y-axis scale (default: auto-scaled)')
+    parser.add_argument('--ymax', type=float, default=None,
+                        help='Maximum value for the y-axis scale (default: auto-scaled)')
+    parser.add_argument('--minimal', action='store_true', default=False,
+                        help='Show only the graph, axis labels, and legend, without the '
+                             'island/metric controls or stats panel on the right')
+    parser.add_argument('--one-island', action='store_true', default=False,
+                        help='Indicate the run only consisted of a single island: omit the '
+                             '"Archipelago (1 Islands) -" prefix from the plot title, and drop '
+                             '"Archipelago" from the Median/Mean/Min legend labels')
     return parser.parse_args()
 
 
@@ -98,13 +111,18 @@ def calculate_rolling_average(scores, window_size=10):
 class InteractivePlot:
     """Interactive plot with toggle controls for islands and metrics."""
 
-    def __init__(self, island_data, all_islands, objective_type=0, show_means=False, title=None):
+    def __init__(self, island_data, all_islands, objective_type=0, show_means=False, title=None,
+                ymin=None, ymax=None, minimal=False, one_island=False):
         self.island_data = island_data
         self.all_islands = all_islands
         self.score_name = OBJECTIVE_LABELS[objective_type]['name']
         self.score_short = OBJECTIVE_LABELS[objective_type]['short']
         self.show_means = show_means
         self.title = title
+        self.ymin = ymin
+        self.ymax = ymax
+        self.minimal = minimal
+        self.one_island = one_island
         self.num_islands = len(all_islands)
 
         # Combine all islands' data for archipelago-level statistics
@@ -139,29 +157,41 @@ class InteractivePlot:
 
         self.setup_figure()
         self.create_plots()
-        self.create_controls()
-        self.update_stats_text()
+        if self.ymin is not None or self.ymax is not None:
+            self.ax.set_ylim(bottom=self.ymin, top=self.ymax)
+        if not self.minimal:
+            self.create_controls()
+            self.update_stats_text()
 
     def setup_figure(self):
         """Set up the figure and axes layout."""
-        self.fig = plt.figure(figsize=(16, 9))
+        self.fig = plt.figure(figsize=(10, 8) if self.minimal else (16, 9))
 
-        # Main plot area (leave room for controls on the right)
-        self.ax = self.fig.add_axes([0.08, 0.1, 0.55, 0.8])
+        if self.minimal:
+            # No controls/stats panel, so the plot can use most of the figure
+            self.ax = self.fig.add_axes([0.10, 0.1, 0.85, 0.8])
+        else:
+            # Main plot area (leave room for controls on the right)
+            self.ax = self.fig.add_axes([0.08, 0.1, 0.55, 0.8])
 
         self.ax.set_xlabel('Generation', fontsize=12, fontweight='bold')
         self.ax.set_ylabel(self.score_name, fontsize=12, fontweight='bold')
-        base_title = f'Archipelago ({self.num_islands} Islands) - {self.score_name}s'
+        if self.one_island:
+            base_title = f'{self.score_name}s'
+        else:
+            base_title = f'Archipelago ({self.num_islands} Islands) - {self.score_name}s'
         full_title = f'{self.title}\n{base_title}' if self.title else base_title
         self.ax.set_title(full_title, fontsize=14, fontweight='bold')
         self.ax.grid(True, alpha=0.3, linestyle='--')
 
     def create_plots(self):
         """Create all plot elements (initially visible based on defaults)."""
-        # Plot each island
-        for idx, island in enumerate(self.all_islands):
-            color = self.colors[idx % len(self.colors)]
-            self.island_plots[island] = self.create_island_plots(island, color)
+        # Plot each island (skipped in --minimal mode, which shows only the
+        # overall archipelago data)
+        if not self.minimal:
+            for idx, island in enumerate(self.all_islands):
+                color = self.colors[idx % len(self.colors)]
+                self.island_plots[island] = self.create_island_plots(island, color)
 
         # Plot archipelago results
         self.archipelago_plots = self.create_archipelago_plots()
@@ -223,6 +253,10 @@ class InteractivePlot:
 
         plots = {}
 
+        # With --one-island, the "Archipelago" qualifier is redundant since
+        # there's only a single island contributing to these stats.
+        arch_prefix = '' if self.one_island else 'Archipelago '
+
         # Individual scores (scatter)
         scatter = self.ax.scatter(all_gens, all_scores, alpha=0.15, s=20, c='gray',
                                   edgecolors='none', visible=self.metric_visible['individual'])
@@ -231,22 +265,22 @@ class InteractivePlot:
         # Mean line (only if --show-means)
         if self.show_means:
             mean_line, = self.ax.plot(unique_gens, mean_scores, color='black', linewidth=1.5,
-                                      alpha=0.5, linestyle='--', marker='o', markersize=3,
-                                      label='Archipelago Mean', visible=self.metric_visible['mean'])
+                                      alpha=0.5, linestyle=':', marker='o', markersize=3,
+                                      label=f'{arch_prefix}Mean', visible=self.metric_visible['mean'])
             plots['mean'] = mean_line
         else:
             plots['mean'] = None
 
         # Median line
-        median_line, = self.ax.plot(unique_gens, median_scores, color='black', linewidth=1.5,
-                                    alpha=0.5, marker='^', markersize=3,
-                                    label='Archipelago Median', visible=self.metric_visible['median'])
+        median_line, = self.ax.plot(unique_gens, median_scores, color='orange', linewidth=1.5,
+                                    alpha=0.5, linestyle=':', marker='^', markersize=3,
+                                    label=f'{arch_prefix}Median', visible=self.metric_visible['median'])
         plots['median'] = median_line
 
         # Min line
-        min_line, = self.ax.plot(unique_gens, min_scores, color='black', linewidth=1.5,
-                                 alpha=0.5, linestyle=':', marker='s', markersize=3,
-                                 label='Archipelago Min', visible=self.metric_visible['min'])
+        min_line, = self.ax.plot(unique_gens, min_scores, color='mediumseagreen', linewidth=1.5,
+                                 alpha=0.5, linestyle='-', marker='s', markersize=3,
+                                 label=f'{arch_prefix}Min', visible=self.metric_visible['min'])
         plots['min'] = min_line
 
         # Rolling averages
@@ -260,22 +294,22 @@ class InteractivePlot:
 
             if self.show_means and mean_rolling is not None:
                 mean_roll_line, = self.ax.plot(rolling_gens, mean_rolling, color='darkblue',
-                                               linewidth=2.5, linestyle='--',
-                                               label='Archipelago Mean (rolling)',
+                                               linewidth=2.5, linestyle='-',
+                                               label=f'{arch_prefix}Mean (rolling)',
                                                visible=self.metric_visible['rolling'] and self.metric_visible['mean'])
                 plots['mean_rolling'] = mean_roll_line
             else:
                 plots['mean_rolling'] = None
 
-            median_roll_line, = self.ax.plot(rolling_gens, median_rolling, color='darkgreen',
+            median_roll_line, = self.ax.plot(rolling_gens, median_rolling, color='chocolate',
                                              linewidth=2.5, linestyle='-',
-                                             label='Archipelago Median (rolling)',
+                                             label=f'{arch_prefix}Median (rolling)',
                                              visible=self.metric_visible['rolling'] and self.metric_visible['median'])
             plots['median_rolling'] = median_roll_line
 
-            min_roll_line, = self.ax.plot(rolling_gens, min_rolling, color='darkred',
-                                          linewidth=2.5, linestyle=':',
-                                          label='Archipelago Min (rolling)',
+            min_roll_line, = self.ax.plot(rolling_gens, min_rolling, color='darkgreen',
+                                          linewidth=2.5, linestyle='-',
+                                          label=f'{arch_prefix}Min (rolling)',
                                           visible=self.metric_visible['rolling'] and self.metric_visible['min'])
             plots['min_rolling'] = min_roll_line
         else:
@@ -557,7 +591,9 @@ def main():
     print_summary(island_data, all_islands, archipelago_scores, args.type, args.show_means)
 
     # Create and show interactive plot
-    plot = InteractivePlot(island_data, all_islands, args.type, args.show_means, args.title)
+    plot = InteractivePlot(island_data, all_islands, args.type, args.show_means, args.title,
+                           ymin=args.ymin, ymax=args.ymax, minimal=args.minimal,
+                           one_island=args.one_island)
     plot.show()
 
 
