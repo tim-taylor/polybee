@@ -16,15 +16,18 @@ Or on Ubuntu/Debian:
     sudo apt install python3-matplotlib python3-numpy
 
 Usage:
-    ./plot_fitness_islands.py [-t {0,1}] <input_csv_file>
-    ./plot_fitness_islands.py <input_csv_file> --ymin 0 --ymax 2
-    ./plot_fitness_islands.py <input_csv_file> --minimal
+    ./plot_fitness.py [-t {0,1}] <input_csv_file>
+    ./plot_fitness.py <input_csv_file> --ymin 0 --ymax 2
+    ./plot_fitness.py <input_csv_file> --minimal
+    ./plot_fitness.py <input_csv_file> --save-only --basename myexpt
 """
 
 import matplotlib.pyplot as plt
 from matplotlib.widgets import CheckButtons, Button
 import numpy as np
 from collections import defaultdict
+import os
+import re
 import sys
 import argparse
 
@@ -58,7 +61,24 @@ def parse_arguments():
                         help='Indicate the run only consisted of a single island: omit the '
                              '"Archipelago (1 Islands) -" prefix from the plot title, and drop '
                              '"Archipelago" from the Median/Mean/Min legend labels')
+    parser.add_argument('--save-only', action='store_true', default=False,
+                        help='Save the plot to graph-fitness-BASENAME-N.png instead of '
+                             'displaying it on screen, where N is the run number taken from '
+                             'the input filename')
+    parser.add_argument('--basename', type=str, default='expt',
+                        help='Basename used in the --save-only output filename (default: expt)')
     return parser.parse_args()
+
+
+RUN_NUM_RE = re.compile(r'[-_](\d+)\.[^.]+$')
+
+
+def extract_run_number(filepath):
+    """Return the trailing run number N from a filename like fitness-expt-N.csv, or None."""
+    match = RUN_NUM_RE.search(os.path.basename(filepath))
+    if not match:
+        return None
+    return int(match.group(1))
 
 
 def read_data(filename):
@@ -176,11 +196,10 @@ class InteractivePlot:
 
         self.ax.set_xlabel('Generation', fontsize=12, fontweight='bold')
         self.ax.set_ylabel(self.score_name, fontsize=12, fontweight='bold')
-        if self.one_island:
-            base_title = f'{self.score_name}s'
-        else:
-            base_title = f'Archipelago ({self.num_islands} Islands) - {self.score_name}s'
-        full_title = f'{self.title}\n{base_title}' if self.title else base_title
+        # score_name is deliberately not repeated here -- it's already shown
+        # as the y-axis label.
+        base_title = '' if self.one_island else f'Archipelago ({self.num_islands} Islands)'
+        full_title = '\n'.join(part for part in (self.title, base_title) if part)
         self.ax.set_title(full_title, fontsize=14, fontweight='bold')
         self.ax.grid(True, alpha=0.3, linestyle='--')
 
@@ -519,6 +538,11 @@ class InteractivePlot:
         """Display the plot."""
         plt.show()
 
+    def save(self, output_file):
+        """Save the plot to a file without displaying it."""
+        self.fig.savefig(output_file, dpi=150, bbox_inches='tight')
+        print(f"Plot saved to: {output_file}")
+
 
 def print_summary(island_data, all_islands, archipelago_scores, objective_type=0, show_means=False):
     """Print summary statistics to console."""
@@ -575,6 +599,15 @@ def print_summary(island_data, all_islands, archipelago_scores, objective_type=0
 
 def main():
     args = parse_arguments()
+
+    if args.save_only:
+        run_num = extract_run_number(args.input_file)
+        if run_num is None:
+            print(f"Error: --save-only requires a run number in the input filename "
+                  f"(e.g. fitness-expt-N.csv), could not extract one from: {args.input_file}",
+                  file=sys.stderr)
+            sys.exit(1)
+
     island_data, all_islands = read_data(args.input_file)
 
     if len(all_islands) == 0:
@@ -590,11 +623,15 @@ def main():
     # Print summary to console
     print_summary(island_data, all_islands, archipelago_scores, args.type, args.show_means)
 
-    # Create and show interactive plot
+    # Create and show (or save) the plot
     plot = InteractivePlot(island_data, all_islands, args.type, args.show_means, args.title,
                            ymin=args.ymin, ymax=args.ymax, minimal=args.minimal,
                            one_island=args.one_island)
-    plot.show()
+    if args.save_only:
+        output_file = f"graph-fitness-{args.basename}_{run_num}.png"
+        plot.save(output_file)
+    else:
+        plot.show()
 
 
 if __name__ == '__main__':
