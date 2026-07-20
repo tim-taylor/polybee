@@ -124,6 +124,11 @@ def visualize_flowmap(cells, fm_rows, fm_cols, title="Flowmap",
         plt.show()
 
 
+def format_threshold(value):
+    """Format a threshold for use in a filename, e.g. 0.75 -> '0p750'."""
+    return f"{value:.3f}".replace('.', 'p')
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Visualize a flowmap CSV file (from Flowmap::print) on its own, '
@@ -154,16 +159,21 @@ Examples:
                        help='Colour lines by strength of alignment using the polybee heatmap '
                             'colour scale (instead of grayscale), with a colourbar on the right')
     parser.add_argument('--strength-th',
-                       type=float, default=0.0, metavar='TH',
-                       help='Only draw cells whose strength is >= TH, in range [0.0, 1.0] (default: 0.0)')
+                       type=float, default=None, metavar='TH',
+                       help='Only draw cells whose strength is >= TH, in range [0.0, 1.0] (default: 0.0). '
+                            'When --save-only is used, appends -st-0pNNN to the output filename.')
     parser.add_argument('--count-th',
-                       type=float, default=0.0, metavar='TH',
+                       type=float, default=None, metavar='TH',
                        help='Only draw cells whose count fraction (count / max count) is >= TH, '
-                            'in range [0.0, 1.0] (default: 0.0)')
+                            'in range [0.0, 1.0] (default: 0.0). When --save-only is used, appends '
+                            '-ct-0pNNN to the output filename.')
 
     args = parser.parse_args()
 
-    for name, value in (('--strength-th', args.strength_th), ('--count-th', args.count_th)):
+    strength_th = args.strength_th if args.strength_th is not None else 0.0
+    count_th = args.count_th if args.count_th is not None else 0.0
+
+    for name, value in (('--strength-th', strength_th), ('--count-th', count_th)):
         if not 0.0 <= value <= 1.0:
             print(f"Error: {name} must be in range [0.0, 1.0], got {value}", file=sys.stderr)
             sys.exit(1)
@@ -183,18 +193,23 @@ Examples:
     title = args.title if args.title else basename
 
     if args.save_only:
-        output_file = os.path.splitext(args.input_file)[0] + '.png'
+        suffix = ''
+        if args.strength_th is not None:
+            suffix += f"-st-{format_threshold(args.strength_th)}"
+        if args.count_th is not None:
+            suffix += f"-ct-{format_threshold(args.count_th)}"
+        output_file = os.path.splitext(args.input_file)[0] + suffix + '.png'
         visualize_flowmap(cells, fm_rows, fm_cols, title=title, save_only=True, output_file=output_file,
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
-                          use_color=args.color, strength_th=args.strength_th, count_th=args.count_th)
+                          use_color=args.color, strength_th=strength_th, count_th=count_th)
     else:
         visualize_flowmap(cells, fm_rows, fm_cols, title=title, save_only=False,
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
-                          use_color=args.color, strength_th=args.strength_th, count_th=args.count_th)
+                          use_color=args.color, strength_th=strength_th, count_th=count_th)
 
 
 if __name__ == '__main__':

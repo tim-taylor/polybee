@@ -20,6 +20,12 @@ Usage:
     ./plot_fitness.py <input_csv_file> --ymin 0 --ymax 2
     ./plot_fitness.py <input_csv_file> --minimal
     ./plot_fitness.py <input_csv_file> --save-only --basename myexpt
+
+    # Multiple input files: instead of per-island/per-file lines, plots the
+    # median (across files) of each file's per-generation median and min,
+    # with the interquartile range shaded around each line.
+    ./plot_fitness.py fitness-expt_1.csv fitness-expt_2.csv fitness-expt_3.csv
+    ./plot_fitness.py fitness-expt_*.csv --minimal
 """
 
 import matplotlib.pyplot as plt
@@ -42,7 +48,11 @@ def parse_arguments():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(
         description='Plot fitness scores from archipelago optimization run')
-    parser.add_argument('input_file', help='Input CSV file (island,generation,fitness_score)')
+    parser.add_argument('input_files', nargs='+',
+                        help='Input CSV file(s) (island,generation,fitness_score). If more '
+                             'than one file is given, plots the median (across files) of each '
+                             "file's per-generation median and min, with the interquartile "
+                             'range shaded around each line, instead of per-file lines.')
     parser.add_argument('-t', '--type', type=int, default=0, choices=[0, 1],
                         help='Objective function type: 0=EMD distance to target (default), '
                              '1=Flower visit count success fraction')
@@ -597,18 +607,206 @@ def print_summary(island_data, all_islands, archipelago_scores, objective_type=0
     print(f"\n{'='*60}\n")
 
 
-def main():
-    args = parse_arguments()
+def compute_file_generation_stats(filename, show_means):
+    """Read a single file and return its per-generation median/min(/mean), combined
+    across all islands in the file, indexed by generation number. Returns None if
+    the file contains no valid data."""
+    island_data, all_islands = read_data(filename)
+    if len(all_islands) == 0:
+        return None
+
+    combined_scores = defaultdict(list)
+    for island in all_islands:
+        for gen in island_data[island]:
+            combined_scores[gen].extend(island_data[island][gen])
+
+    unique_gens, mean_scores, median_scores, min_scores, _, _ = \
+        calculate_generation_stats(combined_scores)
+
+    return {
+        'gens': unique_gens,
+        'median': dict(zip(unique_gens, median_scores)),
+        'min': dict(zip(unique_gens, min_scores)),
+        'mean': dict(zip(unique_gens, mean_scores)) if show_means else None,
+    }
+
+
+def aggregate_multi_run_stats(per_file_stats, show_means):
+    """Aggregate per-file per-generation stats across files/runs. For each generation,
+    and for each of the 'median'/'min'(/'mean') metrics, computes the median across
+    files of that metric's per-generation value, along with its interquartile range.
+    Generations missing from a given file are simply excluded from that generation's
+    aggregation (rather than requiring every file to cover the same generations)."""
+    all_gens = sorted(set(gen for stats in per_file_stats for gen in stats['gens']))
+    metrics = ['median', 'min'] + (['mean'] if show_means else [])
+
+    result = {'gens': all_gens, 'num_runs': []}
+    for metric in metrics:
+        result[metric] = {'center': [], 'q25': [], 'q75': []}
+
+    for gen in all_gens:
+        for metric in metrics:
+            values = [stats[metric][gen] for stats in per_file_stats if gen in stats[metric]]
+            result[metric]['center'].append(np.median(values))
+            result[metric]['q25'].append(np.percentile(values, 25))
+            result[metric]['q75'].append(np.percentile(values, 75))
+        result['num_runs'].append(
+            sum(1 for stats in per_file_stats if gen in stats['median']))
+
+    return result
+
+
+def print_multi_run_summary(filenames, agg_stats, objective_type=0, show_means=False):
+    """Print multi-run summary statistics to console."""
+    score_name = OBJECTIVE_LABELS[objective_type]['name']
+    gens = agg_stats['gens']
+    final_idx = -1
+    final_gen = gens[final_idx]
+
+    print(f"\n{'='*60}")
+    print(f"MULTI-RUN SUMMARY ({len(filenames)} Runs)")
+    print(f"{'='*60}")
+    print(f"Objective: {score_name}")
+    print(f"Generations: {gens[0]}-{final_gen}")
+    print(f"Runs contributing to final generation: {agg_stats['num_runs'][final_idx]}")
+
+    if show_means:
+        print(f"\nFinal Generation Mean (median across runs, IQR):")
+        print(f"  {agg_stats['mean']['center'][final_idx]:.4f} "
+              f"[{agg_stats['mean']['q25'][final_idx]:.4f}, "
+              f"{agg_stats['mean']['q75'][final_idx]:.4f}]")
+
+    print(f"\nFinal Generation Median (median across runs, IQR):")
+    print(f"  {agg_stats['median']['center'][final_idx]:.4f} "
+          f"[{agg_stats['median']['q25'][final_idx]:.4f}, "
+          f"{agg_stats['median']['q75'][final_idx]:.4f}]")
+
+    print(f"\nFinal Generation Min (median across runs, IQR):")
+    print(f"  {agg_stats['min']['center'][final_idx]:.4f} "
+          f"[{agg_stats['min']['q25'][final_idx]:.4f}, "
+          f"{agg_stats['min']['q75'][final_idx]:.4f}]")
+
+    print(f"\n{'='*60}\n")
+
+
+class MultiRunPlot:
+    """Plot of aggregated per-generation median/min(/mean) across multiple runs
+    (input files), each shown as a line with a shaded interquartile-range band."""
+
+    METRIC_STYLE = {
+        'mean': {'color': 'darkblue', 'marker': 'o'},
+        'median': {'color': 'orange', 'marker': '^'},
+        'min': {'color': 'mediumseagreen', 'marker': 's'},
+    }
+
+    def __init__(self, agg_stats, num_runs, objective_type=0, show_means=False, title=None,
+                ymin=None, ymax=None, minimal=False):
+        self.agg_stats = agg_stats
+        self.num_runs = num_runs
+        self.score_name = OBJECTIVE_LABELS[objective_type]['name']
+        self.show_means = show_means
+        self.title = title
+        self.ymin = ymin
+        self.ymax = ymax
+        self.minimal = minimal
+
+        self.setup_figure()
+        self.create_plots()
+        if self.ymin is not None or self.ymax is not None:
+            self.ax.set_ylim(bottom=self.ymin, top=self.ymax)
+        self.ax.legend(loc='upper right', framealpha=0.9, fontsize=9)
+        if not self.minimal:
+            self.create_stats_text()
+
+    def setup_figure(self):
+        """Set up the figure and axes layout."""
+        self.fig = plt.figure(figsize=(10, 8) if self.minimal else (13, 8))
+
+        if self.minimal:
+            self.ax = self.fig.add_axes([0.10, 0.1, 0.85, 0.8])
+        else:
+            # Leave a narrow strip on the right for the stats text panel.
+            self.ax = self.fig.add_axes([0.08, 0.1, 0.68, 0.8])
+
+        self.ax.set_xlabel('Generation', fontsize=12, fontweight='bold')
+        self.ax.set_ylabel(self.score_name, fontsize=12, fontweight='bold')
+        base_title = f'{self.num_runs} Runs (median across runs, shaded IQR)'
+        full_title = '\n'.join(part for part in (self.title, base_title) if part)
+        self.ax.set_title(full_title, fontsize=14, fontweight='bold')
+        self.ax.grid(True, alpha=0.3, linestyle='--')
+
+    def create_plots(self):
+        """Plot the median/min(/mean) lines with shaded IQR bands."""
+        gens = self.agg_stats['gens']
+        metrics = ['median', 'min'] + (['mean'] if self.show_means else [])
+
+        for metric in metrics:
+            style = self.METRIC_STYLE[metric]
+            data = self.agg_stats[metric]
+            label = metric.capitalize()
+
+            self.ax.fill_between(gens, data['q25'], data['q75'],
+                                 color=style['color'], alpha=0.2, linewidth=0,
+                                 label=f'{label} IQR')
+            self.ax.plot(gens, data['center'], color=style['color'], linewidth=2.0,
+                         marker=style['marker'], markersize=3,
+                         label=f'{label} (n={self.num_runs} runs)')
+
+    def create_stats_text(self):
+        """Show a small stats text panel to the right of the plot."""
+        gens = self.agg_stats['gens']
+        final_gen = gens[-1]
+
+        stats_text = 'Multi-Run Statistics\n'
+        stats_text += '─' * 25 + '\n'
+        stats_text += f'Runs: {self.num_runs}\n'
+        stats_text += f'Generations: {gens[0]}-{final_gen}\n'
+        stats_text += f'Final gen runs: {self.agg_stats["num_runs"][-1]}\n\n'
+
+        if self.show_means:
+            mean = self.agg_stats['mean']
+            stats_text += (f'Final Mean:\n  {mean["center"][-1]:.4f} '
+                           f'[{mean["q25"][-1]:.4f}, {mean["q75"][-1]:.4f}]\n')
+
+        median = self.agg_stats['median']
+        stats_text += (f'Final Median:\n  {median["center"][-1]:.4f} '
+                       f'[{median["q25"][-1]:.4f}, {median["q75"][-1]:.4f}]\n')
+
+        min_ = self.agg_stats['min']
+        stats_text += (f'Final Min:\n  {min_["center"][-1]:.4f} '
+                       f'[{min_["q25"][-1]:.4f}, {min_["q75"][-1]:.4f}]')
+
+        stats_ax = self.fig.add_axes([0.80, 0.4, 0.18, 0.5])
+        stats_ax.axis('off')
+        stats_ax.text(0.0, 1.0, stats_text, transform=stats_ax.transAxes,
+                      verticalalignment='top',
+                      bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8),
+                      fontsize=9, family='monospace')
+
+    def show(self):
+        """Display the plot."""
+        plt.show()
+
+    def save(self, output_file):
+        """Save the plot to a file without displaying it."""
+        self.fig.savefig(output_file, dpi=150, bbox_inches='tight')
+        print(f"Plot saved to: {output_file}")
+
+
+def run_single_file(args):
+    """Original single-file behaviour: per-island lines plus combined archipelago
+    lines, with rolling averages and interactive controls."""
+    input_file = args.input_files[0]
 
     if args.save_only:
-        run_num = extract_run_number(args.input_file)
+        run_num = extract_run_number(input_file)
         if run_num is None:
             print(f"Error: --save-only requires a run number in the input filename "
-                  f"(e.g. fitness-expt-N.csv), could not extract one from: {args.input_file}",
+                  f"(e.g. fitness-expt-N.csv), could not extract one from: {input_file}",
                   file=sys.stderr)
             sys.exit(1)
 
-    island_data, all_islands = read_data(args.input_file)
+    island_data, all_islands = read_data(input_file)
 
     if len(all_islands) == 0:
         print("Error: No valid data found in input file", file=sys.stderr)
@@ -632,6 +830,43 @@ def main():
         plot.save(output_file)
     else:
         plot.show()
+
+
+def run_multi_file(args):
+    """Multi-file behaviour: aggregate each file's per-generation median/min(/mean)
+    across files, plotting the median across runs with a shaded IQR band."""
+    per_file_stats = []
+    for filename in args.input_files:
+        stats = compute_file_generation_stats(filename, args.show_means)
+        if stats is None:
+            print(f"Warning: no valid data in {filename}, skipping", file=sys.stderr)
+            continue
+        per_file_stats.append(stats)
+
+    if not per_file_stats:
+        print("Error: No valid data found in any input file", file=sys.stderr)
+        sys.exit(1)
+
+    agg_stats = aggregate_multi_run_stats(per_file_stats, args.show_means)
+
+    print_multi_run_summary(args.input_files, agg_stats, args.type, args.show_means)
+
+    plot = MultiRunPlot(agg_stats, len(per_file_stats), args.type, args.show_means, args.title,
+                        ymin=args.ymin, ymax=args.ymax, minimal=args.minimal)
+    if args.save_only:
+        output_file = f"graph-fitness-{args.basename}-summary.png"
+        plot.save(output_file)
+    else:
+        plot.show()
+
+
+def main():
+    args = parse_arguments()
+
+    if len(args.input_files) == 1:
+        run_single_file(args)
+    else:
+        run_multi_file(args)
 
 
 if __name__ == '__main__':
