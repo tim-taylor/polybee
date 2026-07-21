@@ -55,6 +55,37 @@ All generated output is organised into subdirectories alongside
    best config through `polybee` into `bee-flowmaps-<N>-indiv/`, then
    merges across replicates into `bee-flowmaps-agg/`.
 
+## Cross-analysis between two conditions
+
+`tools/run-cross-analysis.sh` compares the merged bee-movement flowmaps of
+two `run_analysis.sh` output directories (two experimental conditions), using
+axial angular-delta heatmaps and histograms. Run it from the parent of the
+two condition directories:
+
+```
+~/polybee/tools/run-cross-analysis.sh \
+    --title "Barriers-only vs barriers-and-bridges" \
+    condition-a-dir condition-b-dir
+```
+
+For each flowmap cell size found in both directories (detected from whatever
+`bee-flowmap-size-*-intra-condition-merged-*.csv` files exist in each
+directory's `bee-flowmaps-agg/`), it runs `gen_angdelta_data.py` six times:
+with no thresholds and with the (configurable) default strength/count
+thresholds `0.5`/`0.1`, each at histogram bin sizes of 5, 10 and 15 degrees.
+Each resulting angdelta heatmap is visualised with `visualize_heatmap.py`
+(fixed colour scale `0`-`pi/2`, using a config file taken from the first
+condition directory's `best-configs-indiv/`, on the assumption that both
+conditions share the same basic environment) and each histogram with
+`visualize_angdelta_histogram.py`. The given `--title` is passed to every one
+of these plots, with `(thresholds: count=..., strength=...)` appended for the
+thresholded comparisons.
+
+Output (18 heatmap CSV/PNG pairs and 18 histogram CSV/PNG pairs) is written
+to `cross-analysis-<dir1>-vs-<dir2>/` by default, overridable with
+`--output-dir`. Run `run-cross-analysis.sh --help` for the full list of
+options.
+
 # NOTES
 
 Testing this stuff with data in:
