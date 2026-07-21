@@ -612,6 +612,9 @@ void Params::print(std::ostream& os, bool bGenerateForConfigFile)
     }
 
     for (auto& vinfo : REGISTRY) {
+        if (vinfo.uname == "evolve-spec") {
+            continue;   // printed separately below, reconstructed from the evolveSpec struct
+        }
         os << vinfo.uname << valsep << vinfo.valueAsStr() << linesep;
     }
 
