@@ -1,6 +1,8 @@
 # polybee
 An agent-based model of bee movement in polytunnels
 
+Documentation: https://tim-taylor.github.io/polybee/
+
 ## Requirements
 
 ### Boost
