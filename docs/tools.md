@@ -33,8 +33,9 @@ for the full pipeline, output directory layout, and worked examples.
   Slurm output logs. `run_analysis.sh --help` for options.
 
 - **`run_cross_analysis.sh`** — compares the merged bee-movement flowmaps
-  of two `run_analysis.sh` output directories (two experimental
-  conditions) via angular-delta heatmaps and histograms.
+  and bee-position heatmaps of two `run_analysis.sh` output directories
+  (two experimental conditions), via angular-delta heatmaps/histograms
+  (flowmaps) and a plain (unthresholded) delta heatmap (heatmaps).
   `run_cross_analysis.sh --help` for options.
 
 ## Extracting data from run logs
@@ -96,8 +97,11 @@ or the Ubuntu/Debian `python3-matplotlib`/`python3-numpy` packages).
 - **`visualize_heatmap.py`** — renders a heatmap CSV (bee-position heatmap,
   or any other 2D CSV grid such as an angular-delta heatmap) as an image,
   optionally overlaid with a flowmap and/or a config file's tunnel outline
-  and hive locations. `--save-only` skips the on-screen display.
-  `./visualize_heatmap.py <heatmap.csv> [-c polybee.cfg] [-f flowmap.csv] [--color-scale-max N] [--save-only]`
+  and hive locations. `--save-only` skips the on-screen display. `--delta`
+  switches to a diverging blue-white-red scale fixed to `[-2.0, +2.0]`, for
+  signed data such as `gen_heatmap_delta.py` output (mutually exclusive
+  with `--color-scale-max`).
+  `./visualize_heatmap.py <heatmap.csv> [-c polybee.cfg] [-f flowmap.csv] [--color-scale-max N | --delta] [--save-only]`
 
 - **`visualize_flowmap.py`** — renders a flowmap CSV on its own (as a grid
   of oriented line segments) without an underlying heatmap.

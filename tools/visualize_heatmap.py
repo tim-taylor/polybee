@@ -13,6 +13,12 @@ instead -- useful when you want multiple heatmaps rendered on the same
 scale, or when the data has a known theoretical maximum (e.g. pi/2 for
 angular deltas).
 
+Pass --delta for heatmaps produced by gen_heatmap_delta.py (or any other
+signed, zero-centred data): this forces a diverging blue-white-red colour
+scale (blue = negative, white = zero, red = positive) fixed to the range
+[-2.0, +2.0] -- the widest possible delta between two normalised heatmaps.
+--delta and --color-scale-max are mutually exclusive.
+
 Optionally superimpose a flowmap (produced by Flowmap::print) over the heatmap.
 The flowmap CSV contains cells in "axis:strength:count" format and is assumed to
 cover the same environment dimensions as the heatmap (cell sizes may differ).
@@ -29,6 +35,7 @@ Usage:
     ./visualize_heatmap.py <input_csv_file> -c polybee.cfg
     ./visualize_heatmap.py <input_csv_file> -c polybee.cfg -f flowmap.csv
     ./visualize_heatmap.py <input_csv_file> --color-scale-max 1.5708
+    ./visualize_heatmap.py bee-heatmap-delta-a-vs-b.csv --delta
 """
 
 import math
@@ -57,6 +64,22 @@ def create_polybee_colormap():
     ]
 
     return LinearSegmentedColormap.from_list('polybee',
+                                            [c for _, c in colors],
+                                            N=256)
+
+
+def create_delta_colormap():
+    """
+    Create a diverging colormap for signed, zero-centred data (e.g.
+    gen_heatmap_delta.py output): Blue (negative) -> White (zero) -> Red (positive).
+    """
+    colors = [
+        (0.0, (0.0, 0.0, 1.0)),      # Blue at most negative
+        (0.5, (1.0, 1.0, 1.0)),      # White at zero
+        (1.0, (1.0, 0.0, 0.0))       # Red at most positive
+    ]
+
+    return LinearSegmentedColormap.from_list('polybee_delta',
                                             [c for _, c in colors],
                                             N=256)
 
@@ -346,7 +369,7 @@ def load_heatmap(filename):
 def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
                       env_width=None, env_height=None,
                       tunnel=None, entrances=None, crop_patches=None, hive=None,
-                      flowmap=None, color_scale_max=None):
+                      flowmap=None, color_scale_max=None, delta=False):
     nrows, ncols = data.shape
     scale = min(10.0 / max(nrows, ncols), 0.7)  # inches per cell, capped so figure stays reasonable
     top_margin = 1.0    # title
@@ -355,8 +378,9 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
     fig_h = min(nrows * scale + top_margin + bottom_margin, 9.0)  # cap height for small screens
     _, ax = plt.subplots(figsize=(fig_w, fig_h))
 
-    # Create custom colormap matching LocalVis.cpp
-    cmap = create_polybee_colormap()
+    # Create custom colormap matching LocalVis.cpp, or the diverging delta
+    # colormap when visualising a signed, zero-centred delta heatmap
+    cmap = create_delta_colormap() if delta else create_polybee_colormap()
 
     # When env dimensions are known, use extent to label axes in env units.
     # extent=[left, right, bottom, top] with top=0 so row 0 is at the top.
@@ -374,7 +398,12 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
         ylabel = 'Y coordinate'
 
     # aspect='equal' keeps cells square; extent sets the axis coordinate range
-    if color_scale_max is not None:
+    if delta:
+        # Widest possible delta between two normalised heatmaps is [-2.0, +2.0];
+        # fixed and symmetric about zero so white always represents no change.
+        im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='equal', extent=extent,
+                       vmin=-2.0, vmax=2.0)
+    elif color_scale_max is not None:
         im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='equal', extent=extent,
                        vmin=0.0, vmax=color_scale_max)
     else:
@@ -400,7 +429,13 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
 
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax)
-    cbar.set_label('Value' if color_scale_max is not None else 'Normalized Value', rotation=270, labelpad=20)
+    if delta:
+        cbar_label = 'Delta'
+    elif color_scale_max is not None:
+        cbar_label = 'Value'
+    else:
+        cbar_label = 'Normalized Value'
+    cbar.set_label(cbar_label, rotation=270, labelpad=20)
 
     # Set title and labels
     ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
@@ -437,6 +472,7 @@ Examples:
   %(prog)s heatmap.csv --save-only              # Save to heatmap.png without displaying
   %(prog)s heatmap.csv -c polybee.cfg -f flowmap.csv   # Overlay flowmap
   %(prog)s angdelta-heatmap.csv --color-scale-max 1.5708   # Fixed 0-N colour scale instead of auto-scaling
+  %(prog)s bee-heatmap-delta-a-vs-b.csv --delta   # Diverging blue-white-red scale for signed delta data
         """
     )
 
@@ -459,12 +495,21 @@ Examples:
                        type=float, metavar='N',
                        help='Fix the colour scale to run from 0 to N instead of auto-scaling to '
                             'the data range.')
+    parser.add_argument('--delta',
+                       action='store_true',
+                       help='Use a diverging blue-white-red colour scale fixed to [-2.0, +2.0] for '
+                            'signed, zero-centred data (e.g. gen_heatmap_delta.py output). '
+                            'Mutually exclusive with --color-scale-max.')
 
     args = parser.parse_args()
 
     # Check if input file exists
     if not os.path.isfile(args.input_file):
         print(f"Error: File not found: {args.input_file}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.delta and args.color_scale_max is not None:
+        print("Error: --delta and --color-scale-max are mutually exclusive", file=sys.stderr)
         sys.exit(1)
 
     if args.color_scale_max is not None and args.color_scale_max <= 0.0:
@@ -497,13 +542,13 @@ Examples:
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
-                          flowmap=flowmap, color_scale_max=args.color_scale_max)
+                          flowmap=flowmap, color_scale_max=args.color_scale_max, delta=args.delta)
     else:
         visualize_heatmap(data, title=title, save_only=False,
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
-                          flowmap=flowmap, color_scale_max=args.color_scale_max)
+                          flowmap=flowmap, color_scale_max=args.color_scale_max, delta=args.delta)
 
 
 if __name__ == '__main__':

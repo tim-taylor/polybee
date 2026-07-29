@@ -21,7 +21,7 @@ missing.
 ```
 
 Run `run_analysis.sh --help` for the full list of options (raw-output
-directory location, tools directory, target heatmap file, etc).
+directory location, tools directory, etc).
 
 ### Output layout
 
@@ -35,8 +35,9 @@ All generated output is organised into subdirectories alongside
 | `fitness-graphs-indiv/`             | Per-run fitness graphs                                          |
 | `fitness-graphs-agg/`               | Aggregate fitness graph (one-island summary across runs)         |
 | `best-configs-indiv/`               | Best-individual `.cfg` file for each run                        |
-| `bee-flowmaps-10-indiv/`, `-25-indiv/`, `-50-indiv/` | Raw per-run bee-movement flowmap output, one dir per cell size |
+| `bee-flowmaps-10-indiv/`, `-25-indiv/`, `-50-indiv/` | Raw per-run bee-movement flowmap and heatmap output, one dir per cell size |
 | `bee-flowmaps-agg/`                 | Merged/visualised bee-movement flowmaps                         |
+| `bee-heatmaps-agg/`                 | Merged bee-position heatmaps, one per cell size                 |
 | `barrier-and-bridge-maps-agg/`      | Barrier/bridge position heatmaps and barrier flowmaps            |
 
 ### What each stage does
@@ -51,16 +52,21 @@ All generated output is organised into subdirectories alongside
 4. **Barrier/bridge heatmaps and barrier flowmaps** - built from the
    `best-configs-indiv/` configs, written to
    `barrier-and-bridge-maps-agg/` (for cell sizes 10, 25 and 50).
-5. **Bee-movement flowmaps** - for each cell size, runs each replicate's
-   best config through `polybee` into `bee-flowmaps-<N>-indiv/`, then
-   merges across replicates into `bee-flowmaps-agg/`.
+5. **Bee-movement flowmaps and heatmaps** - for each cell size, runs each
+   replicate's best config through `polybee` into `bee-flowmaps-<N>-indiv/`,
+   with both `--flowmap-cell-size` and `--heatmap-cell-size` set to that
+   cell size (and `target-heatmap-filename` cleared, since the best-individual
+   configs carry a target sized for the original evolve run's own
+   heatmap-cell-size, which would otherwise no longer match and abort the
+   run). Flowmaps are merged across replicates into `bee-flowmaps-agg/`;
+   heatmaps are merged (mean per cell) into `bee-heatmaps-agg/`.
 
 ## Cross-analysis between two conditions
 
-`tools/run_cross_analysis.sh` compares the merged bee-movement flowmaps of
-two `run_analysis.sh` output directories (two experimental conditions), using
-axial angular-delta heatmaps and histograms. Run it from the parent of the
-two condition directories:
+`tools/run_cross_analysis.sh` compares the merged bee-movement flowmaps and
+merged bee-position heatmaps of two `run_analysis.sh` output directories (two
+experimental conditions). Run it from the parent of the two condition
+directories:
 
 ```
 ~/polybee/tools/run_cross_analysis.sh \
@@ -68,23 +74,37 @@ two condition directories:
     condition-a-dir condition-b-dir
 ```
 
-For each flowmap cell size found in both directories (detected from whatever
+Each condition directory must have both a `bee-flowmaps-agg/` and a
+`bee-heatmaps-agg/` subdirectory (as produced by `run_analysis.sh`), and a
+`best-configs-indiv/` subdirectory. For each cell size found in both
+directories (detected from whatever
 `bee-flowmap-size-*-intra-condition-merged-*.csv` files exist in each
-directory's `bee-flowmaps-agg/`), it runs `gen_angdelta_data.py` six times:
-with no thresholds and with the (configurable) default strength/count
-thresholds `0.5`/`0.1`, each at histogram bin sizes of 5, 10 and 15 degrees.
-Each resulting angdelta heatmap is visualised with `visualize_heatmap.py`
-(fixed colour scale `0`-`pi/2`, using a config file taken from the first
-condition directory's `best-configs-indiv/`, on the assumption that both
-conditions share the same basic environment) and each histogram with
-`visualize_angdelta_histogram.py`. The given `--title` is passed to every one
-of these plots, with `(thresholds: count=..., strength=...)` appended for the
-thresholded comparisons.
+directory's `bee-flowmaps-agg/`):
 
-Output (18 heatmap CSV/PNG pairs and 18 histogram CSV/PNG pairs) is written
-to `cross-analysis-<dir1>-vs-<dir2>/` by default, overridable with
-`--output-dir`. Run `run_cross_analysis.sh --help` for the full list of
-options.
+- **Flowmap comparison** - `gen_angdelta_data.py` is run six times: with no
+  thresholds and with the (configurable) default strength/count thresholds
+  `0.5`/`0.1`, each at histogram bin sizes of 5, 10 and 15 degrees. Each
+  resulting angdelta heatmap is visualised with `visualize_heatmap.py`
+  (fixed colour scale `0`-`pi/2`, using a config file taken from the first
+  condition directory's `best-configs-indiv/`, on the assumption that both
+  conditions share the same basic environment) and each histogram with
+  `visualize_angdelta_histogram.py`.
+- **Heatmap comparison** - `gen_heatmap_delta.py` is run once (no
+  thresholding - thresholds only make sense for the axial flowmap
+  comparison above) on the two conditions' merged heatmaps from
+  `bee-heatmaps-agg/`, producing a plain `heatmap1 - heatmap2` delta CSV.
+  It's visualised with `visualize_heatmap.py --delta` (diverging
+  blue-white-red colour scale fixed to `[-2.0, +2.0]`).
+
+The given `--title` is passed to every plot, with
+`(thresholds: count=..., strength=...)` appended for the thresholded
+flowmap comparisons.
+
+Output (18 angdelta heatmap CSV/PNG pairs and 18 histogram CSV/PNG pairs for
+the flowmap comparison, plus one heatmap-delta CSV/PNG pair per cell size for
+the heatmap comparison) is written to `cross-analysis-<dir1>-vs-<dir2>/` by
+default, overridable with `--output-dir`. Run `run_cross_analysis.sh --help`
+for the full list of options.
 
 # NOTES
 
