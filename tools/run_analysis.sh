@@ -2,8 +2,8 @@
 #
 # Fully automates analysis of a set of PolyBee evolutionary-experiment runs:
 # fitness CSVs/graphs, best-individual configs, barrier/bridge position
-# heatmaps and flowmaps, and bee-movement flowmaps (per-run and merged
-# across replicates).
+# heatmaps and flowmaps, and bee-movement flowmaps and heatmaps (per-run and
+# merged across replicates, one merge per flowmap/heatmap cell size).
 #
 # Must be run from a directory containing a raw-output subdirectory (or
 # whatever --raw-output-dir points to) populated with out-<basename>-*.txt
@@ -16,9 +16,12 @@
 #   fitness-graphs-indiv/          per-run fitness graphs
 #   fitness-graphs-agg/            aggregate fitness graphs
 #   best-configs-indiv/            best-individual .cfg file per run
-#   bee-flowmaps-<N>-indiv/        raw per-run bee-movement flowmap output,
-#                                  N in {10, 25, 50}
+#   bee-flowmaps-<N>-indiv/        raw per-run bee-movement flowmap and
+#                                  heatmap output, N in {10, 25, 50} (both
+#                                  generated at cell size N)
 #   bee-flowmaps-agg/              merged/visualised bee-movement flowmaps
+#   bee-heatmaps-agg/              merged (mean) bee-position heatmaps,
+#                                  one per cell size N
 #   barrier-and-bridge-maps-agg/   barrier/bridge heatmaps and flowmaps
 #
 # With --baseline, analyses a set of baseline (non-evolutionary, evolve=false)
@@ -61,8 +64,6 @@ Options:
   --flowmap-count-th VAL       Flowmap count threshold (default: 0.1)
   --flowmap-strength-th VAL    Flowmap strength threshold (default: 0.5)
   --heatmap-cell-size N        Cell size for barrier/bridge heatmaps (default: 25)
-  --target-heatmap FILE        Target heatmap CSV used for bee-movement runs
-                               (default: ~/polybee/target-heatmaps/target-heatmap-13x16-4-rows.csv)
   --tools-dir DIR              Directory containing the polybee analysis tools
                                (default: ~/polybee/tools)
   --polybee-run FILE            polybee "run" wrapper script (default: ~/polybee/run)
@@ -83,7 +84,6 @@ FITNESS_PLOT_BEST="-0.78"
 FLOWMAP_COUNT_TH="0.1"
 FLOWMAP_STRENGTH_TH="0.5"
 HEATMAP_CELL_SIZE=25
-TARGET_HEATMAP="$HOME/polybee/target-heatmaps/target-heatmap-13x16-4-rows.csv"
 TOOLS_DIR="$HOME/polybee/tools"
 POLYBEE_RUN="$HOME/polybee/run"
 
@@ -99,7 +99,6 @@ while [ $# -gt 0 ]; do
         --flowmap-count-th) FLOWMAP_COUNT_TH="$2"; shift 2 ;;
         --flowmap-strength-th) FLOWMAP_STRENGTH_TH="$2"; shift 2 ;;
         --heatmap-cell-size) HEATMAP_CELL_SIZE="$2"; shift 2 ;;
-        --target-heatmap) TARGET_HEATMAP="$2"; shift 2 ;;
         --tools-dir) TOOLS_DIR="$2"; shift 2 ;;
         --polybee-run) POLYBEE_RUN="$2"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
@@ -231,6 +230,7 @@ FITNESS_GRAPHS_INDIV_DIR="fitness-graphs-indiv"
 FITNESS_GRAPHS_AGG_DIR="fitness-graphs-agg"
 BEST_CONFIGS_INDIV_DIR="best-configs-indiv"
 BEE_FLOWMAPS_AGG_DIR="bee-flowmaps-agg"
+BEE_HEATMAPS_AGG_DIR="bee-heatmaps-agg"
 BARRIER_BRIDGE_MAPS_AGG_DIR="barrier-and-bridge-maps-agg"
 FLOWMAP_CELL_SIZES=(10 25 50)
 
@@ -244,6 +244,7 @@ ensure_dir() {
 ensure_dir "$FITNESS_DATA_AGG_DIR"
 ensure_dir "$BEST_CONFIGS_INDIV_DIR"
 ensure_dir "$BEE_FLOWMAPS_AGG_DIR"
+ensure_dir "$BEE_HEATMAPS_AGG_DIR"
 for SZ in "${FLOWMAP_CELL_SIZES[@]}"; do
     ensure_dir "bee-flowmaps-${SZ}-indiv"
 done
@@ -403,9 +404,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Step 5: bee-movement flowmaps (per-run and merged across replicates)
+# Step 5: bee-movement flowmaps and heatmaps (per-run and merged across
+# replicates, at each flowmap/heatmap cell size)
 # ---------------------------------------------------------------------------
-echo "== Generating bee-movement flowmaps =="
+echo "== Generating bee-movement flowmaps and heatmaps =="
 for FLOWMAP_CELL_SIZE in "${FLOWMAP_CELL_SIZES[@]}"; do
     RUN_DIR="bee-flowmaps-${FLOWMAP_CELL_SIZE}-indiv"
 
@@ -436,9 +438,17 @@ for FLOWMAP_CELL_SIZE in "${FLOWMAP_CELL_SIZES[@]}"; do
                 continue
             fi
 
+            # The best-individual cfg files carry the target-heatmap-filename from
+            # the original evolve run's header, sized for that run's own
+            # heatmap-cell-size. Since heatmap-cell-size is overridden per cell size
+            # below, that target's dimensions would no longer match the regenerated
+            # heatmap's, and Heatmap::emd_opencv() hard-errors (exiting the process)
+            # on a dimension mismatch - so explicitly clear it here to skip EMD
+            # calculation for these runs.
             "$POLYBEE_RUN" -c ../"${BEST_CONFIGS_INDIV_DIR}"/best-"${EXPT_BASENAME}"-*_"${N}".cfg \
                 --flowmap-cell-size "$FLOWMAP_CELL_SIZE" \
-                --target-heatmap-filename "$TARGET_HEATMAP" \
+                --heatmap-cell-size "$FLOWMAP_CELL_SIZE" \
+                --target-heatmap-filename "" \
                 --visualise false --log-dir . \
                 "${LOG_FILENAME_PREFIX_ARGS[@]}"
         done
@@ -453,6 +463,10 @@ for FLOWMAP_CELL_SIZE in "${FLOWMAP_CELL_SIZES[@]}"; do
     "${TOOLS_DIR}/visualize_flowmap.py" --color --count-th "$FLOWMAP_COUNT_TH" --strength-th "$FLOWMAP_STRENGTH_TH" \
         -c "$FIRST_CFG" -t "Bee flowmap: ${RUN_TITLE} (thresholds: count=${FLOWMAP_COUNT_TH}, strength=${FLOWMAP_STRENGTH_TH})" \
         --save-only "$MERGED_CSV"
+
+    HEATMAP_MERGED_CSV="${BEE_HEATMAPS_AGG_DIR}/bee-heatmap-size-${FLOWMAP_CELL_SIZE}-intra-condition-merged-${EXPT_BASENAME}.csv"
+
+    "${TOOLS_DIR}/merge_heatmaps.py" "$HEATMAP_MERGED_CSV" "${RUN_DIR}"/"${EXPT_BASENAME}"-*-heatmap-normalised-*csv
 done
 
 echo "Done."

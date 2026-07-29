@@ -93,3 +93,16 @@ Testing this stuff with data in:
 ```
 /home/tim/tmp/polybee-data/evolve-20X-10B-400gen-400pop-100epi-2000its
 ```
+
+Example commands used to analysee data for tech report:
+
+```
+~/polybee/tools/run_analysis.sh --basename evolve-10B-400gen-400pop-100epi-2000its --num-reps 50 --title "Evolve positions of 10 bridges"
+
+~/polybee/tools/run_analysis.sh --basename evolve-20X-400gen-400pop-100epi-2000its --num-reps 50 --title "Evolve positions of 20 barriers"
+
+~/polybee/tools/run_analysis.sh --basename evolve-20X-10B-400gen-400pop-100epi-2000its --num-reps 50 --title "Evolve positions of 20 barriers and 10 bridges"
+
+~/polybee/tools/run_analysis.sh --basename "baseline-runs-2000its" --baseline --title "Baseline [no barriers or bridges] (5000 runs)"
+
+```

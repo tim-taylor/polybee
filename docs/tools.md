@@ -59,6 +59,11 @@ for the full pipeline, output directory layout, and worked examples.
   values.
   `./merge_flowmaps.py output.csv run-*/flowmap-*.csv`
 
+- **`merge_heatmaps.py`** — merges multiple (normalised) heatmap CSVs into
+  one aggregate heatmap, where each output cell is the mean of the
+  corresponding input cells.
+  `./merge_heatmaps.py output.csv run-*/heatmap-normalised-*.csv`
+
 - **`gen_barrier_flowmap.py`** — builds a flowmap-format CSV showing where
   barriers are concentrated and their dominant orientation, from one or
   more `.cfg` files' `barrier=` entries, directly comparable to bee-movement
@@ -75,6 +80,13 @@ for the full pipeline, output directory layout, and worked examples.
   movement axes, and writes both a heatmap CSV and a binned histogram CSV
   of the (optionally strength/count-thresholded) deltas.
   `./gen_angdelta_data.py FLOWMAP1 FLOWMAP2 [--strength-th F] [--count-th F] [--bin-size D] [--basename NAME]`
+
+- **`gen_heatmap_delta.py`** — compares two (normalised) bee-position
+  heatmaps cell by cell, writing a heatmap CSV of `heatmap1 - heatmap2`
+  (values may be negative). Output is named
+  `bee-heatmap-delta-{BASE1}-vs-{BASE2}.csv` from the two input files'
+  basenames.
+  `./gen_heatmap_delta.py HEATMAP1 HEATMAP2`
 
 ## Visualisation
 
