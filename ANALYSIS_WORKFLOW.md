@@ -116,6 +116,8 @@ Testing this stuff with data in:
 
 Example commands used to analysee data for tech report:
 
+First the single-condition analyses:
+
 ```
 ~/polybee/tools/run_analysis.sh --basename evolve-10B-400gen-400pop-100epi-2000its --num-reps 50 --title "Evolve positions of 10 bridges"
 
@@ -125,4 +127,10 @@ Example commands used to analysee data for tech report:
 
 ~/polybee/tools/run_analysis.sh --basename "baseline-runs-2000its" --baseline --title "Baseline [no barriers or bridges] (5000 runs)"
 
+```
+
+And the cross-analyses:
+
+```
+run_cross_analysis.sh --title "Baseline vs Evolve positions for 10 bridges" [options] DIR1 DIR2
 ```

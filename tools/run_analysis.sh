@@ -64,6 +64,11 @@ Options:
   --flowmap-count-th VAL       Flowmap count threshold (default: 0.1)
   --flowmap-strength-th VAL    Flowmap strength threshold (default: 0.5)
   --heatmap-cell-size N        Cell size for barrier/bridge heatmaps (default: 25)
+  --start-step N                Skip steps before N (1-5, default: 1); see the
+                               numbered step comments in the script. Steps are
+                               assumed to depend on the on-disk output of any
+                               earlier steps skipped this way (e.g. best-configs-indiv/
+                               from Step 3) already existing from a prior run.
   --tools-dir DIR              Directory containing the polybee analysis tools
                                (default: ~/polybee/tools)
   --polybee-run FILE            polybee "run" wrapper script (default: ~/polybee/run)
@@ -84,6 +89,7 @@ FITNESS_PLOT_BEST="-0.78"
 FLOWMAP_COUNT_TH="0.1"
 FLOWMAP_STRENGTH_TH="0.5"
 HEATMAP_CELL_SIZE=25
+START_STEP=1
 TOOLS_DIR="$HOME/polybee/tools"
 POLYBEE_RUN="$HOME/polybee/run"
 
@@ -99,6 +105,7 @@ while [ $# -gt 0 ]; do
         --flowmap-count-th) FLOWMAP_COUNT_TH="$2"; shift 2 ;;
         --flowmap-strength-th) FLOWMAP_STRENGTH_TH="$2"; shift 2 ;;
         --heatmap-cell-size) HEATMAP_CELL_SIZE="$2"; shift 2 ;;
+        --start-step) START_STEP="$2"; shift 2 ;;
         --tools-dir) TOOLS_DIR="$2"; shift 2 ;;
         --polybee-run) POLYBEE_RUN="$2"; shift 2 ;;
         -h|--help) usage; exit 0 ;;
@@ -113,6 +120,11 @@ if [ -z "$EXPT_BASENAME" ] || [ -z "$RUN_TITLE" ]; then
 fi
 if [ "$BASELINE" != true ] && [ -z "$NUM_REPS" ]; then
     echo "Error: --num-reps is required unless --baseline is given." >&2
+    usage >&2
+    exit 1
+fi
+if ! [[ "$START_STEP" =~ ^[0-9]+$ ]] || [ "$START_STEP" -lt 1 ] || [ "$START_STEP" -gt 5 ]; then
+    echo "Error: --start-step must be an integer between 1 and 5, got '$START_STEP'." >&2
     usage >&2
     exit 1
 fi
@@ -258,7 +270,9 @@ fi
 # ---------------------------------------------------------------------------
 # Step 1: per-run fitness CSVs + champion-fitness aggregate CSV
 # ---------------------------------------------------------------------------
-if [ "$BASELINE" = true ]; then
+if [ "$START_STEP" -gt 1 ]; then
+    echo "== Skipping Step 1 (fitness CSVs); --start-step $START_STEP =="
+elif [ "$BASELINE" = true ]; then
     echo "== Extracting baseline run fitness values =="
     CHAMPION_CSV="${FITNESS_DATA_AGG_DIR}/champion-fitnesses-${EXPT_BASENAME}.csv"
     fitness_rows=()
@@ -297,7 +311,9 @@ fi
 # ---------------------------------------------------------------------------
 # Step 2: per-run and aggregate fitness graphs
 # ---------------------------------------------------------------------------
-if [ "$BASELINE" = true ]; then
+if [ "$START_STEP" -gt 2 ]; then
+    echo "== Skipping Step 2 (fitness graphs); --start-step $START_STEP =="
+elif [ "$BASELINE" = true ]; then
     echo "== Skipping fitness graphs (baseline runs have no generational data to plot) =="
 else
     echo "== Plotting per-run fitness graphs =="
@@ -318,43 +334,50 @@ fi
 # ---------------------------------------------------------------------------
 # Step 3: best-individual config files
 # ---------------------------------------------------------------------------
-echo "== Extracting best-individual configs =="
-if [ "$BASELINE" = true ]; then
-    for N in $(seq 1 "$NUM_REPS"); do
-        shopt -s nullglob
-        cfg_src_matches=("${RAW_OUTPUT_DIR}"/"${EXPT_BASENAME}"-config-*_"${N}".cfg)
-        shopt -u nullglob
-        if [ ${#cfg_src_matches[@]} -ne 1 ]; then
-            echo "Error: expected exactly one config file for run $N, found ${#cfg_src_matches[@]} (pattern: ${RAW_OUTPUT_DIR}/${EXPT_BASENAME}-config-*_${N}.cfg)." >&2
-            exit 1
-        fi
-        # Params::print() writes 'evolve-spec' twice when it's set (once via the
-        # generic registry loop, once via a dedicated reconstruction block) - the
-        # polybee binary itself rejects a repeated non-multi option when this cfg
-        # is fed back in via -c, so drop all but the last occurrence here (the
-        # same "last value wins" workaround best_individual_to_cfg.py already
-        # applies when parsing evolutionary run logs).
-        awk '
-            /^evolve-spec=/ { es_count++; es_line[es_count] = NR }
-            { lines[NR] = $0 }
-            END {
-                last_es = (es_count > 0) ? es_line[es_count] : 0
-                for (i = 1; i <= NR; i++) {
-                    if (lines[i] ~ /^evolve-spec=/ && i != last_es) continue
-                    print lines[i]
-                }
-            }
-        ' "${cfg_src_matches[0]}" > "${BEST_CONFIGS_INDIV_DIR}/best-$(basename "${cfg_src_matches[0]}")"
-    done
+if [ "$START_STEP" -gt 3 ]; then
+    echo "== Skipping Step 3 (best-individual configs); --start-step $START_STEP =="
 else
-    for N in $(seq 1 "$NUM_REPS"); do
-        for LOGFILE in "${RAW_OUTPUT_DIR}"/out-"${EXPT_BASENAME}"-*_"${N}".txt; do
-            STEM=$(basename "$LOGFILE" .txt)
-            "${TOOLS_DIR}/best_individual_to_cfg.py" "$LOGFILE" -o "${BEST_CONFIGS_INDIV_DIR}/best-${STEM#out-}.cfg"
+    echo "== Extracting best-individual configs =="
+    if [ "$BASELINE" = true ]; then
+        for N in $(seq 1 "$NUM_REPS"); do
+            shopt -s nullglob
+            cfg_src_matches=("${RAW_OUTPUT_DIR}"/"${EXPT_BASENAME}"-config-*_"${N}".cfg)
+            shopt -u nullglob
+            if [ ${#cfg_src_matches[@]} -ne 1 ]; then
+                echo "Error: expected exactly one config file for run $N, found ${#cfg_src_matches[@]} (pattern: ${RAW_OUTPUT_DIR}/${EXPT_BASENAME}-config-*_${N}.cfg)." >&2
+                exit 1
+            fi
+            # Params::print() writes 'evolve-spec' twice when it's set (once via the
+            # generic registry loop, once via a dedicated reconstruction block) - the
+            # polybee binary itself rejects a repeated non-multi option when this cfg
+            # is fed back in via -c, so drop all but the last occurrence here (the
+            # same "last value wins" workaround best_individual_to_cfg.py already
+            # applies when parsing evolutionary run logs).
+            awk '
+                /^evolve-spec=/ { es_count++; es_line[es_count] = NR }
+                { lines[NR] = $0 }
+                END {
+                    last_es = (es_count > 0) ? es_line[es_count] : 0
+                    for (i = 1; i <= NR; i++) {
+                        if (lines[i] ~ /^evolve-spec=/ && i != last_es) continue
+                        print lines[i]
+                    }
+                }
+            ' "${cfg_src_matches[0]}" > "${BEST_CONFIGS_INDIV_DIR}/best-$(basename "${cfg_src_matches[0]}")"
         done
-    done
+    else
+        for N in $(seq 1 "$NUM_REPS"); do
+            for LOGFILE in "${RAW_OUTPUT_DIR}"/out-"${EXPT_BASENAME}"-*_"${N}".txt; do
+                STEM=$(basename "$LOGFILE" .txt)
+                "${TOOLS_DIR}/best_individual_to_cfg.py" "$LOGFILE" -o "${BEST_CONFIGS_INDIV_DIR}/best-${STEM#out-}.cfg"
+            done
+        done
+    fi
 fi
 
+# Needed by Steps 4 and 5 below, so resolved unconditionally even when Step 3
+# itself was skipped via --start-step - relies on best-configs-indiv/ already
+# being populated from an earlier (unskipped) invocation in that case.
 shopt -s nullglob
 first_cfg_matches=("${BEST_CONFIGS_INDIV_DIR}"/best-"${EXPT_BASENAME}"-*_1.cfg)
 shopt -u nullglob
@@ -367,7 +390,9 @@ FIRST_CFG="${first_cfg_matches[0]}"
 # ---------------------------------------------------------------------------
 # Step 4: barrier/bridge position heatmaps and barrier flowmaps
 # ---------------------------------------------------------------------------
-if [ "$BASELINE" = true ]; then
+if [ "$START_STEP" -gt 4 ]; then
+    echo "== Skipping Step 4 (barrier/bridge heatmaps and flowmaps); --start-step $START_STEP =="
+elif [ "$BASELINE" = true ]; then
     echo "== Skipping barrier/bridge heatmaps and flowmaps (nothing is evolved in baseline runs) =="
 else
     echo "== Generating barrier/bridge heatmaps =="
@@ -407,6 +432,8 @@ fi
 # Step 5: bee-movement flowmaps and heatmaps (per-run and merged across
 # replicates, at each flowmap/heatmap cell size)
 # ---------------------------------------------------------------------------
+# Always runs regardless of --start-step: 5 is both the last step and the
+# maximum valid --start-step value, so there's no case where it should skip.
 echo "== Generating bee-movement flowmaps and heatmaps =="
 for FLOWMAP_CELL_SIZE in "${FLOWMAP_CELL_SIZES[@]}"; do
     RUN_DIR="bee-flowmaps-${FLOWMAP_CELL_SIZE}-indiv"
