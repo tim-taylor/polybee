@@ -57,13 +57,13 @@ All generated output is organised into subdirectories alongside
 
 ## Cross-analysis between two conditions
 
-`tools/run-cross-analysis.sh` compares the merged bee-movement flowmaps of
+`tools/run_cross_analysis.sh` compares the merged bee-movement flowmaps of
 two `run_analysis.sh` output directories (two experimental conditions), using
 axial angular-delta heatmaps and histograms. Run it from the parent of the
 two condition directories:
 
 ```
-~/polybee/tools/run-cross-analysis.sh \
+~/polybee/tools/run_cross_analysis.sh \
     --title "Barriers-only vs barriers-and-bridges" \
     condition-a-dir condition-b-dir
 ```
@@ -83,7 +83,7 @@ thresholded comparisons.
 
 Output (18 heatmap CSV/PNG pairs and 18 histogram CSV/PNG pairs) is written
 to `cross-analysis-<dir1>-vs-<dir2>/` by default, overridable with
-`--output-dir`. Run `run-cross-analysis.sh --help` for the full list of
+`--output-dir`. Run `run_cross_analysis.sh --help` for the full list of
 options.
 
 # NOTES
