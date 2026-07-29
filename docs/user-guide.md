@@ -172,9 +172,9 @@ Key parameters:
   population and no migration.
 
 See `config-files/evolve-*.cfg` for complete worked examples, and
-`ANALYSIS_WORKFLOW.md` plus [tools.md](tools.md) for how to run and analyse
-many replicate evolve runs (e.g. on a Slurm cluster via
-`tools/gen_slurm_file.py`).
+[`ANALYSIS_WORKFLOW.md`](https://github.com/tim-taylor/polybee/blob/main/ANALYSIS_WORKFLOW.md)
+plus [tools.md](tools.md) for how to run and analyse many replicate evolve
+runs (e.g. on a Slurm cluster via `tools/gen_slurm_file.py`).
 
 ## Output files
 

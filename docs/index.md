@@ -30,4 +30,5 @@ found by the optimizer.
 
 PolyBee is written in C++20 and uses Raylib for real-time visualisation and
 Pagmo for the evolutionary optimization in evolve mode. Source code and
-issue tracking live in the project's GitHub repository.
+issue tracking live in the project's GitHub repository:
+[github.com/tim-taylor/polybee](https://github.com/tim-taylor/polybee).

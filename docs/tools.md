@@ -4,7 +4,8 @@ The `tools/` directory contains scripts for turning PolyBee's raw CSV/log
 output into aggregated data and plots. Most are standalone Python scripts —
 run `<script> --help` for the full option list; only a summary of purpose
 and basic usage is given here. A few are documented in detail in
-[`ANALYSIS_WORKFLOW.md`](../ANALYSIS_WORKFLOW.md) rather than repeated here.
+[`ANALYSIS_WORKFLOW.md`](https://github.com/tim-taylor/polybee/blob/main/ANALYSIS_WORKFLOW.md)
+rather than repeated here.
 
 - [Batch experiments and end-to-end analysis](#batch-experiments-and-end-to-end-analysis)
 - [Extracting data from run logs](#extracting-data-from-run-logs)
@@ -16,7 +17,8 @@ and basic usage is given here. A few are documented in detail in
 ## Batch experiments and end-to-end analysis
 
 These are the scripts used to run and analyse a full set of replicate
-evolve-mode experiments; see **[`ANALYSIS_WORKFLOW.md`](../ANALYSIS_WORKFLOW.md)**
+evolve-mode experiments; see
+**[`ANALYSIS_WORKFLOW.md`](https://github.com/tim-taylor/polybee/blob/main/ANALYSIS_WORKFLOW.md)**
 for the full pipeline, output directory layout, and worked examples.
 
 - **`gen_slurm_file.py`** — generates a Slurm batch script for running many
