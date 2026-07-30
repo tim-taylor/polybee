@@ -21,9 +21,13 @@
 #     resulting angdelta heatmap is visualised with visualize_heatmap.py
 #     (fixed colour scale 0-pi/2) and each histogram with
 #     visualize_angdelta_histogram.py.
-#   - gen_heatmap_delta.py is run once on the merged (normalised)
-#     bee-position heatmaps, with no thresholding (it doesn't support any -
-#     thresholds only make sense for the axial flowmap comparison above).
+#   - gen_heatmap_delta.py is run once per cell size on the merged
+#     (normalised) bee-position heatmaps, with no thresholding (it doesn't
+#     support any - thresholds only make sense for the axial flowmap
+#     comparison above). The 3 resulting delta heatmaps (cell sizes 10, 25
+#     and 50) are then scanned for the highest absolute value found, and all
+#     three are visualised with a fixed --color-scale-max slightly above
+#     that value, so they share the same scale.
 #
 set -euo pipefail
 
@@ -181,25 +185,21 @@ if [ ! -d "$OUTPUT_DIR" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Generate and visualise angular-delta heatmaps/histograms
+# Generate the bee-position delta heatmap for each cell size first (before
+# any visualisation), then scan the resulting delta CSVs for the highest
+# absolute value, so all of them can be plotted on the same fixed
+# --color-scale-max.
 # ---------------------------------------------------------------------------
-BIN_SIZES=(5 10 15)
-THRESH_STRENGTH_VALUES=(0.0 "$FLOWMAP_STRENGTH_TH")
-THRESH_COUNT_VALUES=(0.0 "$FLOWMAP_COUNT_TH")
-THRESH_LABELS=(nothresh thresh)
-
+declare -A DELTA_CSV_BY_SIZE
 for SZ in "${CELL_SIZES[@]}"; do
-    echo "== Cell size $SZ =="
-    FLOWMAP1=$(find_flowmap "$DIR1" "$SZ")
-    FLOWMAP2=$(find_flowmap "$DIR2" "$SZ")
-
-    # Heatmap delta: no thresholding (gen_heatmap_delta.py doesn't support any -
-    # thresholds only make sense for the axial flowmap comparison below). Run in
-    # a subshell cd'd into OUTPUT_DIR since gen_heatmap_delta.py always writes
-    # its fixed-named output to the current directory; find_heatmap returns
-    # absolute paths so they still resolve after the cd.
     HEATMAP1=$(find_heatmap "$DIR1" "$SZ")
     HEATMAP2=$(find_heatmap "$DIR2" "$SZ")
+
+    # No thresholding (gen_heatmap_delta.py doesn't support any - thresholds
+    # only make sense for the axial flowmap comparison below). Run in a
+    # subshell cd'd into OUTPUT_DIR since gen_heatmap_delta.py always writes
+    # its fixed-named output to the current directory; find_heatmap returns
+    # absolute paths so they still resolve after the cd.
     (
         cd "$OUTPUT_DIR"
         "${TOOLS_DIR}/gen_heatmap_delta.py" "$HEATMAP1" "$HEATMAP2"
@@ -215,9 +215,34 @@ for SZ in "${CELL_SIZES[@]}"; do
         echo "Error: expected gen_heatmap_delta.py to produce '$DELTA_CSV', but it wasn't found." >&2
         exit 1
     fi
+    DELTA_CSV_BY_SIZE["$SZ"]="$DELTA_CSV"
+done
 
-    "${TOOLS_DIR}/visualize_heatmap.py" --delta --config "$CONFIG_FILE" \
-        --title "$TITLE" --save-only "$DELTA_CSV"
+echo "Scanning ${#DELTA_CSV_BY_SIZE[@]} delta heatmaps for a common colour-scale max..."
+DELTA_MAX_ABS=$(awk -F, '
+    { for (i = 1; i <= NF; i++) { v = $i + 0; if (v < 0) v = -v; if (v > max) max = v } }
+    END { printf "%.6f", max }
+' "${DELTA_CSV_BY_SIZE[@]}")
+# Small margin above the observed max so the highest value doesn't sit
+# exactly on the edge of the colour scale.
+DELTA_COLOR_SCALE_MAX=$(awk -v m="$DELTA_MAX_ABS" 'BEGIN { printf "%.6f", m * 1.05 }')
+echo "Highest absolute delta heatmap value: $DELTA_MAX_ABS; delta colour-scale max: $DELTA_COLOR_SCALE_MAX"
+
+# ---------------------------------------------------------------------------
+# Generate and visualise angular-delta heatmaps/histograms
+# ---------------------------------------------------------------------------
+BIN_SIZES=(5 10 15)
+THRESH_STRENGTH_VALUES=(0.0 "$FLOWMAP_STRENGTH_TH")
+THRESH_COUNT_VALUES=(0.0 "$FLOWMAP_COUNT_TH")
+THRESH_LABELS=(nothresh thresh)
+
+for SZ in "${CELL_SIZES[@]}"; do
+    echo "== Cell size $SZ =="
+    FLOWMAP1=$(find_flowmap "$DIR1" "$SZ")
+    FLOWMAP2=$(find_flowmap "$DIR2" "$SZ")
+
+    "${TOOLS_DIR}/visualize_heatmap.py" --delta --color-scale-max "$DELTA_COLOR_SCALE_MAX" \
+        --config "$CONFIG_FILE" --title "$TITLE" --save-only "${DELTA_CSV_BY_SIZE[$SZ]}"
 
     for i in 0 1; do
         ST="${THRESH_STRENGTH_VALUES[$i]}"

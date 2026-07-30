@@ -129,8 +129,8 @@ First the single-condition analyses:
 
 ```
 
-And the cross-analyses:
+And the cross-analyses (NB this script creates its own output dir by default):
 
 ```
-run_cross_analysis.sh --title "Baseline vs Evolve positions for 10 bridges" [options] DIR1 DIR2
+~/polybee/tools/run_cross_analysis.sh --title "Evolve positions for 20 barriers vs Baseline" evolve-20X-400gen-400pop-100epi-2000its baseline-runs-2000its
 ```

@@ -14,10 +14,13 @@ scale, or when the data has a known theoretical maximum (e.g. pi/2 for
 angular deltas).
 
 Pass --delta for heatmaps produced by gen_heatmap_delta.py (or any other
-signed, zero-centred data): this forces a diverging blue-white-red colour
-scale (blue = negative, white = zero, red = positive) fixed to the range
-[-2.0, +2.0] -- the widest possible delta between two normalised heatmaps.
---delta and --color-scale-max are mutually exclusive.
+signed, zero-centred data): this selects a diverging red-white-blue colour
+scale (red = negative, white = zero, blue = positive), and the CSV values are
+multiplied by 100 so they display as percentages. By default the scale
+auto-scales to the min/max values found in the CSV (post-percentage), same
+as without --delta. Pass --color-scale-max N together with --delta to fix
+the scale to run from -N% (full red) to +N% (full blue) instead -- N is
+still given in the original (pre-percentage) units.
 
 Optionally superimpose a flowmap (produced by Flowmap::print) over the heatmap.
 The flowmap CSV contains cells in "axis:strength:count" format and is assumed to
@@ -71,12 +74,12 @@ def create_polybee_colormap():
 def create_delta_colormap():
     """
     Create a diverging colormap for signed, zero-centred data (e.g.
-    gen_heatmap_delta.py output): Blue (negative) -> White (zero) -> Red (positive).
+    gen_heatmap_delta.py output): Red (negative) -> White (zero) -> Blue (positive).
     """
     colors = [
-        (0.0, (0.0, 0.0, 1.0)),      # Blue at most negative
+        (0.0, (1.0, 0.0, 0.0)),      # Red at most negative
         (0.5, (1.0, 1.0, 1.0)),      # White at zero
-        (1.0, (1.0, 0.0, 0.0))       # Red at most positive
+        (1.0, (0.0, 0.0, 1.0))       # Blue at most positive
     ]
 
     return LinearSegmentedColormap.from_list('polybee_delta',
@@ -370,6 +373,10 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
                       env_width=None, env_height=None,
                       tunnel=None, entrances=None, crop_patches=None, hive=None,
                       flowmap=None, color_scale_max=None, delta=False):
+    if delta:
+        # Show signed deltas as percentages rather than raw fractions.
+        data = data * 100.0
+
     nrows, ncols = data.shape
     scale = min(10.0 / max(nrows, ncols), 0.7)  # inches per cell, capped so figure stays reasonable
     top_margin = 1.0    # title
@@ -398,14 +405,16 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
         ylabel = 'Y coordinate'
 
     # aspect='equal' keeps cells square; extent sets the axis coordinate range
-    if delta:
-        # Widest possible delta between two normalised heatmaps is [-2.0, +2.0];
-        # fixed and symmetric about zero so white always represents no change.
+    if color_scale_max is not None:
+        # color_scale_max is given in the original (pre-percentage) units, so
+        # scale it to match the data, which has already been converted to
+        # percentages above. --delta only changes vmin so the scale stays
+        # symmetric about zero (white = zero); it does not otherwise change
+        # how the max is applied.
+        scaled_max = color_scale_max * 100.0 if delta else color_scale_max
+        vmin = -scaled_max if delta else 0.0
         im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='equal', extent=extent,
-                       vmin=-2.0, vmax=2.0)
-    elif color_scale_max is not None:
-        im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='equal', extent=extent,
-                       vmin=0.0, vmax=color_scale_max)
+                       vmin=vmin, vmax=scaled_max)
     else:
         im = ax.imshow(data, cmap=cmap, interpolation='nearest', aspect='equal', extent=extent)
 
@@ -430,7 +439,7 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
     # Add colorbar
     cbar = plt.colorbar(im, ax=ax)
     if delta:
-        cbar_label = 'Delta'
+        cbar_label = 'Delta (%)'
     elif color_scale_max is not None:
         cbar_label = 'Value'
     else:
@@ -472,7 +481,8 @@ Examples:
   %(prog)s heatmap.csv --save-only              # Save to heatmap.png without displaying
   %(prog)s heatmap.csv -c polybee.cfg -f flowmap.csv   # Overlay flowmap
   %(prog)s angdelta-heatmap.csv --color-scale-max 1.5708   # Fixed 0-N colour scale instead of auto-scaling
-  %(prog)s bee-heatmap-delta-a-vs-b.csv --delta   # Diverging blue-white-red scale for signed delta data
+  %(prog)s bee-heatmap-delta-a-vs-b.csv --delta   # Diverging red-white-blue scale, auto-scaled
+  %(prog)s bee-heatmap-delta-a-vs-b.csv --delta --color-scale-max 2.0   # Fixed -N to +N delta scale
         """
     )
 
@@ -493,23 +503,23 @@ Examples:
                        help='Title for the plot (default: input filename without extension)')
     parser.add_argument('--color-scale-max',
                        type=float, metavar='N',
-                       help='Fix the colour scale to run from 0 to N instead of auto-scaling to '
-                            'the data range.')
+                       help='Fix the colour scale max to N instead of auto-scaling to the data '
+                            'range. Runs from 0 to N normally, or from -N%% (full red) to +N%% '
+                            '(full blue) when combined with --delta -- N is given in the '
+                            'original (pre-percentage) units in both cases.')
     parser.add_argument('--delta',
                        action='store_true',
-                       help='Use a diverging blue-white-red colour scale fixed to [-2.0, +2.0] for '
-                            'signed, zero-centred data (e.g. gen_heatmap_delta.py output). '
-                            'Mutually exclusive with --color-scale-max.')
+                       help='Use a diverging red-white-blue colour scale (red = negative, '
+                            'white = zero, blue = positive) for signed, zero-centred data '
+                            '(e.g. gen_heatmap_delta.py output), and multiply values by 100 to '
+                            'display as percentages. Only changes the colour scale, not which '
+                            'min/max values are used on it (see --color-scale-max).')
 
     args = parser.parse_args()
 
     # Check if input file exists
     if not os.path.isfile(args.input_file):
         print(f"Error: File not found: {args.input_file}", file=sys.stderr)
-        sys.exit(1)
-
-    if args.delta and args.color_scale_max is not None:
-        print("Error: --delta and --color-scale-max are mutually exclusive", file=sys.stderr)
         sys.exit(1)
 
     if args.color_scale_max is not None and args.color_scale_max <= 0.0:
