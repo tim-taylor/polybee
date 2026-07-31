@@ -126,11 +126,18 @@ First the single-condition analyses:
 ~/polybee/tools/run_analysis.sh --basename evolve-20X-10B-400gen-400pop-100epi-2000its --num-reps 50 --title "Evolve positions of 20 barriers and 10 bridges"
 
 ~/polybee/tools/run_analysis.sh --basename "baseline-runs-2000its" --baseline --title "Baseline [no barriers or bridges] (5000 runs)"
-
 ```
 
 And the cross-analyses (NB this script creates its own output dir by default):
 
 ```
-~/polybee/tools/run_cross_analysis.sh --title "Evolve positions for 20 barriers vs Baseline" evolve-20X-400gen-400pop-100epi-2000its baseline-runs-2000its
+~/polybee/tools/run_cross_analysis.sh --delta-color-scale-max 3.10 --title "Evolve positions for 20 barriers and 10 bridges vs Baseline" evolve-20X-10B-400gen-400pop-100epi-2000its baseline-runs-2000its
+
+~/polybee/tools/run_cross_analysis.sh --delta-color-scale-max 3.10 --title "Evolve positions for 20 barriers vs Baseline" evolve-20X-400gen-400pop-100epi-2000its baseline-runs-2000its
+
+~/polybee/tools/run_cross_analysis.sh --delta-color-scale-max 3.10 --title "Evolve positions for 10 bridges vs Baseline" evolve-10B-400gen-400pop-100epi-2000its baseline-runs-2000its
+
+~/polybee/tools/run_cross_analysis.sh --delta-color-scale-max 3.10 --title "Evolve positions for 20 barriers and 10 bridges vs 20 barriers only" evolve-20X-10B-400gen-400pop-100epi-2000its evolve-20X-400gen-400pop-100epi-2000its/
+
+~/polybee/tools/run_cross_analysis.sh --delta-color-scale-max 3.10 --title "Evolve positions for 20 barriers and 10 bridges vs 10 bridges only" evolve-20X-10B-400gen-400pop-100epi-2000its evolve-10B-400gen-400pop-100epi-2000its
 ```

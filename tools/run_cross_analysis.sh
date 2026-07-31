@@ -25,11 +25,11 @@
 #     (normalised) bee-position heatmaps, with no thresholding (it doesn't
 #     support any - thresholds only make sense for the axial flowmap
 #     comparison above). Each resulting delta heatmap is visualised with a
-#     fixed --color-scale-max: for cell size 50, --delta-color-scale-max is
-#     used directly if supplied; otherwise (and always for cell sizes 10 and
-#     25) the max is calculated by scanning the generated delta heatmap
-#     itself for the highest absolute value found, and using slightly more
-#     than that.
+#     fixed colour-scale max: for cell size 50, --delta-color-scale-max
+#     (given directly in percentage units, e.g. 5 for +/-5%) is used if
+#     supplied; otherwise (and always for cell sizes 10 and 25) the max is
+#     calculated by scanning the generated delta heatmap itself for the
+#     highest absolute value found, and using slightly more than that.
 #
 set -euo pipefail
 
@@ -49,12 +49,12 @@ Options:
                                (default: 0.5)
   --flowmap-count-th VAL       Count threshold for the thresholded comparison
                                (default: 0.1)
-  --delta-color-scale-max VAL  Fixed colour-scale max for the cell-size-50 bee-
-                               position delta heatmap, passed straight through
-                               to visualize_heatmap.py's --color-scale-max.
-                               Ignored for cell sizes 10 and 25, which always
-                               have their scale max calculated from the
-                               generated delta heatmap itself.
+  --delta-color-scale-max VAL  Fixed colour-scale max, in percentage units
+                               (e.g. 5 for +/-5%), for the cell-size-50 bee-
+                               position delta heatmap. Ignored for cell sizes
+                               10 and 25, which always have their scale max
+                               calculated from the generated delta heatmap
+                               itself.
   --output-dir DIR             Directory to write output into
                                (default: cross-analysis-<DIR1>-vs-<DIR2>)
   --tools-dir DIR              Directory containing the polybee analysis tools
@@ -237,15 +237,22 @@ for SZ in "${CELL_SIZES[@]}"; do
     # highest absolute value, with a small margin so that value doesn't sit
     # exactly on the edge of the colour scale.
     if [ "$SZ" -eq 50 ] && [ -n "$DELTA_COLOR_SCALE_MAX_OVERRIDE" ]; then
-        DELTA_COLOR_SCALE_MAX="$DELTA_COLOR_SCALE_MAX_OVERRIDE"
+        # --delta-color-scale-max is given directly in percentage units (the
+        # actual max the user wants to see on the percent scale). visualize_
+        # heatmap.py's --color-scale-max is always in pre-percentage units
+        # and gets multiplied by 100 internally for --delta, so divide by
+        # 100 here to cancel that out and use the supplied value unmodified.
+        DELTA_COLOR_SCALE_MAX=$(awk -v m="$DELTA_COLOR_SCALE_MAX_OVERRIDE" 'BEGIN { printf "%.6f", m / 100.0 }')
+        DISPLAY_MAX="$DELTA_COLOR_SCALE_MAX_OVERRIDE"
     else
         DELTA_MAX_ABS=$(awk -F, '
             { for (i = 1; i <= NF; i++) { v = $i + 0; if (v < 0) v = -v; if (v > max) max = v } }
             END { printf "%.6f", max }
         ' "$DELTA_CSV")
         DELTA_COLOR_SCALE_MAX=$(awk -v m="$DELTA_MAX_ABS" 'BEGIN { printf "%.6f", m * 1.05 }')
+        DISPLAY_MAX=$(awk -v m="$DELTA_COLOR_SCALE_MAX" 'BEGIN { printf "%.6f", m * 100.0 }')
     fi
-    echo "Cell size $SZ: delta colour-scale max: $DELTA_COLOR_SCALE_MAX"
+    echo "Cell size $SZ: delta colour-scale max: ${DISPLAY_MAX}%"
 
     "${TOOLS_DIR}/visualize_heatmap.py" --delta --color-scale-max "$DELTA_COLOR_SCALE_MAX" \
         --config "$CONFIG_FILE" --title "$TITLE" --save-only "$DELTA_CSV"
