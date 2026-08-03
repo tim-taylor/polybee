@@ -402,17 +402,187 @@ reproducibility.
 
 ## Design
 
-What was varied (e.g. cell size, delta color scale, number of bees), what was
-held constant, and why.
+### Base environment
 
-Give details of the basic spatial layout, number of steps, etc.
+All four experimental conditions below (the three evolved conditions and
+the baseline) share the same fixed physical environment, differing only
+in whether barriers and/or bridges are present and, if so, whether their
+positions were evolved. The environment is $650 \times 800$ units,
+containing a single rectangular polytunnel $450 \times 600$ units, with
+its top-left corner at $(100, 100)$ (so the tunnel spans $x \in [100,
+550]$, $y \in [100, 700]$). The tunnel has a single, unnetted entrance on
+its south wall: a 100-unit-wide opening centred on the wall's midpoint
+($x \in [275, 375]$ at $y = 700$). A single hive sits 50 units south of
+(i.e. just outside) the tunnel, at $(325, 750)$, oriented to face north,
+directly towards the entrance.
 
+Four parallel rows of flowering plants run the length of the tunnel:
+each row is a $50 \times 500$ unit patch, evenly spaced 100 units apart
+($x = 150, 250, 350, 450$), spanning $y \in [150, 650]$, well inside the
+tunnel. Within each patch, plants are laid out on a 10-unit grid with a
+small amount of positional jitter (0.1 s.d.). Fifty bees forage from the
+hive over 2000 iterations per simulation run. @tbl:params lists the
+model's default behavioural parameters; several are overridden for these
+experiments (notably a shorter step length of 15, a wider visual range of
+11, and a wider energy band of 0-750) -- see the `.cfg` file accompanying
+each condition's raw output for the exact values used.
 
+Barriers, where present, only partially obstruct movement: a bee blocked
+by one has a fixed 10% chance (`barrier-pass-prob`) of flying over it
+anyway rather than being diverted.
+
+### Experimental conditions
+
+Four conditions were run:
+
+- **Baseline.** No barriers or bridges, and no evolutionary search --
+  just the base environment above, run 5000 times independently (matching
+  the 50 replicates $\times$ 100 trials-per-configuration scale of each
+  evolved condition below, so the samples are of comparable size).
+- **Evolve 20 barriers.** The positions of 20 barriers were evolved;
+  entrance and hive positions were held fixed. Each barrier is a
+  fixed-length (50-unit) line segment; the search evolves each barrier's
+  midpoint position (continuous $x, y$) and orientation (discretised to
+  36 possible angles, in $10^\circ$ steps).
+- **Evolve 10 bridges.** The positions of 10 "bridges" were evolved. A
+  bridge is implemented as a small ($30 \times 30$ unit) patch of
+  flowering plants, positioned by the search so as to straddle the tunnel
+  wall and give bees an attractant-based route across it, in addition to
+  the entrance. Flowers within a bridge patch are excluded from the
+  pollination-success fitness metric itself (below) -- they exist purely
+  as a movement aid, not as a crop to be pollinated.
+- **Evolve 20 barriers and 10 bridges.** Both of the above evolved
+  simultaneously, within the same search.
+
+### Evolutionary search
+
+For each of the three evolved conditions, barrier and/or bridge positions
+(and barrier orientations) were searched for using a genetic algorithm
+(PAGMO's `sga`), run for 400 generations with a population of 400
+candidate configurations per generation. Each candidate configuration was
+evaluated over 100 independent, stochastic simulation trials (2000
+iterations each); its fitness was the median, across those 100 trials, of
+the fraction of flowers receiving a "successful" number of visits -- here,
+at least 3 visits (`min-visit-count-success=3`; the upper bound, 1000, is
+a very loose ceiling given the number of bees and simulation length) --
+negated, since the search minimises. A target heatmap was also specified
+in the configuration, but since this visit-fraction criterion (rather
+than distance-to-target) was the active fitness objective for these
+experiments, the target heatmap played no role in the search itself. The
+search ran as a single island (`num-islands=1`), so no migration took
+place despite migration parameters being set.
+
+Each evolutionary condition was replicated 50 times, each replicate an
+independent run of the full 400-generation search with its own randomly
+generated seed, run as a 50-task array job on the Monash M3 HPC cluster
+(see the accompanying `.slurm` files alongside each condition's raw
+output).
 
 ## Setup
 
-Reference to `run_analysis.sh` / `run_cross_analysis.sh` invocations, config
-files used, number of replicates.
+### Per-condition analysis
+
+Each condition's raw output was analysed independently with
+`tools/run_analysis.sh`, run from a directory containing that condition's
+`raw-output`:
+
+1. extracts per-generation fitness values and the champion (best) fitness
+   per run into CSVs, and produces per-run and aggregate fitness graphs;
+2. extracts the best-performing individual's configuration from each
+   replicate run into its own `.cfg` file;
+3. builds barrier/bridge position heatmaps and barrier flowmaps from
+   those best-individual configs, at three cell sizes (10, 25, 50);
+4. re-runs each replicate's best-individual configuration through
+   `polybee` to record bee-movement flowmaps and position heatmaps at
+   each of those three cell sizes, then merges these across the 50
+   replicates (mean per cell, for heatmaps).
+
+For the baseline condition, `--baseline` is used in place of
+`--num-reps`: since baseline runs are single, non-evolutionary
+simulations (`evolve=false`) rather than evolutionary searches, there are
+no generations or best-individual configs to extract, and no barriers or
+bridges to map (steps 1 and 3 above are skipped). Instead,
+`run_analysis.sh` treats each of the 5000 raw output files as one run,
+taking its "fitness" from the run's own successful-visit fraction
+(negated, for a like-for-like comparison with the evolved conditions) and
+its "best-individual config" as simply its own logged configuration;
+per-run flowmaps and heatmaps are then merged in the same way as for the
+evolved conditions.
+
+The exact invocations used were:
+```
+tools/run_analysis.sh --basename evolve-10B-400gen-400pop-100epi-2000its --num-reps 50 \
+    --title "Evolve positions of 10 bridges"
+
+tools/run_analysis.sh --basename evolve-20X-400gen-400pop-100epi-2000its --num-reps 50 \
+    --title "Evolve positions of 20 barriers"
+
+tools/run_analysis.sh --basename evolve-20X-10B-400gen-400pop-100epi-2000its --num-reps 50 \
+    --title "Evolve positions of 20 barriers and 10 bridges"
+
+tools/run_analysis.sh --basename baseline-runs-2000its --baseline \
+    --title "Baseline [no barriers or bridges] (5000 runs)"
+```
+(default plot-scale, flowmap-threshold, and heatmap-cell-size options
+were used throughout; see `run_analysis.sh --help` for the full set of
+overrides available).
+
+### Cross-condition analysis
+
+Pairs of conditions were then compared with `tools/run_cross_analysis.sh`,
+which compares two `run_analysis.sh` output directories' merged
+bee-movement flowmaps and merged bee-position heatmaps, for each cell
+size present in both:
+
+- **Flowmap comparison.** For each cell size, an axial angular-delta
+  heatmap is computed cell-by-cell between the two conditions'
+  predominant-movement-direction flowmaps:
+  $$
+  \Delta = \tfrac{1}{2}\arccos\bigl(\cos(2(\alpha_1 - \alpha_2))\bigr)
+  $$
+  where $\alpha_1, \alpha_2$ are the two conditions' flowmap axis angles
+  for that cell (treated as headless, i.e. a direction and its opposite
+  are equivalent); $\Delta$ ranges from 0 (identical axis) to $\pi/2$
+  (perpendicular axes). This is computed six times per cell size -- with
+  no thresholding, and with default strength/count thresholds (0.5/0.1),
+  each at histogram bin widths of $5^\circ$, $10^\circ$, and $15^\circ$
+  -- and each result visualised both as a heatmap (fixed colour scale $0$
+  to $\pi/2$) and as a histogram. Heatmap visualisation uses a
+  configuration file taken from the first condition's
+  `best-configs-indiv/`, on the assumption that both conditions share the
+  same basic environment -- true of all the comparisons run here, since
+  all four conditions share the base environment described above.
+- **Heatmap comparison.** A plain cell-by-cell difference (first
+  condition's normalised visitation heatmap minus the second's) is
+  computed once per cell size, with no thresholding, and visualised with
+  a diverging colour scale.
+
+The exact invocations used were:
+```
+tools/run_cross_analysis.sh --delta-color-scale-max 3.10 \
+    --title "Evolve positions for 20 barriers and 10 bridges vs Baseline" \
+    evolve-20X-10B-400gen-400pop-100epi-2000its baseline-runs-2000its
+
+tools/run_cross_analysis.sh --delta-color-scale-max 3.10 \
+    --title "Evolve positions for 20 barriers vs Baseline" \
+    evolve-20X-400gen-400pop-100epi-2000its baseline-runs-2000its
+
+tools/run_cross_analysis.sh --delta-color-scale-max 3.10 \
+    --title "Evolve positions for 10 bridges vs Baseline" \
+    evolve-10B-400gen-400pop-100epi-2000its baseline-runs-2000its
+
+tools/run_cross_analysis.sh --delta-color-scale-max 3.10 \
+    --title "Evolve positions for 20 barriers and 10 bridges vs 20 barriers only" \
+    evolve-20X-10B-400gen-400pop-100epi-2000its evolve-20X-400gen-400pop-100epi-2000its
+
+tools/run_cross_analysis.sh --delta-color-scale-max 3.10 \
+    --title "Evolve positions for 20 barriers and 10 bridges vs 10 bridges only" \
+    evolve-20X-10B-400gen-400pop-100epi-2000its evolve-10B-400gen-400pop-100epi-2000its
+```
+`--delta-color-scale-max 3.10` fixes the colour scale for the
+cell-size-50 heatmap-delta comparison to $\pm 3.10$ percentage points
+(cell sizes 10 and 25 always use a scale computed from their own delta
+heatmap).
 
 # Results and analysis
 
