@@ -14,7 +14,8 @@ export PATH="$PWD/tools:$PATH"
 FILTERS=(--filter pandoc-crossref --citeproc)
 
 pandoc report.md "${FILTERS[@]}" \
-  --pdf-engine=xelatex \
+  --pdf-engine=pdflatex \
+  --include-in-header=preamble.tex \
   -o report.pdf
 
 pandoc report.md "${FILTERS[@]}" \

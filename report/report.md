@@ -7,6 +7,10 @@ date: \today
 abstract: |
   One-paragraph summary of motivation, approach, and headline findings.
   Fill this in last, once the results section is written.
+documentclass: article
+classoption:
+  - 11pt
+  - twoside
 bibliography: references.bib
 link-citations: true
 numbersections: true
@@ -169,6 +173,272 @@ the spatial environmental structure as the entity to be evolved.
 
 # System design
 
+The `polybee` simulation is described below following a concise form of
+the ODD (Overview, Design concepts, Details) protocol for describing
+agent-based models [@grimm2020odd]. This description covers only the
+simulation itself -- bee movement, the polytunnel environment, foraging,
+and observation -- and not the separate evolutionary optimisation layer
+(`PolyBeeEvolve`) that searches over environment configurations using the
+simulation as its fitness evaluator (described in the Experiments
+section). A complete, submodel-level ODD description, sufficient to
+support reimplementation, is given in [the Appendix](#sec:appendix-full-odd).
+
+| Parameter | Meaning | Default |
+|---|---|---|
+| `num-bees` | Number of bees | 50 |
+| `num-​iterations` | Number of simulation iterations | 100 |
+| `env-width`, `env-height` | Environment extent | 450, 250 |
+| `tunnel-width`, `tunnel-height` | Tunnel extent | 50, 50 |
+| `bee-​max-​dir-​delta` | Max heading change per random-walk step (radians) | 0.4 |
+| `bee-​step-​length` | Distance moved per step | 20.0 |
+| `bee-​visual-​range` | Max distance at which a bee can detect a flower | 1.0 |
+| `bee-​prob-​visit-​nearest-​flower` | Probability of heading for a sensed flower vs. random walk | 0.9 |
+| `bee-​energy-​min/max-​threshold` | Energy band triggering return to hive | 0.0 / 100.0 |
+| `net-​antibird-​exit-​prob` | Per-attempt exit probability, anti-bird net | 0.1187 |
+| `net-​antihail-​exit-​prob` | Per-attempt exit probability, anti-hail net | 0.0371 |
+| `barrier-​pass-​prob` | Probability of flying over a barrier | 0.0 |
+| `heatmap-​cell-​size` | Heatmap cell size | 10 |
+
+: Key simulation parameters, with defaults from the `Params` registry. The
+complete parameter reference is given in the Appendix. {#tbl:params}
+
+## Purpose and patterns
+
+`polybee` simulates the foraging movement of a population of bees around
+one or more hives, within an environment that may contain a rectangular
+polytunnel (with netted or open entrances), linear barriers, and patches
+of flowering plants. For a given, fixed physical configuration of these
+elements, it generates the emergent spatial and temporal patterns of bee
+activity -- where bees spend time, how successfully flowers are
+pollinated, and how easily bees cross netted tunnel boundaries -- that
+result from simple individual foraging, homing, and obstacle-avoidance
+rules. The model itself considers only a single, fixed configuration; it
+is designed to serve as the evaluation function for a separate
+*environment-shaping* optimisation process (@sec:environment-shaping-in-abms
+and the Experiments section) that searches over candidate configurations
+to steer these patterns towards a target.
+
+Three patterns are used to judge the model's adequacy. Bee visitation
+should concentrate plausibly around plant patches and accessible tunnel
+entrances or corridors, and respond sensibly to hive, entrance, and
+barrier placement. The per-attempt exit probabilities and maximum-attempt
+counts governing tunnel-netting permeability were calibrated to reproduce
+the exit-success rate and mean rebound count reported for real netted
+enclosures in @sonter2024. And the fraction of flowers receiving a
+"successful" number of visits should decrease appropriately when flowers
+are cut off from a hive by barriers or by an unfavourable entrance
+configuration.
+
+## Entities, state variables and scales
+
+The model's entities are an environment containing a polytunnel,
+entrances, barriers, and patches of flowering plants; one or more hives;
+and a population of bees that forage from the plants and periodically
+return to their hive.
+
+**Environment model.** The environment is a rectangular, continuous 2D
+space of arbitrary units, not tied to an explicit real-world measure such
+as metres, though `bee-step-length` and related parameters calibrate it
+indirectly; the example configuration is $450\times250$ units. It may
+contain a single rectangular polytunnel with one or more entrances, each
+either open or fitted with anti-bird or anti-hail netting, and any number
+of linear barriers. Positions and movement are continuous; grid cells are
+used only for efficient spatial lookup and for output aggregation, not
+for the movement dynamics themselves.
+
+**Bee agent model.** Each bee maintains its current position and heading;
+an energy level that rises when it feeds and falls with each foraging
+step; a behavioural state (foraging, on a flower, returning to the hive
+inside or outside the tunnel, or in the hive); and a short rolling memory
+of the five most recently visited plants, which it will not revisit.
+Each bee is linked to one home hive.
+
+**Hive model.** Each hive has a fixed position and an entry/exit
+direction (one of the four compass points, or random), which sets the
+heading a bee adopts whenever it leaves or arrives at the hive. Hives
+have no dynamics of their own; they are fixed spawn/return points, and the
+bee population is divided evenly across however many are configured.
+
+**Plant model.** Each plant (flower) has a fixed position and a nectar
+store, initialised to a fixed value and depleted, never replenished, as
+bees extract it. Each plant also records the number of times it has been
+visited, used to assess pollination success (see Purpose and patterns,
+above).
+
+## Process overview and scheduling
+
+At the start of a run the environment is built once: the polytunnel and
+its entrances, any barriers, and patches of plants (laid out as jittered
+regular grids) are created and spatially indexed; hives and, divided
+evenly across them, the configured number of bees are then created. Each
+iteration, every bee is updated once, in creation order (harmless, since
+bees never interact with each other directly); the heatmap records each
+bee's current cell; and, periodically, the flowmap records each bee's
+movement direction. A run ends after a fixed number of iterations.
+
+**Submodel: bee movement and foraging.** When no unvisited flower is
+within a bee's visual range, or with fixed probability it chooses not to
+head for one it has found, it takes a short random-walk step, turning by
+a bounded random amount from its current heading:
+$$
+\theta_{t+1} = \theta_t + U(-\delta_{\max}, \delta_{\max})
+$$
+where $\delta_{\max}$ is a fixed maximum turning rate per step (a
+correlated random walk). The decision each step is:
+
+```
+If an unvisited flower is within visual range:
+    with fixed probability, head directly for the nearest such flower
+    otherwise, take a bounded random turn
+Else:
+    take a bounded random turn
+```
+
+Heading directly for a sensed flower is the one case where a bee's turn
+is unconstrained by $\delta_{\max}$. On reaching a flower, the bee
+extracts nectar (capped by however much remains), its visit count
+increments, and it remains on the flower for a fixed number of iterations
+before resuming foraging.
+
+**Submodel: tunnel and barrier interactions.** A candidate step obstructed
+by a barrier is either flown over (fixed probability), shortened to stop
+just short of the barrier, or abandoned in favour of a new random
+direction. A candidate step that would cross the tunnel boundary through
+an entrance succeeds or fails as an independent trial at that entrance's
+per-attempt exit probability (1.0 for an open entrance, $\approx 0.12$ for
+anti-bird netting, $\approx 0.04$ for anti-hail netting, calibrated from
+@sonter2024); on repeated failure the bee rebounds off the netting and
+re-attempts, up to a fixed maximum number of attempts, before giving up
+and continuing to forage on its current side of the tunnel. A move that
+meets solid tunnel wall, or the outer boundary of the environment, is
+clamped to slide along it rather than reflecting off it.
+
+**Submodel: energy dynamics and return to hive.** A bee's energy falls by
+a fixed amount each foraging step and rises, nectar-limited, on each
+flower visit. Once energy leaves a fixed band, the bee switches to
+returning directly to its hive, taking the shortest route that avoids
+passing back through solid tunnel wall (routing via the tunnel's corners
+if necessary). Having reached the hive, the bee rests there for a fixed
+number of iterations, after which its energy resets and it resumes
+foraging.
+
+## Design concepts
+
+**Basic principles.** Bees follow a correlated random walk biased towards
+nearby, unvisited flowers, rather than a true Lévy flight. An energy
+budget accumulated from nectar and depleted per step governs the length
+of a foraging bout and the decision to return to the hive. Tunnel-netting
+permeability is represented stochastically, with exit probabilities taken
+directly from published field-trial data on real netting [@sonter2024]
+rather than from a physical model of the netting itself.
+
+**Emergence.** The population-level patterns of interest -- the
+visitation heatmap, per-plant visit counts and the resulting
+pollination-success fraction, and the overall movement flow field -- are
+not encoded directly anywhere in the model. They emerge from many bees
+independently applying the same simple foraging, obstacle-avoidance, and
+homing rules within one particular, fixed spatial arrangement of hive(s),
+tunnel, entrances, barriers, and plant patches.
+
+**Adaptation, objectives, learning and prediction.** None of these are
+modelled. Bees follow fixed decision rules irrespective of experience;
+their only memory, the rolling list of recently visited plants, exists
+purely to avoid immediate revisits, not to adapt future behaviour. The
+energy state variable creates an implicit approach/avoidance dynamic
+around a fixed threshold band, but this is a hard-coded rule rather than
+an objective the bee evaluates or optimises. Bees do not anticipate
+future states; every movement decision depends only on current position,
+state, and what is currently sensed.
+
+**Sensing.** A bee senses unvisited flowers within a fixed visual range of
+its current position, excluding those in its recent-visit memory and any
+whose line of sight is blocked by a wall or barrier, and any barrier that
+would obstruct its next candidate step. It does not sense other bees, the
+hive from a distance, or any aggregate/global state.
+
+**Interaction.** Bees do not interact with one another directly -- there
+is no collision avoidance, communication, or recruitment. The only
+channel by which one bee's actions affect another is indirect, through
+shared plant state: one bee extracting nectar from, or visiting, a flower
+changes what the next bee to arrive there will experience. Bees do
+interact with the static environment -- tunnel walls and netted
+entrances, barriers, and the hive.
+
+**Stochasticity.** All randomness derives from a single seeded
+random-number stream. Stochastic elements include: a bee's initial/
+hive-exit heading (when a hive's direction is configured as random); the
+turning noise added on each random-walk step; the choice between heading
+for a sensed flower and taking a random turn instead; the outcome of each
+tunnel-entrance crossing attempt; whether a barrier is flown over or
+avoided; small positional jitter while homing; and the initial jittered
+placement of plants within their patches.
+
+**Collectives.** None. Bees are not organised into any collective
+structure such as a swarm or division of labour; a hive is simply a
+shared spawn/return point, and the bee population is divided evenly
+across however many hives are configured.
+
+**Observation.** The main outputs recorded are a heatmap of bee
+visitation density and a flowmap of predominant local movement direction,
+both accumulated over a run; per-plant visit counts, from which the
+pollination-success fraction is derived; and summary statistics on
+tunnel-entrance crossing attempts (success rate and mean number of
+rebounds). None of these outputs are read by the bees themselves.
+
+## Initialization
+
+A run is initialised from a set of named parameters, read from a
+configuration file and optionally overridden from the command line. The
+tunnel, its entrances, any barriers, and patches of plants (laid out as
+regular grids with independent positional jitter) are constructed first;
+one or more hives are then placed, and a fixed number of bees created and
+divided evenly across them, each starting at its hive with a full energy
+budget. A single random-number stream is seeded once for the whole run,
+either from a supplied seed or a freshly generated one, recorded for
+reproducibility.
+
+
+# Experiments
+
+## Design
+
+What was varied (e.g. cell size, delta color scale, number of bees), what was
+held constant, and why.
+
+Give details of the basic spatial layout, number of steps, etc.
+
+
+
+## Setup
+
+Reference to `run_analysis.sh` / `run_cross_analysis.sh` invocations, config
+files used, number of replicates.
+
+# Results and analysis
+
+## Result 1
+
+![Caption describing what the figure
+shows.](figures/placeholder.png){#fig:placeholder width=80%}
+
+As shown in @fig:placeholder, ...
+
+## Discussion
+
+Interpretation, limitations, surprises.
+
+# Conclusion
+
+Summary of findings and future work.
+
+# Appendix: Full ODD Description of the PolyBee Simulation Model {#sec:appendix-full-odd}
+
+This appendix gives the complete, submodel-level ODD description of the
+`polybee` simulation, in full implementation detail (every state
+variable, submodel equation, and the full parameter reference). A
+condensed summary appears in the main text (see
+[System design](#system-design)).
+
 The `polybee` simulation is described below following the ODD (Overview,
 Design concepts, Details) protocol for describing agent-based models
 [@grimm2020odd]. This description covers only the simulation itself --
@@ -177,7 +447,7 @@ not the separate evolutionary optimisation layer (`PolyBeeEvolve`) that
 searches over environment configurations using the simulation as its
 fitness evaluator; that layer is described in the Experiments section.
 
-## Overview
+## Overview {#sec:appendix-overview}
 
 ### Purpose
 
@@ -202,7 +472,7 @@ concerns only the single-configuration simulation dynamics themselves.
 The model's outputs are used to assess environment designs against three
 kinds of pattern:
 
-- **Spatial coverage.** The heatmap of bee visitation (@sec:observation)
+- **Spatial coverage.** The heatmap of bee visitation (@sec:appendix-observation)
   should concentrate around plant patches and along accessible tunnel
   entrances/corridors, and should be sensitive in a plausible way to hive
   placement, entrance placement, and barrier placement.
@@ -221,7 +491,7 @@ kinds of pattern:
   accessibility -- e.g. flowers cut off from a hive by barriers or by an
   unfavourable tunnel-entrance configuration should be visited less.
 
-## Entities, state variables, and scales
+## Entities, state variables, and scales {#sec:appendix-entities}
 
 **Bee** (agent). State: position `m_pos` (continuous $(x,y)$, environment
 coordinates) and previous-step position `m_prevPos`; heading `m_angle`
@@ -272,7 +542,7 @@ visible to agents) used to accelerate nearby-plant and nearby-barrier
 lookups.
 
 **Heatmap and Flowmap** (observation only, not agents; see
-@sec:observation) -- passive grids over the environment that accumulate
+@sec:appendix-observation) -- passive grids over the environment that accumulate
 bee-position counts and bee-movement-direction statistics respectively.
 Neither is read by any agent; they exist purely to record output.
 
@@ -292,14 +562,14 @@ space.
 
 **Temporal scale.** Time advances in discrete iterations; one iteration
 is one synchronous update of every bee plus environment bookkeeping
-(@sec:process-overview). A run lasts `num-iterations` iterations (default
+(@sec:appendix-process-overview). A run lasts `num-iterations` iterations (default
 100; the example `polybee.cfg` configuration uses 2000). There is no
 explicit mapping from one iteration to a real-world duration such as
 seconds; `bee-step-length` and the energy-depletion-per-step parameter
 are the effective calibration knobs for how far/how costly one iteration
 of movement is.
 
-## Process overview and scheduling {#sec:process-overview}
+## Process overview and scheduling {#sec:appendix-process-overview}
 
 **Setup (once per run)**, performed by `Environment::initialise()`: build
 the `Tunnel` and its entrances; build `Barrier`s (each `barrier` spec may
@@ -319,7 +589,7 @@ which:
    `stayOnFlower()`, `returnToHiveInsideTunnel()`,
    `returnToHiveOutsideTunnel()`, or `stayInHive()` (submodels below).
    Because bees never sense or interact with one another directly
-   (@sec:interaction), this update order has no effect on the dynamics --
+   (@sec:appendix-interaction), this update order has no effect on the dynamics --
    only, potentially, on rendering order.
 2. Updates the Heatmap (records each bee's current cell).
 3. If `flowmap-update-period` > 0 and the current iteration is a multiple
@@ -335,11 +605,11 @@ an early-exit request (e.g. the user closes the visualisation window).
 At the end of a run, if logging is enabled, the Flowmap's per-cell
 statistics are finalised and the heatmap, flowmap, effective
 configuration, and a run-info summary are written to file
-(@sec:observation).
+(@sec:appendix-observation).
 
-## Design concepts
+## Design concepts {#sec:appendix-design-concepts}
 
-### Basic principles
+### Basic principles {#sec:appendix-basic-principles}
 
 Bees follow a correlated random walk biased towards nearby, unvisited
 flowers -- a nearest-flower-seeking heuristic rather than a true Lévy
@@ -353,7 +623,7 @@ anti-bird/anti-hail netting reported in @sonter2024 (see
 `PARAM-NOTES.md`), rather than from a first-principles physical model of
 the netting itself.
 
-### Emergence
+### Emergence {#sec:appendix-emergence}
 
 The population-level patterns of interest -- the visitation heatmap, the
 per-plant visit counts and the resulting successful-visit fraction, and
@@ -369,7 +639,7 @@ hive(s), tunnel, entrances, barriers, and plant patches.
 
 None. Bees do not modify their decision rules based on experience within
 a run. Their only form of memory -- the short rolling list of recently
-visited plants (@sec:sensing) -- exists to avoid immediate re-visits, not
+visited plants (@sec:appendix-sensing) -- exists to avoid immediate re-visits, not
 to adapt behaviour.
 
 ### Objectives
@@ -391,7 +661,7 @@ None. Every movement decision uses only the bee's current position/state
 and what it currently senses; there is no internal model of, or
 anticipation of, future states.
 
-### Sensing {#sec:sensing}
+### Sensing {#sec:appendix-sensing}
 
 A bee senses two things, both purely local and both computed via
 background spatial-index grids restricted to a $3\times3$ block of cells
@@ -405,14 +675,14 @@ $\approx$ the longer of the largest barrier length or
   line of sight is obstructed by a tunnel wall or a barrier.
 - **Barriers**: any barrier that would obstruct the straight-line segment
   of a candidate random-walk step, used only to modify that step
-  (@sec:submodel-movement).
+  (@sec:appendix-submodel-movement).
 
 Bees do not sense other bees, the hive from a distance (beyond having a
 fixed internal route home), or any aggregate/global state -- the
 Heatmap and Flowmap are write-only observation structures and are never
 read by agents.
 
-### Interaction {#sec:interaction}
+### Interaction {#sec:appendix-interaction}
 
 Bees do not interact with one another directly: there is no collision
 avoidance, communication, or recruitment behaviour between bees. The only
@@ -439,7 +709,7 @@ Randomness enters at:
   drawn uniform on $[0, 2\pi)$; otherwise heading is fixed to the
   hive's compass direction;
 - the per-step turning noise added during a random-walk step (uniform on
-  $[-\delta_{\max}, \delta_{\max}]$, @sec:submodel-movement);
+  $[-\delta_{\max}, \delta_{\max}]$, @sec:appendix-submodel-movement);
 - the choice, when an unvisited flower is in range, between heading for
   it and taking a random-walk step instead (Bernoulli,
   `bee-prob-visit-nearest-flower`);
@@ -456,7 +726,7 @@ Randomness enters at:
 - plant position jitter at initialisation (Gaussian, s.d. = the patch's
   jitter parameter).
 
-### Collectives
+### Collectives {#sec:appendix-collectives}
 
 None. Bees are not organised into any super-agent structure such as a
 swarm or division of labour. A hive is a shared spawn/return point and
@@ -465,7 +735,7 @@ population is simply divided evenly across the configured hives
 (`num-bees` / number of hives, with a warning if it does not divide
 evenly).
 
-### Observation {#sec:observation}
+### Observation {#sec:appendix-observation}
 
 Two passive spatial accumulators record model output and are never read
 by agents: the **Heatmap** (bee-visitation counts per cell, raw and
@@ -486,9 +756,9 @@ visualisation is enabled, bees, trails, the tunnel, barriers, patches,
 and the heatmap/flowmap can be viewed live, with interactive controls to
 pause, change display mode, and toggle overlays.
 
-## Details
+## Details {#sec:appendix-details}
 
-### Initialization
+### Initialization {#sec:appendix-initialization}
 
 Parameters are read from a config file (default `polybee.cfg`) and then
 overridden by any command-line arguments given (command line wins on
@@ -530,7 +800,7 @@ the derivation.
 
 ### Submodels
 
-#### Movement/turning rule (random walk step) {#sec:submodel-movement}
+#### Movement/turning rule (random walk step) {#sec:appendix-submodel-movement}
 
 When a bee finds no unvisited flower in range, or (with probability
 $1-p_{\text{nearest}}$, `bee-prob-visit-nearest-flower`) chooses not to
@@ -552,7 +822,7 @@ shorten further, a new random direction is tried (up to 5 attempts before
 the bee simply stays put for that iteration).
 
 **Directed movement towards a sensed flower.** If an unvisited flower is
-within `bee-visual-range` (@sec:sensing) and is chosen (probability
+within `bee-visual-range` (@sec:appendix-sensing) and is chosen (probability
 $p_{\text{nearest}}$), the bee's heading is set directly to the bearing
 to that flower -- $\theta_{t+1} = \operatorname{atan2}(y_f - y_t,\, x_f -
 x_t)$ -- **not** bounded by $\delta_{\max}$; this is the one situation in
@@ -645,7 +915,7 @@ cell.
 
 ### Parameter reference
 
-@tbl:params lists the simulation-relevant parameters, grouped as in
+@tbl:appendix-params lists the simulation-relevant parameters, grouped as in
 `polybee.cfg`; parameters that control only the separate optimisation
 layer (`evolve`, `evolve-objective`, `evolve-spec`,
 `target-heatmap-filename`'s active use as a fitness target,
@@ -701,41 +971,8 @@ layer (`evolve`, `evolve-objective`, `evolve-spec`,
 
 : Simulation-relevant parameters, with defaults from the `Params`
 registry. The example configuration in `polybee.cfg` overrides several
-of these (see the Experiments section). {#tbl:params}
+of these (see the Experiments section). {#tbl:appendix-params}
 
-See @tbl:params for the full parameter set used in the experiments below.
-
-# Experiments
-
-## Design
-
-What was varied (e.g. cell size, delta color scale, number of bees), what was
-held constant, and why.
-
-Give details of the basic spatial layout, number of steps, etc.
-
-
-
-## Setup
-
-Reference to `run_analysis.sh` / `run_cross_analysis.sh` invocations, config
-files used, number of replicates.
-
-# Results and analysis
-
-## Result 1
-
-![Caption describing what the figure
-shows.](figures/placeholder.png){#fig:placeholder width=80%}
-
-As shown in @fig:placeholder, ...
-
-## Discussion
-
-Interpretation, limitations, surprises.
-
-# Conclusion
-
-Summary of findings and future work.
+See @tbl:appendix-params for the full parameter set used in the experiments below.
 
 # References
