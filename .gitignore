@@ -49,3 +49,8 @@
 old
 *.old
 __pycache__
+
+# Report build (see report/README.md)
+/report/tools
+/report/report.pdf
+/report/report.docx
