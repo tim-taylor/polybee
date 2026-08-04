@@ -181,7 +181,7 @@ and observation -- and not the separate evolutionary optimisation layer
 (`PolyBeeEvolve`) that searches over environment configurations using the
 simulation as its fitness evaluator (described in the Experiments
 section). A complete, submodel-level ODD description, sufficient to
-support reimplementation, is given in [the Appendix](#sec:appendix-full-odd).
+support reimplementation, is given in [Appendix A](#sec:appendix-full-odd).
 
 | Parameter | Meaning | Default |
 |---|---|---|
@@ -406,8 +406,22 @@ reproducibility.
 
 All four experimental conditions below (the three evolved conditions and
 the baseline) share the same fixed physical environment, differing only
-in whether barriers and/or bridges are present and, if so, whether their
-positions were evolved. The environment is $650 \times 800$ units,
+in whether barriers and/or bridges are present. An example of the basic environmental
+configuration is shown in @fig:basic-env-screenshot.
+
+![Screenshot showing the basic environmental configuration used in the
+experiments. A central tunnel (the dark brown area) houses four rows of crops. A
+single un-netted entrance is provided on the southern end of the tunnel (thick white
+line), and a single hive (red square) is placed outside the tunnel in front of
+the entrance. The tunnel is surrounded by a perimeter area (light
+brown). Fifty bees (small triangles) forage over the environment for 2000
+simulation timesteps. In this visualisation, the colour of each plant indicates
+how often it has been visited by bees, with light green indicating the most
+visited
+plants.](figures/polybee-env-config-example-screenshot.png){#fig:basic-env-screenshot
+width=70%}
+
+The environment is $650 \times 800$ units,
 containing a single rectangular polytunnel $450 \times 600$ units, with
 its top-left corner at $(100, 100)$ (so the tunnel spans $x \in [100,
 550]$, $y \in [100, 700]$). The tunnel has a single, unnetted entrance on
@@ -465,18 +479,17 @@ iterations each); its fitness was the median, across those 100 trials, of
 the fraction of flowers receiving a "successful" number of visits -- here,
 at least 3 visits (`min-visit-count-success=3`; the upper bound, 1000, is
 a very loose ceiling given the number of bees and simulation length) --
-negated, since the search minimises. A target heatmap was also specified
-in the configuration, but since this visit-fraction criterion (rather
-than distance-to-target) was the active fitness objective for these
-experiments, the target heatmap played no role in the search itself. The
-search ran as a single island (`num-islands=1`), so no migration took
-place despite migration parameters being set.
+negated, since the search minimises.
 
 Each evolutionary condition was replicated 50 times, each replicate an
 independent run of the full 400-generation search with its own randomly
 generated seed, run as a 50-task array job on the Monash M3 HPC cluster
 (see the accompanying `.slurm` files alongside each condition's raw
 output).
+
+Some further technical comments about the configuration of the evolutionary
+search in these experiments can be found in
+[Appendix B](#sec:appendix-misc-tech-notes).
 
 ## Setup
 
@@ -511,16 +524,24 @@ evolved conditions.
 
 The exact invocations used were:
 ```
-tools/run_analysis.sh --basename evolve-10B-400gen-400pop-100epi-2000its --num-reps 50 \
+tools/run_analysis.sh \
+    --basename evolve-10B-400gen-400pop-100epi-2000its \
+    --num-reps 50 \
     --title "Evolve positions of 10 bridges"
 
-tools/run_analysis.sh --basename evolve-20X-400gen-400pop-100epi-2000its --num-reps 50 \
+tools/run_analysis.sh \
+    --basename evolve-20X-400gen-400pop-100epi-2000its \
+    --num-reps 50 \
     --title "Evolve positions of 20 barriers"
 
-tools/run_analysis.sh --basename evolve-20X-10B-400gen-400pop-100epi-2000its --num-reps 50 \
+tools/run_analysis.sh \
+    --basename evolve-20X-10B-400gen-400pop-100epi-2000its \
+    --num-reps 50 \
     --title "Evolve positions of 20 barriers and 10 bridges"
 
-tools/run_analysis.sh --basename baseline-runs-2000its --baseline \
+tools/run_analysis.sh \
+    --basename baseline-runs-2000its \
+    --baseline \
     --title "Baseline [no barriers or bridges] (5000 runs)"
 ```
 (default plot-scale, flowmap-threshold, and heatmap-cell-size options
@@ -559,25 +580,35 @@ size present in both:
 
 The exact invocations used were:
 ```
-tools/run_cross_analysis.sh --delta-color-scale-max 3.10 \
+tools/run_cross_analysis.sh \
+    --delta-color-scale-max 3.10 \
     --title "Evolve positions for 20 barriers and 10 bridges vs Baseline" \
-    evolve-20X-10B-400gen-400pop-100epi-2000its baseline-runs-2000its
+    evolve-20X-10B-400gen-400pop-100epi-2000its \
+    baseline-runs-2000its
 
-tools/run_cross_analysis.sh --delta-color-scale-max 3.10 \
+tools/run_cross_analysis.sh \
+    --delta-color-scale-max 3.10 \
     --title "Evolve positions for 20 barriers vs Baseline" \
-    evolve-20X-400gen-400pop-100epi-2000its baseline-runs-2000its
+    evolve-20X-400gen-400pop-100epi-2000its \
+    baseline-runs-2000its
 
-tools/run_cross_analysis.sh --delta-color-scale-max 3.10 \
+tools/run_cross_analysis.sh \
+    --delta-color-scale-max 3.10 \
     --title "Evolve positions for 10 bridges vs Baseline" \
-    evolve-10B-400gen-400pop-100epi-2000its baseline-runs-2000its
+    evolve-10B-400gen-400pop-100epi-2000its \
+    baseline-runs-2000its
 
-tools/run_cross_analysis.sh --delta-color-scale-max 3.10 \
+tools/run_cross_analysis.sh \
+    --delta-color-scale-max 3.10 \
     --title "Evolve positions for 20 barriers and 10 bridges vs 20 barriers only" \
-    evolve-20X-10B-400gen-400pop-100epi-2000its evolve-20X-400gen-400pop-100epi-2000its
+    evolve-20X-10B-400gen-400pop-100epi-2000its \
+    evolve-20X-400gen-400pop-100epi-2000its
 
-tools/run_cross_analysis.sh --delta-color-scale-max 3.10 \
+tools/run_cross_analysis.sh \
+    --delta-color-scale-max 3.10 \
     --title "Evolve positions for 20 barriers and 10 bridges vs 10 bridges only" \
-    evolve-20X-10B-400gen-400pop-100epi-2000its evolve-10B-400gen-400pop-100epi-2000its
+    evolve-20X-10B-400gen-400pop-100epi-2000its \
+    evolve-10B-400gen-400pop-100epi-2000its
 ```
 `--delta-color-scale-max 3.10` fixes the colour scale for the
 cell-size-50 heatmap-delta comparison to $\pm 3.10$ percentage points
@@ -586,12 +617,11 @@ heatmap).
 
 # Results and analysis
 
+**Get info from ChatGPT chat about plan for analysis and ideas behind it**
+
 ## Result 1
 
-![Caption describing what the figure
-shows.](figures/placeholder.png){#fig:placeholder width=80%}
-
-As shown in @fig:placeholder, ...
+blah, blah, blah
 
 ## Discussion
 
@@ -601,7 +631,7 @@ Interpretation, limitations, surprises.
 
 Summary of findings and future work.
 
-# Appendix: Full ODD Description of the PolyBee Simulation Model {#sec:appendix-full-odd}
+# Appendix A: Full ODD Description of the PolyBee Simulation Model {#sec:appendix-full-odd}
 
 This appendix gives the complete, submodel-level ODD description of the
 `polybee` simulation, in full implementation detail (every state
@@ -1144,5 +1174,18 @@ registry. The example configuration in `polybee.cfg` overrides several
 of these (see the Experiments section). {#tbl:appendix-params}
 
 See @tbl:appendix-params for the full parameter set used in the experiments below.
+
+# Appendix B: Miscellaneous Technical Notes {#sec:appendix-misc-tech-notes}
+
+When running the experiments reported in this paper, a target heatmap was also
+specified in the configuration files, but since we were using the visit-fraction
+criterion (rather than distance-to-target) as the active fitness objective for
+these experiments, the target heatmap played no role in the search itself.
+
+The `polybee` package provides the facility of running "island model" genetic
+algorithms, where total populations are split over multiple islands with
+occasional migration between them. However, for the experiments reported here,
+the search ran as a single island (`num-islands=1`), so no migration took place
+despite migration parameters being set.
 
 # References
