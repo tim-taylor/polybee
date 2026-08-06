@@ -11,6 +11,8 @@ documentclass: article
 classoption:
   - 11pt
   - twoside
+header-includes: |
+  \input{preamble.tex}
 bibliography: references.bib
 link-citations: true
 numbersections: true
@@ -445,7 +447,7 @@ Barriers, where present, only partially obstruct movement: a bee blocked
 by one has a fixed 10% chance (`barrier-pass-prob`) of flying over it
 anyway rather than being diverted.
 
-### Experimental conditions
+### Experimental conditions {#sec:exptconds}
 
 Four conditions were run:
 
@@ -468,18 +470,27 @@ Four conditions were run:
 - **Evolve 20 barriers and 10 bridges.** Both of the above evolved
   simultaneously, within the same search.
 
-### Evolutionary search
+### Evolutionary search {#sec:evosearch}
 
-For each of the three evolved conditions, barrier and/or bridge positions
-(and barrier orientations) were searched for using a genetic algorithm
-(PAGMO's `sga`), run for 400 generations with a population of 400
-candidate configurations per generation. Each candidate configuration was
-evaluated over 100 independent, stochastic simulation trials (2000
-iterations each); its fitness was the median, across those 100 trials, of
-the fraction of flowers receiving a "successful" number of visits -- here,
-at least 3 visits (`min-visit-count-success=3`; the upper bound, 1000, is
-a very loose ceiling given the number of bees and simulation length) --
-negated, since the search minimises.
+For each of the three evolved conditions, barrier and/or bridge positions (and
+barrier orientations) were searched for using a genetic algorithm, run for 400
+generations with a population of 400 candidate configurations per generation.
+Each candidate configuration was evaluated over 100 independent, stochastic
+simulation trials (2000 iterations each); its fitness was derived from the
+median, across those 100 trials, of the fraction of flowers receiving a
+"successful" number of visits. Any flower that is visited at least 3 times
+during a simulation is counted as "successfully viited" for this purpose
+(`min-visit-count-success=3`).
+
+The genetic algorithm functionality of `polybee` is implemented using the `sga`
+component of the `pagmo` library [@pagmo2020]. `pagmo` is an extensive library
+of optimisation methods that uses a consistent goal of minimisation across its
+various tools. For this reason, in all our experiments we actually employed the
+goal of _minimising the negated visit fraction_ (so the best possible value is
+-1.0 rather than 1.0). Therefore, where negative visit fractions are presented
+in the [Results](#sec:results) section, it should be remembered that more
+negative values (closer to -1.0) are better than less negative ones (closer to
+0.0).
 
 Each evolutionary condition was replicated 50 times, each replicate an
 independent run of the full 400-generation search with its own randomly
@@ -615,20 +626,226 @@ cell-size-50 heatmap-delta comparison to $\pm 3.10$ percentage points
 (cell sizes 10 and 25 always use a scale computed from their own delta
 heatmap).
 
-# Results and analysis
+# Results and analysis {#sec:results}
 
-**Get info from ChatGPT chat about plan for analysis and ideas behind it**
+## Examples of evolved barrier and bridge configurations
 
-Give table showing summary visitation counts (fitness-data-agg) - best, median, IQR
+@fig:best-layouts shows, for each evolved condition, the physical
+layouts (barrier and/or bridge placement) of the three top-scoring
+configurations across the 50 replicate runs. Tunnel wall, crop rows, and hive
+are shown for reference in each panel.
 
-For your evolutionary experiments, the run-to-run variability is probably scientifically important, so I would use the median with an IQR band as the main presentation. If the number of runs is not very large, a 10th–90th band can be unstable; IQR is usually more robust.
+The figure shows that for the "Evolve 10 bridges" condition (top row), the best
+configurations were those in which most of the bridges were situated within
+the tunnel at the top end, towards the end of the middle two rows of crop. In addition,
+some of the bridges were placed at the other end of the environment, outside the
+tunnel and just behind the hive.
 
-Calc and show statistical differences between conditions
+For the "Evolve 20 barriers" condition (middle row), the best configurations exhibit
+a central "funnel" configuation at the near end of the rows (close to the tunnel entrance),
+together with barriers blocking the near end of the middle two rows, and a line of barriers
+on the outer edges of the leftmost and rightmost rows.
 
-Show evolution of fitness over runs, from fitness-graphs-agg
+For the "Evolve 20 barriers and 10 bridges" condition (bottom row), the barrier positions
+resembled those seen in the "Evolve 20 barriers" condition but with less clearly defined features.
+In one case (the middle one) the bridge positions resembled those seen in the "Evolve 10 bridges" condition,
+but in the other two cases most of the bridges were actually placed _outside_ the tunnel at the
+top end.
 
-Then show analysis of evolved configs:
-(for these, pic one version to show in main text, and show all versions in appendix)
+
+::: {#fig:best-layouts}
+![Bridges only, rank 1](figures/best-layout-1-evolve-10B-400gen-400pop-100epi-2000its-58270372_12.png){#fig:best-layout-10B-1 width=30%}
+![Bridges only, rank 2](figures/best-layout-2-evolve-10B-400gen-400pop-100epi-2000its-58270372_22.png){#fig:best-layout-10B-2 width=30%}
+![Bridges only, rank 3](figures/best-layout-3-evolve-10B-400gen-400pop-100epi-2000its-58270372_30.png){#fig:best-layout-10B-3 width=30%}
+
+```{=latex}
+\mbox{}\\
+```
+
+![Barriers only, rank 1](figures/best-layout-1-evolve-20X-400gen-400pop-100epi-2000its-58163058_31.png){#fig:best-layout-20X-1 width=30%}
+![Barriers only, rank 2](figures/best-layout-2-evolve-20X-400gen-400pop-100epi-2000its-58163058_18.png){#fig:best-layout-20X-2 width=30%}
+![Barriers only, rank 3](figures/best-layout-3-evolve-20X-400gen-400pop-100epi-2000its-58163058_20.png){#fig:best-layout-20X-3 width=30%}
+
+```{=latex}
+\mbox{}\\
+```
+
+![Barriers and bridges, rank 1](figures/best-layout-1-evolve-20X-10B-400gen-400pop-100epi-2000its-58020874_34.png){#fig:best-layout-20X10B-1 width=30%}
+![Barriers and bridges, rank 2](figures/best-layout-2-evolve-20X-10B-400gen-400pop-100epi-2000its-58020874_24.png){#fig:best-layout-20X10B-2 width=30%}
+![Barriers and bridges, rank 3](figures/best-layout-3-evolve-20X-10B-400gen-400pop-100epi-2000its-58020874_46.png){#fig:best-layout-20X10B-3 width=30%}
+
+The three best-performing evolved layouts (ranked by best-observed
+fitness across replicate runs) for each experimental condition:
+bridges-only (top row), barriers-only (middle row), and
+barriers-and-bridges (bottom row). Barriers are drawn as red line segments
+and bridges as purple squares.
+:::
+
+## Overall fitness statistics {#sec:overallstats}
+
+@tbl:fitness-summary shows the flower visitation summary statistics for each
+experimental condition. The figures in the second column show the median of the
+best observed visitation fraction for all replicate runs under the given
+condition, where the visitation fraction is the fraction of all plants in the
+environment that were visited by bees at least three times during the
+simulation. Note again thet in all reported results, the fitness number is negated,
+so lower numbers (i.e. closer to -1.0) are better (see [Results](#sec:evosearch) section).
+
+We report the IQR (interquartile range) as our measure of variability between
+replicate runs, because for the evolve conditions we are looking at the results
+across 50 replicate runs; as this is not a very large number, the 10th--90th
+band can be unstable, so the IQR is more robust.  Note that for the baseline
+condition we are looking at 5000 independent runs (see [Experimental
+Conditions](#sec:exptconds) section); there is no inherent problem in comparing
+medians and IQRs across these very different sample sizes in the different
+conditions (5000 vs 50), although the figures for the baseline condition
+will be a better estimate of the underlying population statistics.
+
+| Condition | Median Fitness | IQR (Q3 - Q1) |
+|---|---:|---:|
+| Baseline (no barriers or bridges) | -0.5770 | 0.0400 |
+| Bridges only (10 bridges) | -0.5945 | 0.0025 |
+| Barriers only (20 barriers) | -0.7490 | 0.0069 |
+| Barriers and bridges (20 barriers + 10 bridges) | -0.7353 | 0.0118 |
+
+: Median and interquartile range (IQR) of the best achieved negated successful
+visit fraction across the 50 replicate runs of each condition (more negative is
+better). {#tbl:fitness-summary}
+
+**TODO** calculate significance stats on the above (using bootstrapping methods)
+
+
+## Evolution of fitness over generations
+
+@fig:fitnessovergens shows how the fitness (negated successful visit fraction) evolved
+over the generations in the three Evolve conditions. It is apparent from these
+graphs that the evolution of bridge positions (@fig:fitnessovergens-10B) was not very
+amenable to evolutionary optimisation, with negligable improvement in fitness after the
+first 50 generations. By contrast, the evolution of barriers (@fig:fitnessovergens-20X) showed
+continued improvement over the whole 400-generation run. Combining the evolution of barriers
+with bridges (@fig:fitnessovergens-20X10B) actually led to _worse_ results than just
+evolving bridges by themselves. This is consistent with the summary statistics reported in
+the [Overall fitness statistics](#sec:overallstats) section.
+
+::: {#fig:fitnessovergens}
+![No evolutionary run for baseline expt](figures/blank-placeholder.png){#fig:fitnessovergens-baseline width=45%}
+![Evolve Bridges only](figures/graph-fitness-evolve-10B-400gen-400pop-100epi-2000its-summary.png){#fig:fitnessovergens-10B width=45%}
+
+```{=latex}
+\mbox{}\\
+```
+
+![Evolve Barriers only](figures/graph-fitness-evolve-20X-400gen-400pop-100epi-2000its-summary.png){#fig:fitnessovergens-20X width=45%}
+![Evolve barriers and bridges](figures/graph-fitness-evolve-20X-10B-400gen-400pop-100epi-2000its-summary.png){#fig:fitnessovergens-20X10B width=45%}
+
+Evolution of (negated) successful visit fraction over time in the
+evolutionary runs for each condition (there being no evolutionary run for
+the baseline condition, panel (a) is blank). In each panel, the upper
+(gold) line shows the median across the 50 replicate runs of the median
+score across 400 individuals in each generation; the lower (green) line
+shows the median across the 50 replicate runs of the best (minimum) score
+across 400 individuals in each generation. The shaded areas around the
+lines show the IQR (interquartile range) across the 50 runs.
+:::
+
+
+## Flowfield analysis of bee movements under each condition
+
+**TODO** Explain what we are looking at here - are these merged heatmaps? Marged from what?
+
+To understand how the bees are moving around their environment, and how the introduction
+of barriers and/or bridges changes their movement patterns, we produced flowmaps
+showing the axial flow of bees in each part of the environment across the course of
+a simulation. The axial flow treats 0^o^ and 180^0^ as equivalent, and is therefore
+good for asking whether bees are being channelled along the same routes in the environment.
+
+@fig:bee-flowmap-size-10-all-conditions shows the flowmaps for each of the experimental
+conditions. Each of these is itself a merge of many independent per-replicate
+flowmaps; see @sec:appendix-flowmap-merging for exactly how these
+per-replicate flowmaps are generated and merged.
+
+
+
+::: {#fig:bee-flowmap-size-10-all-conditions}
+![Baseline (no barriers or bridges)](figures/bee-flowmap-size-10-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz10-baseline width=45%}
+![Evolve 10 bridges only](figures/bee-flowmap-size-10-intra-condition-merged-evolve-10B-400gen-400pop-100epi-2000its.png){#fig:bee-flowmap-sz10-10B width=45%}
+
+```{=latex}
+\mbox{}\\
+```
+
+![Evolve 20 barriers only](figures/bee-flowmap-size-10-intra-condition-merged-evolve-20X-400gen-400pop-100epi-2000its.png){#fig:bee-flowmap-sz10-20X width=45%}
+![Evolve 20 barriers and 10 bridges](figures/bee-flowmap-size-10-intra-condition-merged-evolve-20X-10B-400gen-400pop-100epi-2000its.png){#fig:bee-flowmap-sz10-20X10B width=45%}
+
+Flowmaps showing predominant directions of bee movement, aggregated over
+5000 independent baseline runs (a), and over 50 runs of each replicate's
+champion configuration in the bridges-only (b), barriers-only (c), and
+barriers-and-bridges (d) conditions. Colour indicates the strength of
+alignment of bee movement at each position (colour scale at right); line
+thickness indicates how many bees were recorded at that position over the
+course of a simulation.
+:::
+
+## Analysis of change in bee movements caused by barriers and bridges
+
+**TODO** Explain what we are looking at here - are these merged angdelta maps? Marged from what?
+
+
+::: {#fig:angdelta-heatmap-size-10-all-conditions}
+![Baseline bee movements (no barriers or bridges)](figures/bee-flowmap-size-10-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz10-baseline2 width=45%}
+![Angular deltas for Evolve 10 bridges only](figures/angdelta-heatmap-sz10-nothresh-cross-analysis-evolve-10B-vs-baseline.png){#fig:angdelta-heatmap-sz10-10B width=45%}
+
+```{=latex}
+\mbox{}\\
+```
+
+![Angular deltas for Evolve 20 barriers only](figures/angdelta-heatmap-sz10-nothresh-cross-analysis-evolve-20X-vs-baseline.png){#fig:angdelta-heatmap-sz10-20X width=45%}
+![Angular deltas for Evolve 20 barriers and 10 bridges](figures/angdelta-heatmap-sz10-nothresh-cross-analysis-evolve-20X-10B-vs-baseline.png){#fig:angdelta-heatmap-sz10-20X-10B width=45%}
+
+Analysis of change in bee movements caused by barriers and bridges.
+:::
+
+
+![Histogram of angular deltas for the Evolved 20 barriers and 10 bridges condition compared to the baseline](figures/angdelta-histogram-sz10-bin5-nothresh-cross-analysis-evolve-20X-10B-vs-baseline.png){#fig:angdelta-histogram-sz10-bin5-20X-10B}
+
+
+## Effect of barriers and bridges on bee coverage of the environment {#sec:effect-of-barriers-and-bridges-on-bee-coverage-of-the-environment}
+
+@fig:bee-heatmap-baseline-vs-deltas shows normalised bee-position
+heatmaps: for each run, the total number of bee-position observations
+recorded in each cell, summed over all 2000 simulation steps, is
+normalised so all cells sum to 1.0; the merged heatmap for a condition is
+then the mean, cell by cell, of that normalised heatmap across all runs
+of the condition (cell size 50). Panel (a) shows this merged heatmap
+directly for the baseline condition, averaged across all 5000 baseline
+runs. Panels (b)-(d) instead
+show, for each evolved condition, the per-cell difference between that
+condition's own heatmap and the baseline's (evolved minus baseline, so
+positive/blue cells were visited relatively more under the evolved
+condition, negative/red cells relatively less), on a diverging colour
+scale fixed to $\pm 3.10$ percentage points, as described in the Setup
+section above.
+
+::: {#fig:bee-heatmap-baseline-vs-deltas}
+![Baseline (merged across 5000 runs)](figures/bee-heatmap-size-50-intra-condition-merged-baseline-runs-2000its-cropped.png){#fig:bee-heatmap-baseline-abs width=45%}
+![$\Delta$ Bridges only (10 bridges) vs baseline](figures/bee-heatmap-delta-bee-heatmap-size-50-intra-condition-merged-evolve-10B-vs-bee-heatmap-size-50-intra-condition-merged-baseline-runs.png){#fig:bee-heatmap-delta-10B width=45%}
+
+```{=latex}
+\mbox{}\\
+```
+
+![$\Delta$ Barriers only (20 barriers) vs baseline](figures/bee-heatmap-delta-bee-heatmap-size-50-intra-condition-merged-evolve-20X-vs-bee-heatmap-size-50-intra-condition-merged-baseline-runs.png){#fig:bee-heatmap-delta-20X width=45%}
+![$\Delta$ Barriers and bridges vs baseline](figures/bee-heatmap-delta-bee-heatmap-size-50-intra-condition-merged-evolve-20X-10B-vs-bee-heatmap-size-50-intra-condition-merged-baseline-runs.png){#fig:bee-heatmap-delta-20X10B width=45%}
+
+Normalised bee-position coverage of the environment: the baseline heatmap
+(a), and its per-cell difference against each evolved condition --
+bridges-only (b), barriers-only (c), and barriers-and-bridges (d).
+:::
+
+
+***************************************
+
+## Rough notes for completing results and analysis section
 
 Main figures:
 (A) Baseline flow field - baseline/bee-flowmaps-agg [cell size 10,25,50, th N,Y]
@@ -639,10 +856,7 @@ Main figures:
 And then a second set of figures showing functional effect:
 (E) Pollination/visitation difference map - cross-analysis-evolve-vs-baseline/bee-heatmap-delta [cell size 10,25,50] => size 50
 
-
 For each type of graph, ask Claude to look at the script and look at the command used to generate the graph, and produce a brief description of what exactly is being plotted (inc. are we weighting by sample size, etc)
-
-
 
 The strongest version is to show that large angular changes occur in biologically meaningful places, and that those places correspond to improved visitation or pollination.
 
@@ -658,9 +872,7 @@ Important details
 
 So: yes, show the delta map, but treat it as only one panel in a richer analysis.
 
-## Result 1
 
-blah, blah, blah
 
 ## Discussion
 
@@ -1226,5 +1438,114 @@ algorithms, where total populations are split over multiple islands with
 occasional migration between them. However, for the experiments reported here,
 the search ran as a single island (`num-islands=1`), so no migration took place
 despite migration parameters being set.
+
+# Appendix C: Additional figures from analysis of results {#sec:appendix-additional-figures}
+
+## Evolution of fitness over generations
+
+## Flowfield analysis of bee movements under each condition
+
+
+::: {#fig:bee-flowmap-size-25-all-conditions}
+![Baseline (no barriers or bridges)](figures/bee-flowmap-size-25-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz25-baseline width=45%}
+![Evolved 10 bridges only](figures/bee-flowmap-size-25-intra-condition-merged-evolve-10B-400gen-400pop-100epi-2000its.png){#fig:bee-flowmap-sz25-10B width=45%}
+
+```{=latex}
+\mbox{}\\
+```
+
+![Evolved 20 barriers only](figures/bee-flowmap-size-25-intra-condition-merged-evolve-20X-400gen-400pop-100epi-2000its.png){#fig:bee-flowmap-sz25-20X width=45%}
+![Evolved 20 barriers and 10 bridges](figures/bee-flowmap-size-25-intra-condition-merged-evolve-20X-10B-400gen-400pop-100epi-2000its.png){#fig:bee-flowmap-sz25-20X10B width=45%}
+
+Flowmaps showing predominant directions of bee movement, recorded at the resolution of 25x25 unit cells.
+:::
+
+
+::: {#fig:bee-flowmap-size-50-all-conditions}
+![Baseline (no barriers or bridges)](figures/bee-flowmap-size-50-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz50-baseline width=45%}
+![Evolved 10 bridges only](figures/bee-flowmap-size-50-intra-condition-merged-evolve-10B-400gen-400pop-100epi-2000its.png){#fig:bee-flowmap-sz50-10B width=45%}
+
+```{=latex}
+\mbox{}\\
+```
+
+![Evolved 20 barriers only](figures/bee-flowmap-size-50-intra-condition-merged-evolve-20X-400gen-400pop-100epi-2000its.png){#fig:bee-flowmap-sz50-20X width=45%}
+![Evolved 20 barriers and 10 bridges](figures/bee-flowmap-size-50-intra-condition-merged-evolve-20X-10B-400gen-400pop-100epi-2000its.png){#fig:bee-flowmap-sz50-20X10B width=45%}
+
+Flowmaps showing predominant directions of bee movement, recorded at the resolution of 50x50 unit cells.
+:::
+
+
+::: {#fig:angdelta-heatmap-size-50-all-conditions}
+![Baseline bee movements (no barriers or bridges)](figures/bee-flowmap-size-10-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz10-baseline3 width=45%}
+![Angular deltas for Evolved 10 bridges only](figures/angdelta-heatmap-sz50-nothresh-cross-analysis-evolve-10B-vs-baseline.png){#fig:angdelta-heatmap-sz50-10B width=45%}
+
+```{=latex}
+\mbox{}\\
+```
+
+![Angular deltas for Evolved 20 barriers only](figures/angdelta-heatmap-sz50-nothresh-cross-analysis-evolve-20X-vs-baseline.png){#fig:angdelta-heatmap-sz50-20X width=45%}
+![Angular deltas for Evolved 20 barriers and 10 bridges](figures/angdelta-heatmap-sz50-nothresh-cross-analysis-evolve-20X-10B-vs-baseline.png){#fig:angdelta-heatmap-sz50-20X-10B width=45%}
+
+Analysis of change in bee movements caused by barriers and bridges, recorded at the resolution of 50x50 units cells.
+:::
+
+## Analysis of change in bee movements caused by barriers and bridges
+
+
+# Appendix D: How Bee-Movement Flowmaps Are Generated and Merged {#sec:appendix-flowmap-merging}
+
+Each flowmap shown in the main text and in @sec:appendix-additional-figures
+is a merge of many independent per-replicate flowmaps (50 for each evolved
+condition, 5000 for the baseline), produced by `tools/run_analysis.sh` from
+each replicate's own best-performing configuration.
+
+**Where the per-replicate flowmaps come from.** During the original
+evolutionary search, every trial simulation is run without logging any
+output files, so no flowmap is ever saved for any individual configuration
+evaluated during evolution itself. `run_analysis.sh` therefore performs a
+fresh, single re-run of each replicate's champion (best-individual)
+configuration -- once per flowmap cell size (10, 25, and 50) -- purely to
+generate loggable flowmap and heatmap output for analysis. This is why the
+analysis pipeline needs an explicit re-run step at all, rather than simply
+reusing output from the evolutionary search.
+
+**What a single replicate's flowmap contains.** Each simulation step, for
+every bee that moved, its raw movement heading
+$\theta = \operatorname{atan2}(\Delta y, \Delta x)$ is recorded into
+whichever cell the bee currently occupies. At the end of the run, each
+cell's list of recorded headings is reduced to a single `axis:strength:count`
+value using a double-angle circular mean: the heading values are doubled,
+their sine and cosine components summed and averaged, and the predominant
+(headless) axis and the strength of alignment to it are recovered from that
+average vector -- `axis` $=0.5\operatorname{atan2}(\overline{\sin 2\theta},\overline{\cos 2\theta})$,
+`strength` $=|\overline{\sin 2\theta},\overline{\cos 2\theta}|$ (0 when
+recorded movements in that cell point in unrelated directions, 1 when they
+were all exactly aligned to `axis`); `count` is simply the number of
+individual movement observations recorded in that cell.
+
+**How the per-replicate flowmaps are merged.** Merging does not simply
+average each replicate's `axis`/`strength` values cell by cell -- doing so
+would treat every replicate as equally informative regardless of how many
+movements it actually contributed to a cell, and naively averaging a
+circular quantity like `axis` is not mathematically well defined in
+general. Instead, for each cell, the merge step first reconstructs each
+replicate's underlying weighted sine/cosine sums (multiplying each
+replicate's own `count`, `strength`, and doubled `axis` back together),
+pools those sums across all contributing replicates, and only then
+recomputes a single merged `axis` and `strength` from the pooled totals,
+with merged `count` equal to the sum of all replicates' counts. This is
+mathematically equivalent to pooling every individual bee-movement
+observation from every replicate run into one single per-cell circular-mean
+calculation, so replicates that recorded more movements in a given cell
+correctly contribute proportionally more to that cell's merged value.
+
+The merged bee-position heatmaps shown alongside these flowmaps are
+produced by the same "one fresh re-run per replicate, then combined" scheme,
+but merging there is simpler: each replicate's heatmap cell values are
+already normalised fractions (summing to 1.0 across the whole grid), so the
+merged heatmap is just their mean, cell by cell, across all replicates (see
+@sec:effect-of-barriers-and-bridges-on-bee-coverage-of-the-environment).
+
 
 # References
