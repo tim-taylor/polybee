@@ -750,7 +750,33 @@ statistics.
 visit fraction across the 50 replicate runs of each condition (more negative is
 better). {#tbl:fitness-summary}
 
-**TODO** calculate significance stats on the above (using bootstrapping methods)
+To test whether each evolved condition's median fitness differs significantly
+from the baseline's, given the very different sample sizes involved (5000
+baseline runs vs. 50 replicates per evolved condition) and the non-normal,
+bounded nature of the fitness metric, we used a nonparametric bootstrap rather
+than a parametric test such as a t-test: each pair of samples (one evolved
+condition vs. baseline) was resampled independently, each at its own size,
+10,000 times, to obtain a 95% confidence interval for the difference in
+medians and a two-sided bootstrap hypothesis-test p-value, with Holm-Bonferroni
+correction applied across the three evolved-vs-baseline comparisons. Full
+methodology is given in @sec:appendix-bootstrap. As @tbl:fitness-significance
+shows, all three evolved conditions differ significantly from the baseline
+(Holm-adjusted $p = 0.0003$ in every case), with confidence intervals for the
+median difference that exclude zero by a wide margin -- consistent with the
+much larger effect sizes for the two barrier-involving conditions than for
+bridges alone.
+
+| Condition | Median diff. vs. baseline | 95% CI | Holm-adjusted $p$ |
+|---|---:|---:|---:|
+| Bridges only (10 bridges) | -0.0175 | [-0.0190, -0.0163] | 0.0003 |
+| Barriers only (20 barriers) | -0.1720 | [-0.1738, -0.1693] | 0.0003 |
+| Barriers and bridges | -0.1583 | [-0.1615, -0.1540] | 0.0003 |
+
+: Bootstrap 95% confidence intervals and Holm-Bonferroni-adjusted two-sided
+p-values for the difference between each evolved condition's median fitness
+and the baseline's (negative = evolved condition better than baseline, since
+lower/more-negative fitness is better; see @sec:appendix-bootstrap).
+{#tbl:fitness-significance}
 
 
 ## Evolution of fitness over generations
@@ -1681,5 +1707,79 @@ excluded cell, and passing the same flag to `visualize_heatmap.py` when
 plotting the resulting CSV renders those `x`-marked cells as plain white,
 rather than colouring them using the heatmap's normal colour scale -- so a
 white cell in the figures means "excluded", not "zero delta".
+
+# Appendix F: Bootstrap Significance Testing of Median Fitness Differences {#sec:appendix-bootstrap}
+
+The significance tests reported in @sec:overallstats
+(@tbl:fitness-significance) are produced by `bootstrap_median_test.py`, run
+from `calc_fitness_stats.sh` alongside the min/median/IQR summary in
+@tbl:fitness-summary. For each evolved condition it compares that
+condition's 50 champion-fitness values against the baseline's 5000 per-run
+values (the same `champion-fitnesses-*.csv` files `calc_fitness_stats.sh`
+reads).
+
+**Why a bootstrap, and why the median.** The baseline and evolved conditions
+have very different sample sizes (5000 vs. 50), and the fitness metric is a
+bounded, non-normally-distributed proportion-like quantity, which is also why
+@tbl:fitness-summary reports median/IQR rather than mean/SD in the first
+place. A parametric test such as a t-test would assume near-normal sampling
+distributions for the *mean*; a nonparametric bootstrap instead targets the
+median directly, requires no distributional assumptions, and handles the
+50-vs-5000 mismatch without any special adjustment: each sample is simply
+resampled (with replacement) at its own size, independently of the other, so
+each group is treated as its own random sample from its own population.
+
+**Confidence interval.** For each evolved condition, both samples are
+resampled independently 10,000 times (`--n-resamples`, default 10000), and
+the difference $\text{median(condition)} - \text{median(baseline)}$ is
+recomputed on each pair of resamples, giving a bootstrap distribution of the
+median difference. A 95% confidence interval is taken from this distribution
+using the BCa (bias-corrected and accelerated) method, which is generally
+more accurate than a plain percentile interval for a skewed bootstrap
+distribution. BCa's acceleration constant is itself estimated via a
+jackknife on the median -- a non-smooth statistic -- which can make that
+estimate degenerate (a zero denominator) for some samples; when this
+happened (for the bridges-only condition), the script automatically falls
+back to the plain percentile bootstrap CI for that condition and reports
+which method was used (`ci_method` column in its output).
+
+**p-value.** A two-sided bootstrap hypothesis-test p-value is computed
+separately from the confidence interval, using the "shift" method of Davison
+& Hinkley (*Bootstrap Methods and Their Application*, 1997, ch. 4): both
+samples are first recentred by subtracting their own median, so that the
+null hypothesis of equal medians holds by construction; 10,000 resamples are
+then drawn independently from these recentred samples, and the p-value is
+the fraction of resulting null differences at least as extreme (in absolute
+value) as the difference actually observed in the unshifted data, with +1
+smoothing added to numerator and denominator to avoid ever reporting $p=0$
+(so the smallest value the test can report at 10,000 resamples is
+$1/10001\approx0.0001$). For all three evolved conditions here, none of the
+10,000 null-shifted resamples were as extreme as the observed difference, so
+each comparison hits this floor: $p_\text{raw}\approx0.0001$ should be read
+as "$p<0.0001$" rather than as a precisely estimated probability: it would
+take more resamples to resolve a smaller p-value than the floor, though this
+makes no difference to the significance conclusion at the $\alpha=0.05$
+threshold used here.
+
+**Multiple comparisons.** Since all three evolved conditions are compared
+against the same baseline sample, a Holm-Bonferroni correction is applied
+across the three resulting p-values to control the family-wise error rate,
+giving the `p_holm` values reported in @tbl:fitness-significance.
+
+**Interpretation.** This test answers the question "does the median
+champion-configuration performance under evolution differ from the median
+single-run baseline performance?" -- not "would a randomly chosen
+configuration under condition X outperform a random baseline run?" Each
+evolved condition's 50 values are themselves the best individual found by a
+genetic algorithm (400 generations $\times$ 400 configurations per
+generation $\times$ 100 trials per configuration; @sec:evosearch), not raw
+single-run outcomes like the baseline's, so the two samples are not draws
+from directly comparable underlying processes -- only their champion-vs-
+single-run medians are being compared here.
+
+Usage: `python3 bootstrap_median_test.py [--n-resamples N] [--seed S]
+[--alpha A]`, run from the same directory as `calc_fitness_stats.sh` (it
+expects the same per-condition `fitness-data-agg/` layout). The RNG seed
+defaults to a fixed value for reproducibility.
 
 # References
