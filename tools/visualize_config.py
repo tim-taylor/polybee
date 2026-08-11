@@ -209,7 +209,7 @@ def visualize_config(env_width, env_height, tunnel, entrances, crop_patches, hiv
     legend_handles = [
         mlines.Line2D([], [], color='black', lw=2, label='Tunnel wall'),
         mpatches.Patch(edgecolor='#a8a8a8', facecolor='none', lw=2, label='Crop row'),
-        mpatches.Patch(edgecolor='#e8e8e8', facecolor='none', lw=2, label='Hive'),
+        mpatches.Patch(edgecolor='#e8a000', facecolor='none', lw=2, label='Hive'),
     ]
     if barrier_segments:
         legend_handles.append(mlines.Line2D([], [], color=BARRIER_COLOR, lw=3, label='Barrier'))

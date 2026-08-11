@@ -22,6 +22,11 @@ as without --delta. Pass --color-scale-max N together with --delta to fix
 the scale to run from -N% (full red) to +N% (full blue) instead -- N is
 still given in the original (pre-percentage) units.
 
+Pass --x-below-th for heatmaps produced by gen_angdelta_data.py's own
+--x-below-th option: cells holding an 'x' marker (rather than a number) are
+drawn white instead of being coloured by the value scale. Without this flag,
+a CSV containing 'x' markers fails to load.
+
 Optionally superimpose a flowmap (produced by Flowmap::print) over the heatmap.
 The flowmap CSV contains cells in "axis:strength:count" format and is assumed to
 cover the same environment dimensions as the heatmap (cell sizes may differ).
@@ -232,7 +237,7 @@ def _draw_hive(ax, hive):
     size = 20  # env units
     ax.add_patch(mpatches.Rectangle(
         (hx - size / 2, hy - size / 2), size, size,
-        linewidth=2, edgecolor='#e8e8e8', facecolor='none', zorder=4,
+        linewidth=2, edgecolor='#e8a000', facecolor='none', zorder=4,
     ))
 
 
@@ -347,13 +352,19 @@ def _draw_flowmap(ax, cells, fm_rows, fm_cols,
     ax.add_collection(lc)
 
 
-def load_heatmap(filename):
+def load_heatmap(filename, x_below_th=False):
     """Load heatmap data from CSV file as a 2-D (rows x cols) array.
 
     np.loadtxt silently squeezes a single-row or single-column grid down to
     a 1-D array, which is ambiguous (a 1x3 grid and a 3x1 grid both come out
     as shape (3,)). Row/column counts are taken from the raw file text
     instead, and the loaded data is reshaped to match.
+
+    Returns (data, x_mask), where x_mask is a same-shape boolean array marking
+    cells that hold an 'x' marker (as written by gen_angdelta_data.py's
+    --x-below-th option) rather than a number. If x_below_th is False, 'x'
+    cells are not recognised and instead cause the usual load error, matching
+    prior behaviour for CSVs that aren't expected to contain them.
     """
     try:
         with open(filename) as f:
@@ -362,8 +373,24 @@ def load_heatmap(filename):
             raise ValueError("file is empty")
         ncols = len(lines[0].split(','))
         nrows = len(lines)
-        data = np.loadtxt(filename, delimiter=',').reshape(nrows, ncols)
-        return data
+
+        if not x_below_th:
+            data = np.loadtxt(filename, delimiter=',').reshape(nrows, ncols)
+            return data, np.zeros((nrows, ncols), dtype=bool)
+
+        data = np.zeros((nrows, ncols))
+        x_mask = np.zeros((nrows, ncols), dtype=bool)
+        for i, line in enumerate(lines):
+            tokens = line.split(',')
+            if len(tokens) != ncols:
+                raise ValueError(f"row {i + 1} has {len(tokens)} columns, expected {ncols}")
+            for j, token in enumerate(tokens):
+                token = token.strip()
+                if token.lower() == 'x':
+                    x_mask[i, j] = True
+                else:
+                    data[i, j] = float(token)
+        return data, x_mask
     except Exception as e:
         print(f"Error loading CSV file: {e}", file=sys.stderr)
         sys.exit(1)
@@ -372,12 +399,23 @@ def load_heatmap(filename):
 def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
                       env_width=None, env_height=None,
                       tunnel=None, entrances=None, crop_patches=None, hive=None,
-                      flowmap=None, color_scale_max=None, delta=False):
+                      flowmap=None, color_scale_max=None, delta=False, x_mask=None):
     if delta:
         # Show signed deltas as percentages rather than raw fractions.
         data = data * 100.0
 
     nrows, ncols = data.shape
+
+    if x_mask is not None and x_mask.any():
+        # Cells marked 'x' (e.g. by gen_angdelta_data.py's --x-below-th) are drawn
+        # white rather than coloured by the value scale, via a masked array and the
+        # colormap's "bad" colour.
+        data = np.ma.masked_array(data, mask=x_mask)
+        cmap_bad_color = 'white'
+    else:
+        x_mask = None
+        cmap_bad_color = None
+
     scale = min(10.0 / max(nrows, ncols), 0.7)  # inches per cell, capped so figure stays reasonable
     top_margin = 1.0    # title
     bottom_margin = 1.5  # x-axis tick labels + axis label
@@ -388,6 +426,8 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
     # Create custom colormap matching LocalVis.cpp, or the diverging delta
     # colormap when visualising a signed, zero-centred delta heatmap
     cmap = create_delta_colormap() if delta else create_polybee_colormap()
+    if cmap_bad_color is not None:
+        cmap.set_bad(color=cmap_bad_color)
 
     # When env dimensions are known, use extent to label axes in env units.
     # extent=[left, right, bottom, top] with top=0 so row 0 is at the top.
@@ -458,7 +498,8 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
     if nrows <= 20 and ncols <= 20:  # Only annotate if heatmap is small enough
         for i in range(nrows):
             for j in range(ncols):
-                ax.text((j + 0.5) * cell_w, (i + 0.5) * cell_h, f'{data[i, j]:.2f}',
+                label = 'x' if x_mask is not None and x_mask[i, j] else f'{data[i, j]:.2f}'
+                ax.text((j + 0.5) * cell_w, (i + 0.5) * cell_h, label,
                         ha="center", va="center", color="black", fontsize=8)
 
     plt.tight_layout(pad=1.2)
@@ -514,6 +555,12 @@ Examples:
                             '(e.g. gen_heatmap_delta.py output), and multiply values by 100 to '
                             'display as percentages. Only changes the colour scale, not which '
                             'min/max values are used on it (see --color-scale-max).')
+    parser.add_argument('--x-below-th',
+                       action='store_true',
+                       help="Recognise 'x' markers in the CSV (as written by gen_angdelta_data.py's "
+                            '--x-below-th option) and draw those cells white instead of colouring '
+                            'them by the value scale. Without this flag, a CSV containing \'x\' '
+                            'markers fails to load.')
 
     args = parser.parse_args()
 
@@ -527,7 +574,7 @@ Examples:
         sys.exit(1)
 
     # Load the heatmap data
-    data = load_heatmap(args.input_file)
+    data, x_mask = load_heatmap(args.input_file, x_below_th=args.x_below_th)
 
     env_width, env_height = None, None
     tunnel, entrances, crop_patches, hive = {}, [], [], None
@@ -552,13 +599,15 @@ Examples:
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
-                          flowmap=flowmap, color_scale_max=args.color_scale_max, delta=args.delta)
+                          flowmap=flowmap, color_scale_max=args.color_scale_max, delta=args.delta,
+                          x_mask=x_mask)
     else:
         visualize_heatmap(data, title=title, save_only=False,
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
-                          flowmap=flowmap, color_scale_max=args.color_scale_max, delta=args.delta)
+                          flowmap=flowmap, color_scale_max=args.color_scale_max, delta=args.delta,
+                          x_mask=x_mask)
 
 
 if __name__ == '__main__':

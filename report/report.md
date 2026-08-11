@@ -5,8 +5,16 @@ author:
   - Alan Dorin
 date: \today
 abstract: |
-  One-paragraph summary of motivation, approach, and headline findings.
-  Fill this in last, once the results section is written.
+  PolyBee is an agent-based model of bee movement and visitation of crops in polytunnels.
+  It also includes an optimisation component that allows searching for good arrangements
+  of baffles/barriers and/or "bridge" pots in tunnel to promote homogeneous visitation
+  patterns by the bees of all crops in the tunnel. This report describes the background
+  and motivation behind the development of the model, followed by a full description of
+  the model itself. It then describes a series of experiments on the optimisation of
+  barrier and bridge placement. Results suggest that appropriately-placed barriers can
+  significantly promote homogeneous plant visitation (thereby leading to improved
+  levels of pollination). Bridge placement, on the other hand, was much less effective
+  in improving pollination.
 documentclass: article
 classoption:
   - 11pt
@@ -166,43 +174,24 @@ which evolutionary and metaheuristic methods have been extensively developed
 [@eiben2015]. Evolutionary algorithms, in particular, have a well-established
 record in optimising ABM parameters: genetic algorithms and evolution strategies
 have been applied to agent rule calibration, parameter estimation, and scenario
-search across a range of ecological and social models ([@stonedahl2010;
-@moya2021; @robles2021]). That literature, however, is again almost exclusively
+search across a range of ecological and social models [@stonedahl2010;
+@moya2021; @robles2021]. That literature, however, is again almost exclusively
 directed at behavioural or parametric optimisation of agents rather than at the
 configuration of the environment. The present work inherits the same class of
 search machinery but redirects it toward a different decision variable, treating
 the spatial environmental structure as the entity to be evolved.
 
-# System design
+# System design {#sec:system-design}
 
-The `polybee` simulation is described below following a concise form of
-the ODD (Overview, Design concepts, Details) protocol for describing
-agent-based models [@grimm2020odd]. This description covers only the
-simulation itself -- bee movement, the polytunnel environment, foraging,
-and observation -- and not the separate evolutionary optimisation layer
-(`PolyBeeEvolve`) that searches over environment configurations using the
-simulation as its fitness evaluator (described in the Experiments
-section). A complete, submodel-level ODD description, sufficient to
-support reimplementation, is given in [Appendix A](#sec:appendix-full-odd).
-
-| Parameter | Meaning | Default |
-|---|---|---|
-| `num-bees` | Number of bees | 50 |
-| `num-​iterations` | Number of simulation iterations | 100 |
-| `env-width`, `env-height` | Environment extent | 450, 250 |
-| `tunnel-width`, `tunnel-height` | Tunnel extent | 50, 50 |
-| `bee-​max-​dir-​delta` | Max heading change per random-walk step (radians) | 0.4 |
-| `bee-​step-​length` | Distance moved per step | 20.0 |
-| `bee-​visual-​range` | Max distance at which a bee can detect a flower | 1.0 |
-| `bee-​prob-​visit-​nearest-​flower` | Probability of heading for a sensed flower vs. random walk | 0.9 |
-| `bee-​energy-​min/max-​threshold` | Energy band triggering return to hive | 0.0 / 100.0 |
-| `net-​antibird-​exit-​prob` | Per-attempt exit probability, anti-bird net | 0.1187 |
-| `net-​antihail-​exit-​prob` | Per-attempt exit probability, anti-hail net | 0.0371 |
-| `barrier-​pass-​prob` | Probability of flying over a barrier | 0.0 |
-| `heatmap-​cell-​size` | Heatmap cell size | 10 |
-
-: Key simulation parameters, with defaults from the `Params` registry. The
-complete parameter reference is given in the Appendix. {#tbl:params}
+An overview of the `polybee` simulation is presented below, following a concise
+form of the ODD (Overview, Design concepts, Details) protocol for describing
+agent-based models [@grimm2020odd]. This description covers only the simulation
+itself -- bee movement, the polytunnel environment, foraging, and observation --
+and not the separate evolutionary optimisation layer (`PolyBeeEvolve`) that
+searches over environment configurations using the simulation as its fitness
+evaluator (described in the Experiments section). A complete, submodel-level ODD
+description, sufficient to support reimplementation, is given in
+@sec:appendix-full-odd.
 
 ## Purpose and patterns
 
@@ -238,15 +227,14 @@ entrances, barriers, and patches of flowering plants; one or more hives;
 and a population of bees that forage from the plants and periodically
 return to their hive.
 
-**Environment model.** The environment is a rectangular, continuous 2D
-space of arbitrary units, not tied to an explicit real-world measure such
-as metres, though `bee-step-length` and related parameters calibrate it
-indirectly; the example configuration is $450\times250$ units. It may
-contain a single rectangular polytunnel with one or more entrances, each
-either open or fitted with anti-bird or anti-hail netting, and any number
-of linear barriers. Positions and movement are continuous; grid cells are
-used only for efficient spatial lookup and for output aggregation, not
-for the movement dynamics themselves.
+**Environment model.** The environment is a rectangular, continuous 2D space of
+arbitrary units, not tied to an explicit real-world measure such as metres,
+although the parameters `bee-step-length` and `bee-visual-range` calibrate it
+indirectly. It may contain a single rectangular polytunnel with one or more
+entrances, each either open or fitted with anti-bird or anti-hail netting, and
+any number of linear barriers. Positions and movement are continuous; grid cells
+are used only for efficient spatial lookup and for output aggregation, not for
+the movement dynamics themselves.
 
 **Bee agent model.** Each bee maintains its current position and heading;
 an energy level that rises when it feeds and falls with each foraging
@@ -380,12 +368,17 @@ structure such as a swarm or division of labour; a hive is simply a
 shared spawn/return point, and the bee population is divided evenly
 across however many hives are configured.
 
-**Observation.** The main outputs recorded are a heatmap of bee
-visitation density and a flowmap of predominant local movement direction,
-both accumulated over a run; per-plant visit counts, from which the
-pollination-success fraction is derived; and summary statistics on
-tunnel-entrance crossing attempts (success rate and mean number of
-rebounds). None of these outputs are read by the bees themselves.
+**Observation.** The main outputs recorded are a heatmap of bee visitation
+density and a flowmap of predominant local movement direction, both accumulated
+over a run; per-plant visit counts, from which the successful visit fraction is
+derived; and summary statistics on tunnel-entrance crossing attempts (success
+rate and mean number of rebounds). None of these outputs are read by the bees
+themselves. Optionally, a reference bee-position heatmap can be supplied by the
+user and used as a target for the optimisation process instead of the usual
+successful visit fraction; in this case, the system also outputs the _Earth
+Mover's Distance_ (EMD) measure between the bee-position heatmap produced by the
+simulation and the reference heatmap supplied (`polybee` uses the `OpenCV`
+implementation of the EMD calculation for this purpose).
 
 ## Initialization
 
@@ -413,9 +406,10 @@ configuration is shown in @fig:basic-env-screenshot.
 
 ![Screenshot showing the basic environmental configuration used in the
 experiments. A central tunnel (the dark brown area) houses four rows of crops. A
-single un-netted entrance is provided on the southern end of the tunnel (thick white
-line), and a single hive (red square) is placed outside the tunnel in front of
-the entrance. The tunnel is surrounded by a perimeter area (light
+single un-netted entrance is provided on the southern end of the tunnel (thick
+white line), and a single hive (red square) is placed outside the tunnel in
+front of the entrance. The hive has a single entrance/exit facing north (i.e.
+towards the tunnel). The tunnel is surrounded by a perimeter area (light
 brown). Fifty bees (small triangles) forage over the environment for 2000
 simulation timesteps. In this visualisation, the colour of each plant indicates
 how often it has been visited by bees, with light green indicating the most
@@ -437,15 +431,51 @@ each row is a $50 \times 500$ unit patch, evenly spaced 100 units apart
 ($x = 150, 250, 350, 450$), spanning $y \in [150, 650]$, well inside the
 tunnel. Within each patch, plants are laid out on a 10-unit grid with a
 small amount of positional jitter (0.1 s.d.). Fifty bees forage from the
-hive over 2000 iterations per simulation run. @tbl:params lists the
-model's default behavioural parameters; several are overridden for these
-experiments (notably a shorter step length of 15, a wider visual range of
-11, and a wider energy band of 0-750) -- see the `.cfg` file accompanying
-each condition's raw output for the exact values used.
+hive over 2000 iterations per simulation run.
 
 Barriers, where present, only partially obstruct movement: a bee blocked
 by one has a fixed 10% chance (`barrier-pass-prob`) of flying over it
 anyway rather than being diverted.
+
+@tbl:params lists the baseline parameter values used across all of the
+experiments reported here unless otherwise stated.
+
+| Parameter | Meaning | Value |
+|---|---|---|
+| `env-width`, `env-height` | Environment extent | 650, 800 |
+| `tunnel-width`, `tunnel-height` | Tunnel extent | 450, 600 |
+| `tunnel-x`, `tunnel-y` | Top-left position of tunnel | 100, 100 |
+| `tunnel-​entrance` | Entrance span, side, net type | `175,275:2:0` |
+| `barrier-​pass-​prob` | Probability of flying over a barrier | 0.1 |
+| `flower-​initial-​nectar` | Initial nectar per flower | 100 |
+| `plant-​default-​spacing` | Default plant spacing | 10.0 |
+| `plant-​default-​jitter` | Default plant position jitter | 0.1 |
+| `hive` | Hive position and direction | `325,750:0` |
+| `num-bees` | Number of bees | 50 |
+| `bee-​max-​dir-​delta` ($\delta_{\max}$) | Max heading change per step (radians) | 0.5 |
+| `bee-​step-​length` ($\ell$) | Distance moved per step | 15 |
+| `bee-​path-​record-​len` | Max path positions retained per bee | 0 |
+| `bee-​visual-​range` | Max distance at which a bee can detect a flower | 11 |
+| `bee-​visit-​memory-​length` | Recently visited plants remembered | 5 |
+| `bee-​prob-​visit-​nearest-​flower` ($p_{\text{nearest}}$) | Probability of heading for a sensed flower | 0.8 |
+| `bee-​in-​hive-​duration` | Iterations spent in hive between bouts | 200 |
+| `bee-​initial-​energy` | Energy on leaving the hive | 500 |
+| `bee-​energy-​depletion-​per-​step` | Energy cost per step | 1 |
+| `bee-​energy-​boost-​per-​flower` | Energy gained per flower visit | 10 |
+| `bee-​on-​flower-​duration` | Iterations spent on a flower | 3 |
+| `bee-​energy-​min-​threshold` | Energy floor triggering return to hive | 0 |
+| `bee-​energy-​max-​threshold` | Energy ceiling triggering return to hive | 750 |
+| `num-​iterations` | Number of simulation iterations | 2000 |
+| `heatmap-​cell-​size` | Heatmap cell size | 50 |
+| `min-​visit-​count-​success` | Lower bound of a "successful" visit count | 3 |
+| `max-​visit-​count-​success` | Upper bound of a "successful" visit count | 1000 |
+
+: Baseline parameter values used across the experiments reported here,
+taken from `baseline-runs-2000its.cfg` (see @sec:exptconds). Parameters
+controlling only the evolutionary search layer (e.g. `evolve-spec`,
+`num-generations`) vary by condition and are given in
+@sec:evosearch instead; see @tbl:appendix-params for parameter
+descriptions and software defaults. {#tbl:params}
 
 ### Experimental conditions {#sec:exptconds}
 
@@ -459,12 +489,15 @@ Four conditions were run:
   entrance and hive positions were held fixed. Each barrier is a
   fixed-length (50-unit) line segment; the search evolves each barrier's
   midpoint position (continuous $x, y$) and orientation (discretised to
-  36 possible angles, in $10^\circ$ steps).
+  36 possible angles, in $10^\circ$ steps). Barrier placement was
+  freely evolved; no attempt was made to prevent placement of barriers that
+  crossed the tunnel walls or other solid objects such as the hive.
 - **Evolve 10 bridges.** The positions of 10 "bridges" were evolved. A
   bridge is implemented as a small ($30 \times 30$ unit) patch of
-  flowering plants, positioned by the search so as to straddle the tunnel
-  wall and give bees an attractant-based route across it, in addition to
-  the entrance. Flowers within a bridge patch are excluded from the
+  flowering plants, which could represent a large pot. The idea was that
+  these bridges, when placed between crop rows, might encourage the bees
+  to switch rows or otherwise alter their foraging behaviour.
+  Flowers within a bridge patch are excluded from the
   pollination-success fitness metric itself (below) -- they exist purely
   as a movement aid, not as a crop to be pollinated.
 - **Evolve 20 barriers and 10 bridges.** Both of the above evolved
@@ -488,7 +521,7 @@ of optimisation methods that uses a consistent goal of minimisation across its
 various tools. For this reason, in all our experiments we actually employed the
 goal of _minimising the negated visit fraction_ (so the best possible value is
 -1.0 rather than 1.0). Therefore, where negative visit fractions are presented
-in the [Results](#sec:results) section, it should be remembered that more
+in the @sec:results, it should be remembered that more
 negative values (closer to -1.0) are better than less negative ones (closer to
 0.0).
 
@@ -500,7 +533,7 @@ output).
 
 Some further technical comments about the configuration of the evolutionary
 search in these experiments can be found in
-[Appendix B](#sec:appendix-misc-tech-notes).
+@sec:appendix-misc-tech-notes.
 
 ## Setup
 
@@ -508,7 +541,7 @@ search in these experiments can be found in
 
 Each condition's raw output was analysed independently with
 `tools/run_analysis.sh`, run from a directory containing that condition's
-`raw-output`:
+`raw-output`. This tool performs the following actions:
 
 1. extracts per-generation fitness values and the champion (best) fitness
    per run into CSVs, and produces per-run and aggregate fitness graphs;
@@ -521,17 +554,18 @@ Each condition's raw output was analysed independently with
    each of those three cell sizes, then merges these across the 50
    replicates (mean per cell, for heatmaps).
 
-For the baseline condition, `--baseline` is used in place of
-`--num-reps`: since baseline runs are single, non-evolutionary
-simulations (`evolve=false`) rather than evolutionary searches, there are
-no generations or best-individual configs to extract, and no barriers or
-bridges to map (steps 1 and 3 above are skipped). Instead,
-`run_analysis.sh` treats each of the 5000 raw output files as one run,
-taking its "fitness" from the run's own successful-visit fraction
-(negated, for a like-for-like comparison with the evolved conditions) and
-its "best-individual config" as simply its own logged configuration;
-per-run flowmaps and heatmaps are then merged in the same way as for the
-evolved conditions.
+For the baseline condition, `run_analysis.sh` is passed the `--baseline` flag in
+place of `--num-reps`: since baseline runs are single, non-evolutionary
+simulations (`evolve=false`) rather than evolutionary searches, there are no
+generations or best-individual configs to extract, and no barriers or bridges to
+map (steps 1 and 3 above are skipped). Instead, `run_analysis.sh` treats each of
+the 5000 raw output files as one run, taking its "fitness" from the run's own
+successful-visit fraction (negated, for a like-for-like comparison with the
+evolved conditions) and its "best-individual config" as simply its own logged
+configuration; per-run flowmaps and heatmaps are then merged in the same way as
+for the evolved conditions. All of the heatmaps used in this analysis are normalised, so the process of creating
+merged heatmaps is straightforward. For details of how the flowmaps are generated and merged, see
+Appendix D (@sec:appendix-flowmap-merging).
 
 The exact invocations used were:
 ```
@@ -566,24 +600,20 @@ which compares two `run_analysis.sh` output directories' merged
 bee-movement flowmaps and merged bee-position heatmaps, for each cell
 size present in both:
 
-- **Flowmap comparison.** For each cell size, an axial angular-delta
-  heatmap is computed cell-by-cell between the two conditions'
-  predominant-movement-direction flowmaps:
-  $$
-  \Delta = \tfrac{1}{2}\arccos\bigl(\cos(2(\alpha_1 - \alpha_2))\bigr)
-  $$
-  where $\alpha_1, \alpha_2$ are the two conditions' flowmap axis angles
-  for that cell (treated as headless, i.e. a direction and its opposite
-  are equivalent); $\Delta$ ranges from 0 (identical axis) to $\pi/2$
-  (perpendicular axes). This is computed six times per cell size -- with
-  no thresholding, and with default strength/count thresholds (0.5/0.1),
-  each at histogram bin widths of $5^\circ$, $10^\circ$, and $15^\circ$
-  -- and each result visualised both as a heatmap (fixed colour scale $0$
-  to $\pi/2$) and as a histogram. Heatmap visualisation uses a
-  configuration file taken from the first condition's
-  `best-configs-indiv/`, on the assumption that both conditions share the
-  same basic environment -- true of all the comparisons run here, since
-  all four conditions share the base environment described above.
+- **Flowmap comparison.** For each cell size, an axial angular-delta heatmap is
+  computed cell-by-cell between the two conditions'
+  predominant-movement-direction flowmaps using the standard angle-doubling
+  transformation for axial data: $$ \Delta =
+  \tfrac{1}{2}\arccos\bigl(\cos(2(\alpha_1 - \alpha_2))\bigr) $$ where
+  $\alpha_1, \alpha_2$ are the two conditions' flowmap axis angles for that cell
+  (treated as headless, i.e. a direction and its opposite are equivalent);
+  $\Delta$ ranges from 0 (identical axis) to $\pi/2$ (perpendicular axes). This
+  is computed twice per cell size: once with no thresholding, and again with
+  default strength and count thresholds of 0.5 and 0.1, respectively.
+  Angular-delta heatmap visualisation uses a configuration file taken from the
+  first condition's `best-configs-indiv/`, on the assumption that both
+  conditions share the same basic environment -- true of all the comparisons run
+  here, since all four conditions share the base environment described above.
 - **Heatmap comparison.** A plain cell-by-cell difference (first
   condition's normalised visitation heatmap minus the second's) is
   computed once per cell size, with no thresholding, and visualised with
@@ -624,7 +654,8 @@ tools/run_cross_analysis.sh \
 `--delta-color-scale-max 3.10` fixes the colour scale for the
 cell-size-50 heatmap-delta comparison to $\pm 3.10$ percentage points
 (cell sizes 10 and 25 always use a scale computed from their own delta
-heatmap).
+heatmap). The value 3.10 was empirically determined to be large enough
+to include all values found in all heatmap-delta data being analysed.
 
 # Results and analysis {#sec:results}
 
@@ -681,6 +712,8 @@ barriers-and-bridges (bottom row). Barriers are drawn as red line segments
 and bridges as purple squares.
 :::
 
+**TODO** Make the hives more visible in these plots
+
 ## Overall fitness statistics {#sec:overallstats}
 
 @tbl:fitness-summary shows the flower visitation summary statistics for each
@@ -689,17 +722,17 @@ best observed visitation fraction for all replicate runs under the given
 condition, where the visitation fraction is the fraction of all plants in the
 environment that were visited by bees at least three times during the
 simulation. Note again thet in all reported results, the fitness number is negated,
-so lower numbers (i.e. closer to -1.0) are better (see [Results](#sec:evosearch) section).
+so lower numbers (i.e. closer to -1.0) are better (see @sec:evosearch).
 
 We report the IQR (interquartile range) as our measure of variability between
 replicate runs, because for the evolve conditions we are looking at the results
 across 50 replicate runs; as this is not a very large number, the 10th--90th
 band can be unstable, so the IQR is more robust.  Note that for the baseline
-condition we are looking at 5000 independent runs (see [Experimental
-Conditions](#sec:exptconds) section); there is no inherent problem in comparing
-medians and IQRs across these very different sample sizes in the different
-conditions (5000 vs 50), although the figures for the baseline condition
-will be a better estimate of the underlying population statistics.
+condition we are looking at 5000 independent runs (see @sec:exptconds); there is
+no inherent problem in comparing medians and IQRs across these very different
+sample sizes in the different conditions (5000 vs 50), although the figures for
+the baseline condition will be a better estimate of the underlying population
+statistics.
 
 | Condition | Median Fitness | IQR (Q3 - Q1) |
 |---|---:|---:|
@@ -725,7 +758,7 @@ first 50 generations. By contrast, the evolution of barriers (@fig:fitnessoverge
 continued improvement over the whole 400-generation run. Combining the evolution of barriers
 with bridges (@fig:fitnessovergens-20X10B) actually led to _worse_ results than just
 evolving bridges by themselves. This is consistent with the summary statistics reported in
-the [Overall fitness statistics](#sec:overallstats) section.
+@sec:overallstats.
 
 ::: {#fig:fitnessovergens}
 ![No evolutionary run for baseline expt](figures/blank-placeholder.png){#fig:fitnessovergens-baseline width=45%}
@@ -749,22 +782,49 @@ lines show the IQR (interquartile range) across the 50 runs.
 :::
 
 
-## Flowfield analysis of bee movements under each condition
-
-**TODO** Explain what we are looking at here - are these merged heatmaps? Marged from what?
+## Flowfield analysis of bee movements under each condition {#sec:flowfield-analysis}
 
 To understand how the bees are moving around their environment, and how the introduction
 of barriers and/or bridges changes their movement patterns, we produced flowmaps
 showing the axial flow of bees in each part of the environment across the course of
-a simulation. The axial flow treats 0^o^ and 180^0^ as equivalent, and is therefore
-good for asking whether bees are being channelled along the same routes in the environment.
+a simulation. The axial flow treats 0^o^ and 180^o^ as equivalent, and is therefore
+good for showing whether bees are being channelled along the same routes in the environment.
 
 @fig:bee-flowmap-size-10-all-conditions shows the flowmaps for each of the experimental
 conditions. Each of these is itself a merge of many independent per-replicate
-flowmaps; see @sec:appendix-flowmap-merging for exactly how these
+flowmaps; see Appendix D (@sec:appendix-flowmap-merging) for exactly how these
 per-replicate flowmaps are generated and merged.
 
+In each flowmap, the colour of a line in a given position represent how strongly aligned the
+recorded bee movements were at that position --- a red line indicates that nearly all recorded
+bees were moving in the same axial direction, whereas a dark blue line indicates that bees were
+moving in many different directions. The thickness of each line indicates how many bees were
+recorded at the position during the course of a simulation --- the thicker then line, the
+more bees recorded.
 
+The flowmaps show that the bees generally moved parallel to the edges of the tunnel and of the
+outer perimeter of the environment when close to these edges, but in corners (of the tunnel
+and of the environment) they tended to move in a less homogeneous direction (blue areas in
+corners of flowmaps). Bees emerging from the hive did so in a very homogeneous direction (red
+lines), which is expected as the hive had a single exit which faced the tunnel entrance.
+Over the crop patches the bees moved in heterogeneous directions (blue) as dictated by their
+foraging behaviour. In between crop rows, the bee's movement tended to get less homogeneous
+the further they travelled down the tunnel away from the entrance (flowlines transition from
+greens to blues), and fewer bees were recorded at the far end of the tunnel (thiner lines
+than nearer the entrance).
+
+In the conditions involving evolved bridges (@fig:bee-flowmap-sz10-10B and
+@fig:bee-flowmap-sz10-20X10B), the bees' movements immediately behind the hive
+(bottom centre of the figures) was less uniform (more blue than green),
+indicating that the bees were not simply flying past this area but were stopping
+on the bridge patches that were positioned in that area (@fig:best-layout-10B-1
+-- @fig:best-layout-10B-3).
+
+In the conditions involving evolved barriers (@fig:bee-flowmap-sz10-20X and
+@fig:bee-flowmap-sz10-20X10B), the bees' movements just inside the entrance to
+the tunnel were a little less uniform than in the baseline (green rather than
+yellow), indicating that they were not simply flight straight ahead but had to
+change direction because of the bridges.
 
 ::: {#fig:bee-flowmap-size-10-all-conditions}
 ![Baseline (no barriers or bridges)](figures/bee-flowmap-size-10-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz10-baseline width=45%}
@@ -786,45 +846,77 @@ thickness indicates how many bees were recorded at that position over the
 course of a simulation.
 :::
 
-## Analysis of change in bee movements caused by barriers and bridges
+## Analysis of change in bee movements caused by barriers and bridges {#sec:analysis-of-change-in-bee-movements-caused-by-barriers-and-bridges}
 
-**TODO** Explain what we are looking at here - are these merged angdelta maps? Marged from what?
+To get a better idea of how the different conditions changed the movement
+patterns of the bees, we looked at angular delta heatmaps showing the difference
+between the flowmaps for each of the Evolve conditions and the baseline flowmap.
+For each cell, this "angular delta" is the axial difference between that
+condition's predominant movement axis and the baseline's in that cell: 0 where
+bees in the two conditions moved (or exactly counter-moved) along the same axis
+through that cell, up to 90 degrees where their predominant directions were
+perpendicular.
+
+@fig:bee-flowmap-sz10-baseline2 is just a
+reproduction of the flowmap for the baseline condition shown in
+@fig:bee-flowmap-sz10-baseline. The other three panels in the figure show the
+angular delta heatmaps, indicating the _difference_ observed in the bees'
+direction of movement, compared to the baseline, for each of the three Evolve
+conditions. Thresholds have been applied to each cell in these
+heatmaps to exclude cases where (1) the strength of alignment in that cell in
+both of the flowmaps being compared is too low (`strength-th`=0.250); (2) not
+enough data was present for that cell in either of the flowmaps being compared
+(`count-th`=0.025); and (3) the computed angular delta between the two
+flowmaps for that cell was too low (`delta-th`=0.175 radians, about 10^o^).
+Cells that fall below any of these thresholds are shown in white in the angular
+delta heatmaps. For further information on the calculation of the angular delta
+heatmaps and  the exclusion criteria used, see Appendix E
+(@sec:appendix-angdelta).
+
+
+**TODO** Write a brief descripition of the results
 
 
 ::: {#fig:angdelta-heatmap-size-10-all-conditions}
-![Baseline bee movements (no barriers or bridges)](figures/bee-flowmap-size-10-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz10-baseline2 width=45%}
-![Angular deltas for Evolve 10 bridges only](figures/angdelta-heatmap-sz10-nothresh-cross-analysis-evolve-10B-vs-baseline.png){#fig:angdelta-heatmap-sz10-10B width=45%}
+![Baseline bee movements](figures/bee-flowmap-size-10-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz10-baseline2 width=45%}
+![Angular deltas for Evolve 10 bridges only](figures/angdelta-heatmap-sz10-st-0p250-ct-0p025-dt-0p175-cross-analysis-evolve-10B-vs-baseline.png){#fig:angdelta-heatmap-sz10-10B width=45%}
 
 ```{=latex}
 \mbox{}\\
 ```
 
-![Angular deltas for Evolve 20 barriers only](figures/angdelta-heatmap-sz10-nothresh-cross-analysis-evolve-20X-vs-baseline.png){#fig:angdelta-heatmap-sz10-20X width=45%}
-![Angular deltas for Evolve 20 barriers and 10 bridges](figures/angdelta-heatmap-sz10-nothresh-cross-analysis-evolve-20X-10B-vs-baseline.png){#fig:angdelta-heatmap-sz10-20X-10B width=45%}
+![Angular deltas for Evolve 20 barriers only](figures/angdelta-heatmap-sz10-st-0p250-ct-0p025-dt-0p175-cross-analysis-evolve-20X-vs-baseline.png){#fig:angdelta-heatmap-sz10-20X width=45%}
+![Angular deltas for Evolve 20 barriers and 10 bridges](figures/angdelta-heatmap-sz10-st-0p250-ct-0p025-dt-0p175-cross-analysis-evolve-20X-10B-vs-baseline.png){#fig:angdelta-heatmap-sz10-20X-10B width=45%}
 
 Analysis of change in bee movements caused by barriers and bridges.
 :::
 
 
-![Histogram of angular deltas for the Evolved 20 barriers and 10 bridges condition compared to the baseline](figures/angdelta-histogram-sz10-bin5-nothresh-cross-analysis-evolve-20X-10B-vs-baseline.png){#fig:angdelta-histogram-sz10-bin5-20X-10B}
-
-
 ## Effect of barriers and bridges on bee coverage of the environment {#sec:effect-of-barriers-and-bridges-on-bee-coverage-of-the-environment}
 
-@fig:bee-heatmap-baseline-vs-deltas shows normalised bee-position
-heatmaps: for each run, the total number of bee-position observations
-recorded in each cell, summed over all 2000 simulation steps, is
-normalised so all cells sum to 1.0; the merged heatmap for a condition is
-then the mean, cell by cell, of that normalised heatmap across all runs
-of the condition (cell size 50). Panel (a) shows this merged heatmap
-directly for the baseline condition, averaged across all 5000 baseline
-runs. Panels (b)-(d) instead
-show, for each evolved condition, the per-cell difference between that
-condition's own heatmap and the baseline's (evolved minus baseline, so
-positive/blue cells were visited relatively more under the evolved
-condition, negative/red cells relatively less), on a diverging colour
-scale fixed to $\pm 3.10$ percentage points, as described in the Setup
-section above.
+**TODO** redo plots in @fig:bee-heatmap-baseline-vs-deltas so that red
+indicates a positive delta and blue negative, so it is consistant with
+the scales on the other maps. And change all of these plots to show a better range of the data
+(e.g. a non-linear scale or clipped scale?)
+
+In @sec:flowfield-analysis and
+@sec:analysis-of-change-in-bee-movements-caused-by-barriers-and-bridges we
+looked at how bee movement was affected by the presence of barriers and bridges.
+In this section we look at the presence of bees, rather than their direction of
+movement, in specific locations throughout the simulations.
+
+@fig:bee-heatmap-baseline-vs-deltas(a) shows a normalised bee-position heatmaps
+for the baseline condition: for each of the 5000 runs under this condition, the
+total number of bee-position observations recorded in each cell, summed over all
+2000 simulation steps, is normalised so all cells sum to 1.0; the merged heatmap
+for a condition is then the mean, cell by cell, of that normalised heatmap
+across all runs of the condition (cell size 50).
+@fig:bee-heatmap-baseline-vs-deltas(b)--(d) instead show, for each evolved
+condition, the per-cell difference between that condition's own heatmap and the
+baseline's (evolved minus baseline, so positive/blue cells were visited
+relatively more under the evolved condition, negative/red cells relatively
+less), on a diverging colour scale fixed to $\pm 3.10$ percentage points, as
+described in the Setup section above.
 
 ::: {#fig:bee-heatmap-baseline-vs-deltas}
 ![Baseline (merged across 5000 runs)](figures/bee-heatmap-size-50-intra-condition-merged-baseline-runs-2000its-cropped.png){#fig:bee-heatmap-baseline-abs width=45%}
@@ -843,52 +935,24 @@ bridges-only (b), barriers-only (c), and barriers-and-bridges (d).
 :::
 
 
-***************************************
-
-## Rough notes for completing results and analysis section
-
-Main figures:
-(A) Baseline flow field - baseline/bee-flowmaps-agg [cell size 10,25,50, th N,Y]
-(B) Flow field with evolved barriers/bridges - evolve/bee-flowmaps-agg
-(C) Axial angular-difference heatmap - cross-analysis-evolve-vs-baseline/size-S-bin-B-[no]thresh-angdelta-heatmap [size 10,25,50, bin 5,10,15] => use size 50, bin 5
-(D) Weighted histogram of delta-theta_axial - cross-analysis-evolve-vs-baseline/size-S-bin-B-[no]thresh-angdelta-histogram [size 10,25,50, bin 5,10,15] => use size 50, bin 5
-
-And then a second set of figures showing functional effect:
-(E) Pollination/visitation difference map - cross-analysis-evolve-vs-baseline/bee-heatmap-delta [cell size 10,25,50] => size 50
-
-For each type of graph, ask Claude to look at the script and look at the command used to generate the graph, and produce a brief description of what exactly is being plotted (inc. are we weighting by sample size, etc)
-
-The strongest version is to show that large angular changes occur in biologically meaningful places, and that those places correspond to improved visitation or pollination.
-
-Important details
-
-* Weight or mask by sample size. Otherwise cells with very few bees can show dramatic but meaningless angle changes.
-
-* Use axial difference only where direction is genuinely orientation-like. If forward vs backward movement matters biologically, also show ordinary directional angular difference.
-
-* Compare angle change to outcome change. A high angular change is not automatically good; the best evidence is:
-
-  - barrier placement → local flow redirection → changed visitation pattern → improved pollination
-
-So: yes, show the delta map, but treat it as only one panel in a richer analysis.
-
-
-
 ## Discussion
 
 Interpretation, limitations, surprises.
 
+**TO DO**
+
 # Conclusion
 
 Summary of findings and future work.
+
+**TO DO**
 
 # Appendix A: Full ODD Description of the PolyBee Simulation Model {#sec:appendix-full-odd}
 
 This appendix gives the complete, submodel-level ODD description of the
 `polybee` simulation, in full implementation detail (every state
 variable, submodel equation, and the full parameter reference). A
-condensed summary appears in the main text (see
-[System design](#system-design)).
+condensed summary appears in the main text (see @sec:system-design).
 
 The `polybee` simulation is described below following the ODD (Overview,
 Design concepts, Details) protocol for describing agent-based models
@@ -1062,17 +1126,14 @@ configuration, and a run-info summary are written to file
 
 ### Basic principles {#sec:appendix-basic-principles}
 
-Bees follow a correlated random walk biased towards nearby, unvisited
-flowers -- a nearest-flower-seeking heuristic rather than a true Lévy
-flight (noted explicitly in the source as a simplification: "we are not
-yet considering Levy flights here"). An energy budget accumulated from
-nectar and depleted per step drives the length of a foraging bout and the
-decision to return to the hive. Tunnel-boundary permeability is
-represented stochastically, with per-attempt exit probabilities
+Bees follow a correlated random walk biased towards nearby, unvisited flowers --
+a nearest-flower-seeking heuristic rather than a true Lévy flight. An energy
+budget accumulated from nectar and depleted per step drives the length of a
+foraging bout and the decision to return to the hive. Tunnel-boundary
+permeability is represented stochastically, with per-attempt exit probabilities
 calibrated directly from published field-trial statistics on real
-anti-bird/anti-hail netting reported in @sonter2024 (see
-`PARAM-NOTES.md`), rather than from a first-principles physical model of
-the netting itself.
+anti-bird/anti-hail netting reported in @sonter2024 (see `PARAM-NOTES.md`),
+rather than from a first-principles physical model of the netting itself.
 
 ### Emergence {#sec:appendix-emergence}
 
@@ -1275,7 +1336,7 @@ the bee simply stays put for that iteration).
 **Directed movement towards a sensed flower.** If an unvisited flower is
 within `bee-visual-range` (@sec:appendix-sensing) and is chosen (probability
 $p_{\text{nearest}}$), the bee's heading is set directly to the bearing
-to that flower -- $\theta_{t+1} = \operatorname{atan2}(y_f - y_t,\, x_f -
+to that flower -- $\theta_{t+1} = \operatorname{arctan2}(y_f - y_t,\, x_f -
 x_t)$ -- **not** bounded by $\delta_{\max}$; this is the one situation in
 which a bee's turn is unconstrained. If the flower is within one step
 length it moves directly onto it (triggering a landing, below); otherwise
@@ -1357,7 +1418,7 @@ of a run, which cover foraging-mode attempts only.
 **Heatmap and flowmap recording.** Each iteration, every bee's current
 cell (at `heatmap-cell-size` resolution) has its visitation count
 incremented. Every `flowmap-update-period` iterations, every bee that
-moved this step has its movement direction $\theta = \operatorname{atan2}
+moved this step has its movement direction $\theta = \operatorname{arctan2}
 (\Delta y, \Delta x)$ recorded into its current cell (at
 `flowmap-cell-size` resolution); at the end of a run the predominant
 (headless) axis and alignment strength for each flowmap cell are computed
@@ -1510,22 +1571,34 @@ generate loggable flowmap and heatmap output for analysis. This is why the
 analysis pipeline needs an explicit re-run step at all, rather than simply
 reusing output from the evolutionary search.
 
-**What a single replicate's flowmap contains.** Each simulation step, for
-every bee that moved, its raw movement heading
-$\theta = \operatorname{atan2}(\Delta y, \Delta x)$ is recorded into
-whichever cell the bee currently occupies. At the end of the run, each
-cell's list of recorded headings is reduced to a single `axis:strength:count`
-value using a double-angle circular mean: the heading values are doubled,
-their sine and cosine components summed and averaged, and the predominant
-(headless) axis and the strength of alignment to it are recovered from that
-average vector -- `axis` $=0.5\operatorname{atan2}(\overline{\sin 2\theta},\overline{\cos 2\theta})$,
-`strength` $=|\overline{\sin 2\theta},\overline{\cos 2\theta}|$ (0 when
-recorded movements in that cell point in unrelated directions, 1 when they
-were all exactly aligned to `axis`); `count` is simply the number of
-individual movement observations recorded in that cell.
+**What a single replicate's flowmap contains.** Each simulation step, for every
+bee that moved, its raw movement heading $\theta = \operatorname{arctan2}(\Delta
+y, \Delta x)$ is recorded into whichever cell the bee currently occupies. At the
+end of the run, each cell's list of recorded headings is reduced to a single
+`axis:strength:count` value using a double-angle circular mean: the heading
+values are doubled, their sine and cosine components summed and averaged, and
+the predominant (headless) axis and the strength of alignment to it are
+recovered from that average vector: `axis`
+$=\tfrac{1}{2}\operatorname{arctan2}(\overline{\sin 2\theta},\overline{\cos
+2\theta})$, `strength` $=|\overline{\sin 2\theta},\overline{\cos 2\theta}|$ (0
+when recorded movements in that cell point in unrelated directions, 1 when they
+were all exactly aligned to `axis`); `count` is simply the number of individual
+movement observations recorded in that cell.
+So `strength` is a mean resultant length (a standard circular-statistics
+concentration measure, in [0, 1]) of the doubled bee headings in that cell:
+a `stength` value near 1.0 means nearly all bee movements through that cell were aligned
+along (or exactly opposite) the same axis --- a strong, coherent flow direction;
+`strength` of 0.0 means movements in that cell were scattered across many different
+directions with no dominant axis --- even if count is high, there's no
+consistent flow to report. `strength` is independent of `count` (which just
+tracks how many movements were observed): a cell can have a high `count` but low
+`strength` if bees passed through it moving every which way, or a low `count`
+but `strength` of exactly 1.0 if the handful of bees that did pass through all
+moved along the same line.
 
-**How the per-replicate flowmaps are merged.** Merging does not simply
-average each replicate's `axis`/`strength` values cell by cell -- doing so
+**How the per-replicate flowmaps are merged.** Merging of flowmaps (performed by the
+`merge_flowmaps.py` script called by `run_analysis.sh`) does not simply
+average each replicate's `axis`/`strength` values cell by cell; doing so
 would treat every replicate as equally informative regardless of how many
 movements it actually contributed to a cell, and naively averaging a
 circular quantity like `axis` is not mathematically well defined in
@@ -1547,5 +1620,62 @@ already normalised fractions (summing to 1.0 across the whole grid), so the
 merged heatmap is just their mean, cell by cell, across all replicates (see
 @sec:effect-of-barriers-and-bridges-on-bee-coverage-of-the-environment).
 
+
+# Appendix E: How Angular-Delta Heatmaps Are Generated {#sec:appendix-angdelta}
+
+The angular-delta ("angdelta") heatmaps shown in
+@sec:analysis-of-change-in-bee-movements-caused-by-barriers-and-bridges are
+produced by `tools/gen_angdelta_data.py`, run once per pair of merged
+flowmaps being compared (@sec:appendix-flowmap-merging), for each
+combination of thresholds used in the
+Setup section above.
+
+**The angular-delta value itself.** For each cell, given the two flowmaps'
+predominant axes $\alpha_1$ and $\alpha_2$ at that cell (see
+@sec:appendix-flowmap-merging for how a flowmap's per-cell axis is
+computed), the angular delta is:
+$$
+\Delta = \tfrac{1}{2}\operatorname{arccos}\bigl(\cos(2(\alpha_1 - \alpha_2))\bigr)
+$$
+As with the flowmap axes themselves, this treats each axis as headless (a
+direction and its exact opposite are equivalent), and yields a delta in
+$[0, \pi/2]$: 0 where the two flowmaps' predominant directions in that cell
+coincide (or are exactly opposed), up to $\pi/2$ (90 degrees) where they are
+perpendicular.
+
+**Excluding cells without enough data.** A cell is excluded from the heatmap
+(scored 0, rather than an actual computed delta) if either flowmap has no
+recorded movements there at all (strength $\le 0$ or count $=0$), matching the
+same hard exclusion rule used when drawing flowmaps directly
+(@sec:appendix-flowmap-merging). Beyond that, three optional thresholds can
+exclude further cells:
+
+- `--strength-th`: matching the equivalent thresholding available when
+  visualising a flowmap on its own, at least one of the two flowmaps'
+  entries for that cell must have alignment strength at or above this
+  value; if both are below it, the cell is excluded.
+- `--count-th`: also matching flowmap thresholding, expresses each
+  flowmap's own count for that cell as a fraction of the largest count
+  found anywhere in that same flowmap, and both flowmaps' fractions for
+  the cell must be at or above this value; if either falls short, the cell
+  is excluded.
+- `--delta-th`: unlike the two thresholds above, this is applied to the
+  *computed angular delta itself* (in radians), not to either flowmap's
+  strength or count, and only once a cell has already passed the
+  `--strength-th` / `--count-th` checks. If the resulting delta $\Delta$
+  is below `--delta-th`, the cell is excluded -- this filters out cells
+  where the two conditions' predominant directions are too close together
+  to be a meaningfully different axis, as opposed to cells where the
+  underlying flowmap data is simply too weak or sparse to trust.
+
+**Marking excluded cells.** By default an excluded cell (for any of the
+reasons above) is written into the heatmap CSV as a plain 0, which is
+indistinguishable from a cell whose *computed* delta genuinely happens to be
+0 (i.e. the two conditions' predominant directions coincide exactly). Passing
+`--x-below-th` to `gen_angdelta_data.py` instead writes an `x` marker for any
+excluded cell, and passing the same flag to `visualize_heatmap.py` when
+plotting the resulting CSV renders those `x`-marked cells as plain white,
+rather than colouring them using the heatmap's normal colour scale -- so a
+white cell in the figures means "excluded", not "zero delta".
 
 # References

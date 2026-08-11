@@ -33,6 +33,16 @@ What it does:
                       entry's count fraction falls below this threshold, 0
                       is recorded.
 
+    Separately, --delta-th applies to the *computed* angular delta itself, in
+    radians (not to either flowmap's strength or count): once a cell has
+    passed the --strength-th / --count-th checks above, if its angular delta
+    is below --delta-th, it is also recorded as 0.
+
+    If --x-below-th is given, any cell scored 0 above -- whether because it
+    is empty in one of the flowmaps, because it fails the --strength-th /
+    --count-th checks, or because its angular delta falls below --delta-th
+    -- is written as 'x' instead of 0 in the heatmap CSV.
+
     The result is written as a plain (non-normalised) 2D CSV grid, one row
     per cell-row (y), matching the format used for heatmap CSVs elsewhere in
     this project (e.g. target-heatmaps/*.csv).
@@ -41,8 +51,8 @@ What it does:
     contains the data needed to plot a histogram of the weighted
     distribution of angular deltas across the heatmap. Deltas are binned
     into --bin-size degree-wide bins spanning [0, 90]. Cells that fail the
-    thresholds above are excluded entirely (not just scored 0). For each bin
-    the file records:
+    thresholds above (including --delta-th) are excluded entirely (not just
+    scored 0). For each bin the file records:
 
         bin_lo, bin_hi, weighted_count
 
@@ -54,12 +64,12 @@ What it does:
     count in the two flowmaps.
 
     Both output filenames are tagged with the thresholds used to generate
-    them: st-{strength_th} and ct-{count_th}, each to 3 decimal places with
-    'p' in place of the decimal point, e.g.
-    NAME-angdelta-heatmap-st-0p725-ct-0p400.csv.
+    them: st-{strength_th}, ct-{count_th}, and dt-{delta_th}, each to 3
+    decimal places with 'p' in place of the decimal point, e.g.
+    NAME-angdelta-heatmap-st-0p725-ct-0p400-dt-0p087.csv.
 
 Usage:
-    ./gen_angdelta_data.py FLOWMAP1 FLOWMAP2 [--strength-th F] [--count-th F] [--bin-size D] [--basename NAME]
+    ./gen_angdelta_data.py FLOWMAP1 FLOWMAP2 [--strength-th F] [--count-th F] [--delta-th R] [--bin-size D] [--basename NAME]
 
     FLOWMAP1, FLOWMAP2  Flowmap CSV files to compare (must have matching dimensions).
     --strength-th F     Minimum strength required of at least one flowmap entry
@@ -69,17 +79,27 @@ Usage:
                         for a cell to be scored, where a cell's count fraction
                         is its count divided by the maximum count in its own
                         flowmap (float, 0.0-1.0). Default: 0.0 (no thresholding).
+    --delta-th R        Minimum angular delta, in radians (0.0-pi/2), required
+                        for a cell to be scored, applied to the computed delta
+                        itself (not to either flowmap's strength or count),
+                        after the --strength-th / --count-th checks. Default:
+                        0.0 (no thresholding).
     --bin-size D        Histogram bin size in degrees, spanning [0, 90]
                         (float). Default: 15.
+    --x-below-th        Write any cell that would otherwise be scored 0 (empty
+                        in either flowmap, failing --strength-th / --count-th,
+                        or failing --delta-th) as 'x' instead, in the heatmap
+                        CSV.
     --basename NAME     Basename for the output CSV files (default: output).
                         Writes NAME-angdelta-heatmap-{suffix}.csv and
                         NAME-angdelta-histogram-{suffix}.csv in the current
-                        directory, where {suffix} encodes --strength-th and
-                        --count-th (e.g. st-0p725-ct-0p400).
+                        directory, where {suffix} encodes --strength-th,
+                        --count-th, and --delta-th (e.g.
+                        st-0p725-ct-0p400-dt-0p087).
 
 Example:
     ./gen_angdelta_data.py run1-flowmap.csv run2-flowmap.csv --strength-th 0.725 --count-th 0.4 --basename cmp
-    # -> writes cmp-angdelta-heatmap-st-0p725-ct-0p400.csv and cmp-angdelta-histogram-st-0p725-ct-0p400.csv
+    # -> writes cmp-angdelta-heatmap-st-0p725-ct-0p400-dt-0p000.csv and cmp-angdelta-histogram-st-0p725-ct-0p400-dt-0p000.csv
 """
 
 import argparse
@@ -121,30 +141,45 @@ def max_count(flowmap):
     return max((count for row in flowmap for (_, _, count) in row), default=0)
 
 
-def cell_is_valid(strength1, strength2, count1, count2, strength_th, count_th,
-                  max_count1, max_count2):
-    """Whether a cell meets the --strength-th / --count-th thresholds.
+def cell_status(strength1, strength2, count1, count2, strength_th, count_th,
+                max_count1, max_count2):
+    """Classify a cell as 'empty', 'below_threshold', or 'valid'.
 
     count_th is a fraction (0.0-1.0) of each flowmap's own maximum count,
     matching the count-fraction thresholding in visualize_flowmap.py /
     visualize_heatmap.py's _draw_flowmap(), which also hard-excludes empty
     cells (strength <= 0.0 or count == 0) regardless of threshold — matched
     here too, so a cell with no observations in either flowmap is never
-    scored as having an "identical axis" (delta 0) by default.
+    scored as having an "identical axis" (delta 0) by default. Empty cells
+    are reported separately from cells that merely fail the thresholds, so
+    callers can tell the two cases apart.
     """
     if strength1 <= 0.0 or count1 == 0 or strength2 <= 0.0 or count2 == 0:
-        return False
+        return 'empty'
     if strength1 < strength_th and strength2 < strength_th:
-        return False
+        return 'below_threshold'
     fraction1 = count1 / max_count1 if max_count1 > 0 else 0.0
     fraction2 = count2 / max_count2 if max_count2 > 0 else 0.0
     if fraction1 < count_th or fraction2 < count_th:
-        return False
-    return True
+        return 'below_threshold'
+    return 'valid'
 
 
-def build_angdelta_heatmap(flowmap1, flowmap2, strength_th, count_th):
-    """Return a 2-D list of angular-delta values (0.0 where thresholds aren't met)."""
+def cell_is_valid(strength1, strength2, count1, count2, strength_th, count_th,
+                  max_count1, max_count2):
+    """Whether a cell meets the --strength-th / --count-th thresholds (and isn't empty)."""
+    return cell_status(strength1, strength2, count1, count2, strength_th, count_th,
+                       max_count1, max_count2) == 'valid'
+
+
+def build_angdelta_heatmap(flowmap1, flowmap2, strength_th, count_th, delta_th=0.0, x_below_th=False):
+    """Return a 2-D list of angular-delta values.
+
+    Cells that are empty in either flowmap, that fail the --strength-th /
+    --count-th checks, or whose computed angular delta (in radians) is below
+    delta_th, are 0.0, or the string 'x' if x_below_th is set (for any of
+    those reasons).
+    """
     nrows = len(flowmap1)
     ncols = len(flowmap1[0])
     max_count1 = max_count(flowmap1)
@@ -157,24 +192,30 @@ def build_angdelta_heatmap(flowmap1, flowmap2, strength_th, count_th):
             axis1, strength1, count1 = flowmap1[r][c]
             axis2, strength2, count2 = flowmap2[r][c]
 
-            if not cell_is_valid(strength1, strength2, count1, count2, strength_th, count_th,
-                                 max_count1, max_count2):
-                row.append(0.0)
-                continue
+            status = cell_status(strength1, strength2, count1, count2, strength_th, count_th,
+                                 max_count1, max_count2)
+            delta = angular_delta(axis1, axis2) if status == 'valid' else None
+            if status == 'valid' and delta < delta_th:
+                status = 'below_threshold'
 
-            row.append(angular_delta(axis1, axis2))
+            if status != 'valid' and x_below_th:
+                row.append('x')
+            elif status != 'valid':
+                row.append(0.0)
+            else:
+                row.append(delta)
         result.append(row)
     return result
 
 
-def build_angdelta_histogram(flowmap1, flowmap2, strength_th, count_th, bin_size_deg):
+def build_angdelta_histogram(flowmap1, flowmap2, strength_th, count_th, bin_size_deg, delta_th=0.0):
     """Return a list of (bin_lo, bin_hi, weighted_count) tuples covering [0, 90] degrees.
 
     weighted_count is the raw per-bin cell count multiplied by a normalised
     weighting: the pooled occupancy (mean of the two flowmaps' counts) of the
     cells in that bin, divided by the pooled occupancy of all thresholded
-    cells in the heatmap. Cells failing --strength-th / --count-th are
-    excluded entirely.
+    cells in the heatmap. Cells failing --strength-th / --count-th, or whose
+    angular delta (in radians) is below delta_th, are excluded entirely.
     """
     nrows = len(flowmap1)
     ncols = len(flowmap1[0])
@@ -194,7 +235,11 @@ def build_angdelta_histogram(flowmap1, flowmap2, strength_th, count_th, bin_size
                                  max_count1, max_count2):
                 continue
 
-            delta_deg = math.degrees(angular_delta(axis1, axis2))
+            delta = angular_delta(axis1, axis2)
+            if delta < delta_th:
+                continue
+
+            delta_deg = math.degrees(delta)
             bin_idx = min(int(delta_deg // bin_size_deg), num_bins - 1)
             bin_counts[bin_idx] += 1
             bin_occupancy[bin_idx] += (count1 + count2) / 2.0
@@ -212,17 +257,19 @@ def build_angdelta_histogram(flowmap1, flowmap2, strength_th, count_th, bin_size
 
 
 def write_heatmap(cells, path):
-    """Write a 2-D grid of floats as a plain CSV heatmap."""
+    """Write a 2-D grid of floats (and possibly 'x' markers) as a plain CSV heatmap."""
     with open(path, 'w') as f:
         for row in cells:
-            f.write(','.join(f"{value:.5f}" for value in row) + '\n')
+            f.write(','.join(value if isinstance(value, str) else f"{value:.5f}"
+                             for value in row) + '\n')
 
 
-def threshold_suffix(strength_th, count_th):
-    """Return a filename-safe suffix encoding the thresholds, e.g. 'st-0p725-ct-0p400'."""
+def threshold_suffix(strength_th, count_th, delta_th):
+    """Return a filename-safe suffix encoding the thresholds, e.g. 'st-0p725-ct-0p400-dt-5p000'."""
     strength_str = f"{strength_th:.3f}".replace('.', 'p')
     count_str = f"{count_th:.3f}".replace('.', 'p')
-    return f"st-{strength_str}-ct-{count_str}"
+    delta_str = f"{delta_th:.3f}".replace('.', 'p')
+    return f"st-{strength_str}-ct-{count_str}-dt-{delta_str}"
 
 
 def write_histogram(bins, path):
@@ -258,8 +305,21 @@ Examples:
              'recorded as 0. Default: 0.0'
     )
     parser.add_argument(
+        '--delta-th', type=float, default=0.0, metavar='R',
+        help='Minimum angular delta, in radians, required for a cell to be scored '
+             '(0.0-pi/2). Applied to the computed delta itself, after the '
+             '--strength-th / --count-th checks. Cells below this are recorded as '
+             '0. Default: 0.0 (no thresholding).'
+    )
+    parser.add_argument(
         '--bin-size', type=float, default=15.0, metavar='D',
         help='Histogram bin size in degrees, spanning [0, 90]. Default: 15'
+    )
+    parser.add_argument(
+        '--x-below-th', action='store_true',
+        help="Write any cell that would otherwise be scored 0 (empty in either "
+             "flowmap, or failing --strength-th / --count-th) as 'x' instead, "
+             'in the heatmap CSV.'
     )
     parser.add_argument(
         '--basename', default='output',
@@ -271,6 +331,8 @@ Examples:
         sys.exit(f"Error: --strength-th must be in range 0.0-1.0, got {args.strength_th}")
     if not 0.0 <= args.count_th <= 1.0:
         sys.exit(f"Error: --count-th must be in range 0.0-1.0, got {args.count_th}")
+    if not 0.0 <= args.delta_th <= math.pi / 2.0:
+        sys.exit(f"Error: --delta-th must be in range 0.0-{math.pi / 2.0:.4f} (pi/2), got {args.delta_th}")
     if not 0.0 < args.bin_size <= 90.0:
         sys.exit(f"Error: --bin-size must be in range 0.0-90.0, got {args.bin_size}")
 
@@ -290,16 +352,17 @@ Examples:
             f"but {args.flowmap2} is {rows2}x{cols2}"
         )
 
-    heatmap = build_angdelta_heatmap(flowmap1, flowmap2, args.strength_th, args.count_th)
+    heatmap = build_angdelta_heatmap(flowmap1, flowmap2, args.strength_th, args.count_th,
+                                     args.delta_th, args.x_below_th)
 
-    suffix = threshold_suffix(args.strength_th, args.count_th)
+    suffix = threshold_suffix(args.strength_th, args.count_th, args.delta_th)
 
     heatmap_path = f"{args.basename}-angdelta-heatmap-{suffix}.csv"
     write_heatmap(heatmap, heatmap_path)
     print(f"Wrote {heatmap_path}  (grid {cols1}x{rows1})")
 
     histogram = build_angdelta_histogram(
-        flowmap1, flowmap2, args.strength_th, args.count_th, args.bin_size
+        flowmap1, flowmap2, args.strength_th, args.count_th, args.bin_size, args.delta_th
     )
     histogram_path = f"{args.basename}-angdelta-histogram-{suffix}.csv"
     write_histogram(histogram, histogram_path)
