@@ -14,18 +14,22 @@ scale, or when the data has a known theoretical maximum (e.g. pi/2 for
 angular deltas).
 
 Pass --delta for heatmaps produced by gen_heatmap_delta.py (or any other
-signed, zero-centred data): this selects a diverging red-white-blue colour
-scale (red = negative, white = zero, blue = positive), and the CSV values are
+signed, zero-centred data): this selects a diverging blue-white-red colour
+scale (blue = negative, white = zero, red = positive), and the CSV values are
 multiplied by 100 so they display as percentages. By default the scale
 auto-scales to the min/max values found in the CSV (post-percentage), same
 as without --delta. Pass --color-scale-max N together with --delta to fix
-the scale to run from -N% (full red) to +N% (full blue) instead -- N is
+the scale to run from -N% (full blue) to +N% (full red) instead -- N is
 still given in the original (pre-percentage) units.
 
 Pass --x-below-th for heatmaps produced by gen_angdelta_data.py's own
 --x-below-th option: cells holding an 'x' marker (rather than a number) are
 drawn white instead of being coloured by the value scale. Without this flag,
 a CSV containing 'x' markers fails to load.
+
+Pass --show-numbers to print the underlying value in each cell, to 3 decimal
+places, regardless of the heatmap's cell size or grid dimensions. Off by
+default.
 
 Optionally superimpose a flowmap (produced by Flowmap::print) over the heatmap.
 The flowmap CSV contains cells in "axis:strength:count" format and is assumed to
@@ -79,12 +83,12 @@ def create_polybee_colormap():
 def create_delta_colormap():
     """
     Create a diverging colormap for signed, zero-centred data (e.g.
-    gen_heatmap_delta.py output): Red (negative) -> White (zero) -> Blue (positive).
+    gen_heatmap_delta.py output): Blue (negative) -> White (zero) -> Red (positive).
     """
     colors = [
-        (0.0, (1.0, 0.0, 0.0)),      # Red at most negative
+        (0.0, (0.0, 0.0, 1.0)),      # Blue at most negative
         (0.5, (1.0, 1.0, 1.0)),      # White at zero
-        (1.0, (0.0, 0.0, 1.0))       # Blue at most positive
+        (1.0, (1.0, 0.0, 0.0))       # Red at most positive
     ]
 
     return LinearSegmentedColormap.from_list('polybee_delta',
@@ -399,7 +403,8 @@ def load_heatmap(filename, x_below_th=False):
 def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
                       env_width=None, env_height=None,
                       tunnel=None, entrances=None, crop_patches=None, hive=None,
-                      flowmap=None, color_scale_max=None, delta=False, x_mask=None):
+                      flowmap=None, color_scale_max=None, delta=False, x_mask=None,
+                      show_numbers=False):
     if delta:
         # Show signed deltas as percentages rather than raw fractions.
         data = data * 100.0
@@ -494,11 +499,11 @@ def visualize_heatmap(data, title="Heatmap", save_only=False, output_file=None,
     # Add grid for better readability
     ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
 
-    # Add text annotations for each cell (optional, only for small heatmaps)
-    if nrows <= 20 and ncols <= 20:  # Only annotate if heatmap is small enough
+    # Add text annotations for each cell, if requested
+    if show_numbers:
         for i in range(nrows):
             for j in range(ncols):
-                label = 'x' if x_mask is not None and x_mask[i, j] else f'{data[i, j]:.2f}'
+                label = 'x' if x_mask is not None and x_mask[i, j] else f'{data[i, j]:.3f}'
                 ax.text((j + 0.5) * cell_w, (i + 0.5) * cell_h, label,
                         ha="center", va="center", color="black", fontsize=8)
 
@@ -522,7 +527,7 @@ Examples:
   %(prog)s heatmap.csv --save-only              # Save to heatmap.png without displaying
   %(prog)s heatmap.csv -c polybee.cfg -f flowmap.csv   # Overlay flowmap
   %(prog)s angdelta-heatmap.csv --color-scale-max 1.5708   # Fixed 0-N colour scale instead of auto-scaling
-  %(prog)s bee-heatmap-delta-a-vs-b.csv --delta   # Diverging red-white-blue scale, auto-scaled
+  %(prog)s bee-heatmap-delta-a-vs-b.csv --delta   # Diverging blue-white-red scale, auto-scaled
   %(prog)s bee-heatmap-delta-a-vs-b.csv --delta --color-scale-max 2.0   # Fixed -N to +N delta scale
         """
     )
@@ -545,13 +550,13 @@ Examples:
     parser.add_argument('--color-scale-max',
                        type=float, metavar='N',
                        help='Fix the colour scale max to N instead of auto-scaling to the data '
-                            'range. Runs from 0 to N normally, or from -N%% (full red) to +N%% '
-                            '(full blue) when combined with --delta -- N is given in the '
+                            'range. Runs from 0 to N normally, or from -N%% (full blue) to +N%% '
+                            '(full red) when combined with --delta -- N is given in the '
                             'original (pre-percentage) units in both cases.')
     parser.add_argument('--delta',
                        action='store_true',
-                       help='Use a diverging red-white-blue colour scale (red = negative, '
-                            'white = zero, blue = positive) for signed, zero-centred data '
+                       help='Use a diverging blue-white-red colour scale (blue = negative, '
+                            'white = zero, red = positive) for signed, zero-centred data '
                             '(e.g. gen_heatmap_delta.py output), and multiply values by 100 to '
                             'display as percentages. Only changes the colour scale, not which '
                             'min/max values are used on it (see --color-scale-max).')
@@ -561,6 +566,10 @@ Examples:
                             '--x-below-th option) and draw those cells white instead of colouring '
                             'them by the value scale. Without this flag, a CSV containing \'x\' '
                             'markers fails to load.')
+    parser.add_argument('--show-numbers',
+                       action='store_true',
+                       help='Print the underlying value in each cell, to 3 decimal places '
+                            '(regardless of cell size/grid dimensions). Off by default.')
 
     args = parser.parse_args()
 
@@ -593,21 +602,24 @@ Examples:
     title = args.title if args.title else basename
 
     if args.save_only:
-        # Generate output filename: replace .csv with .png
-        output_file = os.path.splitext(args.input_file)[0] + '.png'
+        # Generate output filename: replace .csv with .png, tagging with
+        # '-with-numbers' when --show-numbers is set so the two variants don't
+        # overwrite each other.
+        suffix = '-with-numbers' if args.show_numbers else ''
+        output_file = os.path.splitext(args.input_file)[0] + suffix + '.png'
         visualize_heatmap(data, title=title, save_only=True, output_file=output_file,
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
                           flowmap=flowmap, color_scale_max=args.color_scale_max, delta=args.delta,
-                          x_mask=x_mask)
+                          x_mask=x_mask, show_numbers=args.show_numbers)
     else:
         visualize_heatmap(data, title=title, save_only=False,
                           env_width=env_width, env_height=env_height,
                           tunnel=tunnel, entrances=entrances,
                           crop_patches=crop_patches, hive=hive,
                           flowmap=flowmap, color_scale_max=args.color_scale_max, delta=args.delta,
-                          x_mask=x_mask)
+                          x_mask=x_mask, show_numbers=args.show_numbers)
 
 
 if __name__ == '__main__':

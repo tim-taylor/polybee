@@ -195,7 +195,7 @@ if [ ! -d "$OUTPUT_DIR" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Generate and visualise angular-delta heatmaps/histograms
+# Generate and visualise angular-delta heatmaps/histograms and bee position heatmaps
 # ---------------------------------------------------------------------------
 BIN_SIZES=(5 10 15)
 THRESH_STRENGTH_VALUES=(0.0 "$FLOWMAP_STRENGTH_TH")

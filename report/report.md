@@ -535,7 +535,7 @@ Some further technical comments about the configuration of the evolutionary
 search in these experiments can be found in
 @sec:appendix-misc-tech-notes.
 
-## Setup
+## Setup {#sec:setup}
 
 ### Per-condition analysis
 
@@ -593,7 +593,7 @@ tools/run_analysis.sh \
 were used throughout; see `run_analysis.sh --help` for the full set of
 overrides available).
 
-### Cross-condition analysis
+### Cross-condition analysis {#sec:setup-cross-condition-analysis}
 
 Pairs of conditions were then compared with `tools/run_cross_analysis.sh`,
 which compares two `run_analysis.sh` output directories' merged
@@ -622,40 +622,45 @@ size present in both:
 The exact invocations used were:
 ```
 tools/run_cross_analysis.sh \
-    --delta-color-scale-max 3.10 \
+    --delta-color-scale-max 0.004 \
     --title "Evolve positions for 20 barriers and 10 bridges vs Baseline" \
     evolve-20X-10B-400gen-400pop-100epi-2000its \
     baseline-runs-2000its
 
 tools/run_cross_analysis.sh \
-    --delta-color-scale-max 3.10 \
+    --delta-color-scale-max 0.004 \
     --title "Evolve positions for 20 barriers vs Baseline" \
     evolve-20X-400gen-400pop-100epi-2000its \
     baseline-runs-2000its
 
 tools/run_cross_analysis.sh \
-    --delta-color-scale-max 3.10 \
+    --delta-color-scale-max 0.004 \
     --title "Evolve positions for 10 bridges vs Baseline" \
     evolve-10B-400gen-400pop-100epi-2000its \
     baseline-runs-2000its
 
 tools/run_cross_analysis.sh \
-    --delta-color-scale-max 3.10 \
+    --delta-color-scale-max 0.004 \
     --title "Evolve positions for 20 barriers and 10 bridges vs 20 barriers only" \
     evolve-20X-10B-400gen-400pop-100epi-2000its \
     evolve-20X-400gen-400pop-100epi-2000its
 
 tools/run_cross_analysis.sh \
-    --delta-color-scale-max 3.10 \
+    --delta-color-scale-max 0.004 \
     --title "Evolve positions for 20 barriers and 10 bridges vs 10 bridges only" \
     evolve-20X-10B-400gen-400pop-100epi-2000its \
     evolve-10B-400gen-400pop-100epi-2000its
 ```
-`--delta-color-scale-max 3.10` fixes the colour scale for the
-cell-size-50 heatmap-delta comparison to $\pm 3.10$ percentage points
-(cell sizes 10 and 25 always use a scale computed from their own delta
-heatmap). The value 3.10 was empirically determined to be large enough
-to include all values found in all heatmap-delta data being analysed.
+The line `--delta-color-scale-max 0.004` fixes the colour scale for the bee
+position delta comparison to $\pm 0.4\%$ (0.004 is specified as
+a fraction). For reference, for heatmaps with cell size 50x50, as used for the
+bee position delta heatmaps in @fig:bee-heatmap-baseline-vs-deltas, there are
+16x13 cells in the heatmap (as the environment is 800x650 units), meaning that
+each cell in a bee position heatmap with completely homogeneous occupancy would
+have a value of $1/(16*13)=0.00481$ ($0.481\%$). Fixing the colour scale range
+to $\pm 0.004$ is therefore of a similar magnitude to this value, and we
+determined empirically that it was a good value for visualising and
+differentiating interesting features of the delta heatmaps.
 
 # Results and analysis {#sec:results}
 
@@ -913,21 +918,21 @@ for a condition is then the mean, cell by cell, of that normalised heatmap
 across all runs of the condition (cell size 50).
 @fig:bee-heatmap-baseline-vs-deltas(b)--(d) instead show, for each evolved
 condition, the per-cell difference between that condition's own heatmap and the
-baseline's (evolved minus baseline, so positive/blue cells were visited
-relatively more under the evolved condition, negative/red cells relatively
-less), on a diverging colour scale fixed to $\pm 3.10$ percentage points, as
-described in the Setup section above.
+baseline's (evolved minus baseline, so positive/red cells were visited
+relatively more under the evolved condition, negative/blue cells relatively
+less), on a diverging colour scale fixed to $\pm 0.4\%$, as
+described in @sec:setup-cross-condition-analysis.
 
 ::: {#fig:bee-heatmap-baseline-vs-deltas}
-![Baseline (merged across 5000 runs)](figures/bee-heatmap-size-50-intra-condition-merged-baseline-runs-2000its-cropped.png){#fig:bee-heatmap-baseline-abs width=45%}
-![$\Delta$ Bridges only (10 bridges) vs baseline](figures/bee-heatmap-delta-bee-heatmap-size-50-intra-condition-merged-evolve-10B-vs-bee-heatmap-size-50-intra-condition-merged-baseline-runs.png){#fig:bee-heatmap-delta-10B width=45%}
+![Baseline occupancy (merged across 5000 runs)](figures/bee-heatmap-size-50-intra-condition-merged-baseline-runs-2000its-cropped.png){#fig:bee-heatmap-baseline-abs width=45%}
+![Delta occupancy for Evolve 10 bridges only](figures/bee-heatmap-delta-bee-heatmap-size-50-intra-condition-merged-evolve-10B-vs-bee-heatmap-size-50-intra-condition-merged-baseline-runs.png){#fig:bee-heatmap-delta-10B width=45%}
 
 ```{=latex}
 \mbox{}\\
 ```
 
-![$\Delta$ Barriers only (20 barriers) vs baseline](figures/bee-heatmap-delta-bee-heatmap-size-50-intra-condition-merged-evolve-20X-vs-bee-heatmap-size-50-intra-condition-merged-baseline-runs.png){#fig:bee-heatmap-delta-20X width=45%}
-![$\Delta$ Barriers and bridges vs baseline](figures/bee-heatmap-delta-bee-heatmap-size-50-intra-condition-merged-evolve-20X-10B-vs-bee-heatmap-size-50-intra-condition-merged-baseline-runs.png){#fig:bee-heatmap-delta-20X10B width=45%}
+![Delta occupancy for Evolve 20 barriers only](figures/bee-heatmap-delta-bee-heatmap-size-50-intra-condition-merged-evolve-20X-vs-bee-heatmap-size-50-intra-condition-merged-baseline-runs.png){#fig:bee-heatmap-delta-20X width=45%}
+![Delta occupancy for Evolve 20 barriers and 10 bridges](figures/bee-heatmap-delta-bee-heatmap-size-50-intra-condition-merged-evolve-20X-10B-vs-bee-heatmap-size-50-intra-condition-merged-baseline-runs.png){#fig:bee-heatmap-delta-20X10B width=45%}
 
 Normalised bee-position coverage of the environment: the baseline heatmap
 (a), and its per-cell difference against each evolved condition --
@@ -1627,8 +1632,7 @@ The angular-delta ("angdelta") heatmaps shown in
 @sec:analysis-of-change-in-bee-movements-caused-by-barriers-and-bridges are
 produced by `tools/gen_angdelta_data.py`, run once per pair of merged
 flowmaps being compared (@sec:appendix-flowmap-merging), for each
-combination of thresholds used in the
-Setup section above.
+combination of thresholds used in @sec:setup-cross-condition-analysis.
 
 **The angular-delta value itself.** For each cell, given the two flowmaps'
 predominant axes $\alpha_1$ and $\alpha_2$ at that cell (see
