@@ -757,22 +757,22 @@ bounded nature of the fitness metric, we used a nonparametric bootstrap rather
 than a parametric test such as a t-test: each pair of samples (one evolved
 condition vs. baseline) was resampled independently, each at its own size,
 10,000 times, to obtain a 95% confidence interval for the difference in
-medians and a two-sided bootstrap hypothesis-test p-value, with Holm-Bonferroni
+medians and a two-sided bootstrap hypothesis-test p-value, with Bonferroni
 correction applied across the three evolved-vs-baseline comparisons. Full
 methodology is given in @sec:appendix-bootstrap. As @tbl:fitness-significance
 shows, all three evolved conditions differ significantly from the baseline
-(Holm-adjusted $p = 0.0003$ in every case), with confidence intervals for the
-median difference that exclude zero by a wide margin -- consistent with the
-much larger effect sizes for the two barrier-involving conditions than for
+(Bonferroni-adjusted $p = 0.0003$ in every case), with confidence intervals for
+the median difference that exclude zero by a wide margin -- consistent with
+the much larger effect sizes for the two barrier-involving conditions than for
 bridges alone.
 
-| Condition | Median diff. vs. baseline | 95% CI | Holm-adjusted $p$ |
+| Condition | Median diff. vs. baseline | 95% CI | Bonferroni-adjusted $p$ |
 |---|---:|---:|---:|
 | Bridges only (10 bridges) | -0.0175 | [-0.0190, -0.0163] | 0.0003 |
-| Barriers only (20 barriers) | -0.1720 | [-0.1738, -0.1693] | 0.0003 |
-| Barriers and bridges | -0.1583 | [-0.1615, -0.1540] | 0.0003 |
+| Barriers only (20 barriers) | -0.1720 | [-0.1740, -0.1700] | 0.0003 |
+| Barriers and bridges | -0.1583 | [-0.1623, -0.1550] | 0.0003 |
 
-: Bootstrap 95% confidence intervals and Holm-Bonferroni-adjusted two-sided
+: Bootstrap 95% confidence intervals and Bonferroni-adjusted two-sided
 p-values for the difference between each evolved condition's median fitness
 and the baseline's (negative = evolved condition better than baseline, since
 lower/more-negative fitness is better; see @sec:appendix-bootstrap).
@@ -1733,15 +1733,8 @@ each group is treated as its own random sample from its own population.
 resampled independently 10,000 times (`--n-resamples`, default 10000), and
 the difference $\text{median(condition)} - \text{median(baseline)}$ is
 recomputed on each pair of resamples, giving a bootstrap distribution of the
-median difference. A 95% confidence interval is taken from this distribution
-using the BCa (bias-corrected and accelerated) method, which is generally
-more accurate than a plain percentile interval for a skewed bootstrap
-distribution. BCa's acceleration constant is itself estimated via a
-jackknife on the median -- a non-smooth statistic -- which can make that
-estimate degenerate (a zero denominator) for some samples; when this
-happened (for the bridges-only condition), the script automatically falls
-back to the plain percentile bootstrap CI for that condition and reports
-which method was used (`ci_method` column in its output).
+median difference. A 95% confidence interval is read directly off this
+distribution's 2.5th and 97.5th percentiles (the "percentile" bootstrap CI).
 
 **p-value.** A two-sided bootstrap hypothesis-test p-value is computed
 separately from the confidence interval, using the "shift" method of Davison
@@ -1762,9 +1755,10 @@ makes no difference to the significance conclusion at the $\alpha=0.05$
 threshold used here.
 
 **Multiple comparisons.** Since all three evolved conditions are compared
-against the same baseline sample, a Holm-Bonferroni correction is applied
-across the three resulting p-values to control the family-wise error rate,
-giving the `p_holm` values reported in @tbl:fitness-significance.
+against the same baseline sample, a Bonferroni correction (each p-value
+multiplied by 3, capped at 1) is applied across the three resulting p-values
+to control the family-wise error rate, giving the `p_bonferroni` values
+reported in @tbl:fitness-significance.
 
 **Interpretation.** This test answers the question "does the median
 champion-configuration performance under evolution differ from the median
@@ -1781,5 +1775,6 @@ Usage: `python3 bootstrap_median_test.py [--n-resamples N] [--seed S]
 [--alpha A]`, run from the same directory as `calc_fitness_stats.sh` (it
 expects the same per-condition `fitness-data-agg/` layout). The RNG seed
 defaults to a fixed value for reproducibility.
+
 
 # References

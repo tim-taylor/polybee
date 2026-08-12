@@ -9,7 +9,7 @@ for C in baseline-runs-2000its \
 done
 
 echo "=== Bootstrap significance tests: each evolve condition's median vs baseline's ==="
-echo "(median difference, BCa/percentile bootstrap CI, and a bootstrap-shift-test"
-echo " p-value, Holm-Bonferroni-adjusted across the 3 comparisons -- see"
+echo "(median difference, percentile bootstrap CI, and a bootstrap-shift-test"
+echo " p-value, Bonferroni-adjusted across the 3 comparisons -- see"
 echo " bootstrap_median_test.py for methodology)"
 python3 "$(dirname "$0")/bootstrap_median_test.py"

@@ -6,9 +6,9 @@ condition's 5000 per-run fitness values (same data as calc_fitness_stats.sh).
 
 For each evolve condition, this computes:
   - observed statistic: median(condition) - median(baseline)
-  - a 95% BCa bootstrap confidence interval for that statistic, resampling
-    each of the two samples independently (each at its own size: 50 for the
-    evolve condition, 5000 for baseline), via scipy.stats.bootstrap
+  - a 95% percentile bootstrap confidence interval for that statistic,
+    resampling each of the two samples independently (each at its own size:
+    50 for the evolve condition, 5000 for baseline), via scipy.stats.bootstrap
   - a two-sided bootstrap hypothesis-test p-value, computed by recentring
     both samples to share a common median (subtracting each sample's own
     median, so H0 "equal medians" holds by construction), resampling
@@ -17,7 +17,7 @@ For each evolve condition, this computes:
     the actually observed difference (the bootstrap "shift" test of Davison
     & Hinkley, Bootstrap Methods and Their Application, 1997, ch. 4)
 
-Holm-Bonferroni correction is then applied across the 3 evolve-vs-baseline
+Bonferroni correction is then applied across the 3 evolve-vs-baseline
 comparisons, to control the family-wise error rate across the 3 tests
 sharing the same baseline sample.
 
@@ -37,7 +37,6 @@ with fitness in the second column).
 import argparse
 import csv
 import sys
-import warnings
 
 import numpy as np
 from scipy.stats import bootstrap
@@ -49,7 +48,7 @@ CONDITIONS = [
     "evolve-20X-10B-400gen-400pop-100epi-2000its",
 ]
 
-BATCH_SIZE = 1000  # caps peak memory use during the shift-test resampling
+BATCH_SIZE = 1000  # caps peak memory use during bootstrap resampling
 
 
 def load_fitnesses(cond):
@@ -86,46 +85,10 @@ def bootstrap_shift_test(sample_a, sample_b, observed_diff, n_resamples, rng):
     return (exceed + 1) / (n_resamples + 1)
 
 
-def compute_ci(sample, baseline, n_resamples, alpha, batch_size, rng, cond):
-    """95% (or 1-alpha) bootstrap CI for median(sample) - median(baseline).
-
-    Tries BCa first (bias- and skewness-corrected, generally the most
-    accurate bootstrap CI). BCa's acceleration constant is estimated via a
-    jackknife on the median, which is a non-smooth statistic -- this can
-    make the jackknife estimate degenerate (zero denominator) for some
-    samples, in which case scipy returns NaN bounds. When that happens, this
-    falls back to the plain percentile bootstrap CI instead, and says so.
-    """
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        ci = bootstrap(
-            (sample, baseline), median_diff_stat, method='BCa',
-            n_resamples=n_resamples, vectorized=True, paired=False,
-            confidence_level=1.0 - alpha, batch=batch_size, random_state=rng,
-        )
-    if np.isnan(ci.confidence_interval.low) or np.isnan(ci.confidence_interval.high):
-        print(f"Note: BCa CI was degenerate for {cond} (the median's jackknife "
-             "acceleration estimate was undefined); falling back to the plain "
-             "percentile bootstrap CI for this condition.", file=sys.stderr)
-        ci = bootstrap(
-            (sample, baseline), median_diff_stat, method='percentile',
-            n_resamples=n_resamples, vectorized=True, paired=False,
-            confidence_level=1.0 - alpha, batch=batch_size, random_state=rng,
-        )
-        return ci, 'percentile'
-    return ci, 'BCa'
-
-
-def holm_bonferroni(pvalues):
-    """Return Holm-Bonferroni-adjusted p-values, in the same order as input."""
+def bonferroni(pvalues):
+    """Return Bonferroni-adjusted p-values (p * m, capped at 1)."""
     m = len(pvalues)
-    order = np.argsort(pvalues)
-    adjusted = np.empty(m)
-    running_max = 0.0
-    for rank, idx in enumerate(order):
-        running_max = max(running_max, (m - rank) * pvalues[idx])
-        adjusted[idx] = min(running_max, 1.0)
-    return adjusted
+    return np.minimum(pvalues * m, 1.0)
 
 
 def main():
@@ -140,7 +103,7 @@ def main():
     parser.add_argument('--seed', type=int, default=12345,
                        help='RNG seed, for reproducibility (default: 12345)')
     parser.add_argument('--alpha', type=float, default=0.05,
-                       help='Significance level for the CI and the Holm-Bonferroni '
+                       help='Significance level for the CI and the Bonferroni '
                             'test (default: 0.05)')
     args = parser.parse_args()
 
@@ -153,8 +116,11 @@ def main():
         sample = load_fitnesses(cond)
         observed = median_diff_stat(sample, baseline)
 
-        ci, ci_method = compute_ci(sample, baseline, args.n_resamples, args.alpha,
-                                   BATCH_SIZE, rng, cond)
+        ci = bootstrap(
+            (sample, baseline), median_diff_stat, method='percentile',
+            n_resamples=args.n_resamples, vectorized=True, paired=False,
+            confidence_level=1.0 - args.alpha, batch=BATCH_SIZE, random_state=rng,
+        )
 
         pval = bootstrap_shift_test(sample, baseline, observed, args.n_resamples, rng)
 
@@ -166,26 +132,25 @@ def main():
             'diff': observed,
             'ci_lo': ci.confidence_interval.low,
             'ci_hi': ci.confidence_interval.high,
-            'ci_method': ci_method,
             'p_raw': pval,
         })
 
-    adjusted = holm_bonferroni(np.array([r['p_raw'] for r in results]))
-    for r, p_holm in zip(results, adjusted):
-        r['p_holm'] = p_holm
+    adjusted = bonferroni(np.array([r['p_raw'] for r in results]))
+    for r, p_bonf in zip(results, adjusted):
+        r['p_bonf'] = p_bonf
 
     ci_pct = round((1.0 - args.alpha) * 100)
     header = ["condition", "n", "median", "baseline_median", "diff",
-              f"ci{ci_pct}_lo", f"ci{ci_pct}_hi", "ci_method", "p_raw", "p_holm",
+              f"ci{ci_pct}_lo", f"ci{ci_pct}_hi", "p_raw", "p_bonferroni",
               f"significant_at_{args.alpha}"]
     print(",".join(header))
     for r in results:
-        significant = "yes" if r['p_holm'] < args.alpha else "no"
+        significant = "yes" if r['p_bonf'] < args.alpha else "no"
         print(",".join([
             r['condition'], str(r['n']),
             f"{r['median']:.5f}", f"{r['baseline_median']:.5f}", f"{r['diff']:.5f}",
-            f"{r['ci_lo']:.5f}", f"{r['ci_hi']:.5f}", r['ci_method'],
-            f"{r['p_raw']:.5f}", f"{r['p_holm']:.5f}", significant,
+            f"{r['ci_lo']:.5f}", f"{r['ci_hi']:.5f}",
+            f"{r['p_raw']:.5f}", f"{r['p_bonf']:.5f}", significant,
         ]))
 
 
