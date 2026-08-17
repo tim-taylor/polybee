@@ -7,7 +7,7 @@ date: \today
 abstract: |
   PolyBee is an agent-based model of bee movement and visitation of crops in polytunnels.
   It also includes an optimisation component that allows searching for good arrangements
-  of baffles/barriers and/or "bridge" pots in tunnel to promote homogeneous visitation
+  of baffles/barriers and/or "bridge" pots to promote homogeneous visitation
   patterns by the bees of all crops in the tunnel. This report describes the background
   and motivation behind the development of the model, followed by a full description of
   the model itself. It then describes a series of experiments on the optimisation of
@@ -189,9 +189,13 @@ agent-based models [@grimm2020odd]. This description covers only the simulation
 itself -- bee movement, the polytunnel environment, foraging, and observation --
 and not the separate evolutionary optimisation layer (`PolyBeeEvolve`) that
 searches over environment configurations using the simulation as its fitness
-evaluator (described in the Experiments section). A complete, submodel-level ODD
-description, sufficient to support reimplementation, is given in
-@sec:appendix-full-odd.
+evaluator (described in the Experiments section). The basic design of `polybee`
+is similar to an earlier simulation developed by the authors, called `evobee`.
+This earlier model has been described in several publications, and the
+interested reader is referred to these, e.g. [@dorin2022goldilocks], for a more
+detailed discussion of the scientific justification for various design decisions
+in the model. A complete, submodel-level ODD description of `polybee` is given
+in Appendix A (@sec:appendix-full-odd).
 
 ## Purpose and patterns
 
@@ -235,6 +239,14 @@ entrances, each either open or fitted with anti-bird or anti-hail netting, and
 any number of linear barriers. Positions and movement are continuous; grid cells
 are used only for efficient spatial lookup and for output aggregation, not for
 the movement dynamics themselves.
+
+**Tunnel model.** A single fixed rectangle with one or more entrances (each
+a sub-span of one side, either open or fitted with anti-bird or anti-hail
+netting that imposes a fixed per-attempt exit probability and a maximum
+number of attempts before a bee gives up crossing).
+
+**Barrier model.** A fixed line segment with no other state, used purely
+geometrically to block or partially block bee movement.
 
 **Bee agent model.** Each bee maintains its current position and heading;
 an energy level that rises when it feeds and falls with each foraging
@@ -680,7 +692,11 @@ tunnel and just behind the hive.
 For the "Evolve 20 barriers" condition (middle row), the best configurations exhibit
 a central "funnel" configuation at the near end of the rows (close to the tunnel entrance),
 together with barriers blocking the near end of the middle two rows, and a line of barriers
-on the outer edges of the leftmost and rightmost rows.
+on the outer edges of the leftmost and rightmost rows. As the coverage analysis in
+@sec:effect-of-barriers-and-bridges-on-bee-coverage-of-the-environment shows, blocking the
+near end of the middle two rows in this way does not simply exclude bees from those rows: it
+also pushes bees that do enter these aisles further down them before they land, as well as
+diverting some bees toward the outer rows altogether.
 
 For the "Evolve 20 barriers and 10 bridges" condition (bottom row), the barrier positions
 resembled those seen in the "Evolve 20 barriers" condition but with less clearly defined features.
@@ -716,8 +732,6 @@ bridges-only (top row), barriers-only (middle row), and
 barriers-and-bridges (bottom row). Barriers are drawn as red line segments
 and bridges as purple squares.
 :::
-
-**TODO** Make the hives more visible in these plots
 
 ## Overall fitness statistics {#sec:overallstats}
 
@@ -788,7 +802,7 @@ amenable to evolutionary optimisation, with negligable improvement in fitness af
 first 50 generations. By contrast, the evolution of barriers (@fig:fitnessovergens-20X) showed
 continued improvement over the whole 400-generation run. Combining the evolution of barriers
 with bridges (@fig:fitnessovergens-20X10B) actually led to _worse_ results than just
-evolving bridges by themselves. This is consistent with the summary statistics reported in
+evolving barriers by themselves. This is consistent with the summary statistics reported in
 @sec:overallstats.
 
 ::: {#fig:fitnessovergens}
@@ -854,8 +868,8 @@ on the bridge patches that were positioned in that area (@fig:best-layout-10B-1
 In the conditions involving evolved barriers (@fig:bee-flowmap-sz10-20X and
 @fig:bee-flowmap-sz10-20X10B), the bees' movements just inside the entrance to
 the tunnel were a little less uniform than in the baseline (green rather than
-yellow), indicating that they were not simply flight straight ahead but had to
-change direction because of the bridges.
+yellow), indicating that some of them were not simply flying straight ahead but
+had to change direction because of the barriers.
 
 ::: {#fig:bee-flowmap-size-10-all-conditions}
 ![Baseline (no barriers or bridges)](figures/bee-flowmap-size-10-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz10-baseline width=45%}
@@ -904,10 +918,6 @@ delta heatmaps. For further information on the calculation of the angular delta
 heatmaps and  the exclusion criteria used, see Appendix E
 (@sec:appendix-angdelta).
 
-
-**TODO** Write a brief descripition of the results
-
-
 ::: {#fig:angdelta-heatmap-size-10-all-conditions}
 ![Baseline bee movements](figures/bee-flowmap-size-10-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz10-baseline2 width=45%}
 ![Angular deltas for Evolve 10 bridges only](figures/angdelta-heatmap-sz10-st-0p250-ct-0p025-dt-0p175-cross-analysis-evolve-10B-vs-baseline.png){#fig:angdelta-heatmap-sz10-10B width=45%}
@@ -922,13 +932,36 @@ heatmaps and  the exclusion criteria used, see Appendix E
 Analysis of change in bee movements caused by barriers and bridges.
 :::
 
+@fig:angdelta-heatmap-sz10-10B shows that the main effect of the "evolve
+bridges" condition is to cause bees to change direction when they are located
+behind the hive (as indicated by the red squares at the bottom centre of the
+image). By placing bridging pots in this location, bees that might otherwise fly
+straight past the tunnel entrance as they travel left-to-right (or vice versa)
+along the lower perimeter of the environment instead stop to forage on flowers
+in the bridging pot. After foraging on a number of flowers in the pot, their
+direction of exiting the pot will depend on the path they have taken within the
+pot while foraging. In this situation, bees are more likely to exit the pot to
+the north, and therefore more likely to enter the tunnel than they would be if
+no bridge pot were present outside the tunnel to attract them as they passed by.
+
+The evolved barriers, on the other hand, affect the bee's movements inside the
+tunnel rather than outside. @fig:angdelta-heatmap-sz10-20X shows that the
+predominant effect of the barriers is inside the tunnel to the left and right of
+the entrance (blue areas). Studying this figure and
+@fig:bee-flowmap-size-10-all-conditions suggests that the barriers nudge more
+bees to travel left and right around the entrance area, toward the outer rows of
+crops, rather than flying straight forward towards the centre rows. This
+angular-delta measure only captures the change in movement direction near the
+entrance, however; the occupancy-heatmap analysis below
+(@sec:effect-of-barriers-and-bridges-on-bee-coverage-of-the-environment) shows a
+second, complementary effect further into the tunnel, where barriers placed at
+the near end of the middle two rows push bees that do continue along those
+aisles deeper into the tunnel before they land.
+
+The "evolve barriers and bridges" condition (@fig:angdelta-heatmap-sz10-20X-10B)
+shows a superposition of both of the indiviual "evolve" patterns described above.
 
 ## Effect of barriers and bridges on bee coverage of the environment {#sec:effect-of-barriers-and-bridges-on-bee-coverage-of-the-environment}
-
-**TODO** redo plots in @fig:bee-heatmap-baseline-vs-deltas so that red
-indicates a positive delta and blue negative, so it is consistant with
-the scales on the other maps. And change all of these plots to show a better range of the data
-(e.g. a non-linear scale or clipped scale?)
 
 In @sec:flowfield-analysis and
 @sec:analysis-of-change-in-bee-movements-caused-by-barriers-and-bridges we
@@ -965,18 +998,149 @@ Normalised bee-position coverage of the environment: the baseline heatmap
 bridges-only (b), barriers-only (c), and barriers-and-bridges (d).
 :::
 
+@fig:bee-heatmap-delta-10B shows that the "evolve bridges" condition results in
+many more bees being located in the bottom centre of the environment, behind the
+hive, (deep red colour) compared to the baseline condition. This is due to the
+presence of the bridging pot in that location. It also resulted in slightly more
+bees, in general, over the crop rows (light red squares) and slightly fewer bees
+outside the tunnel (light blue squares), apart from just behind the hive as
+already mentioned.
+
+fig:bee-heatmap-delta-20X shows that the effect of the "evolve barriers"
+condition is much stronger, with more deep reds and deep blues acorss the image,
+showing larger differences in bee locations. In this case, many more bees
+visited the outer two crop rows (deep red squares in the far left and far right
+rows), and more bees reached the far end of the rows away from the entrance (red
+squares at far/top end of all four crop rows). The barriers led to many fewer
+bees at the near/lower end of the middle two rows (deep blue squares),
+consistent with the barrier placements seen there in the best-performing
+layouts (@fig:best-layout-20X-1 -- @fig:best-layout-20X-3), which block the near
+end of the middle two rows. Rather than simply excluding bees from the middle
+two rows, this pattern -- a deficit near the entrance paired with a surplus at
+the far end of the *same* rows -- suggests that the barriers funnelled bees
+further along these two central aisles before they landed, in addition to
+diverting some bees toward the outer rows altogether.
+
+As before, the "evolve barriers and bridges" condition
+(@fig:bee-heatmap-delta-20X10B) shows a superposition of both of the indiviual
+"evolve" patterns described above.
+
 
 ## Discussion
 
-Interpretation, limitations, surprises.
+The results broadly support the environment-shaping premise set out in
+@sec:environment-shaping-in-abms: without altering any aspect of individual
+bee behaviour, reconfiguring the physical environment alone was sufficient to
+produce large, statistically robust shifts in the emergent spatial pattern of
+pollination (@tbl:fitness-significance). The two mechanisms, however, achieved
+this through visibly different causal routes, and with very different
+effectiveness.
 
-**TO DO**
+Barriers act as a hard, always-present constraint on movement
+inside the tunnel, and their effect was correspondingly large (median fitness
+improvement of 0.172 over baseline) and consistent (small IQR, continued
+improvement across all 400 generations of search; @fig:fitnessovergens).
+
+Bridges act very differently: unlike a barrier, which deflects the path of
+*any* bee that runs into it, a bridge only has an effect on a bee that
+happens to pass within visual range of it and is drawn in to forage there.
+Even then, the bridge does not redirect the bee directly -- it is simply a
+patch of flowers, so its only effect on heading is an indirect, emergent
+one: whatever direction the bee is facing when its foraging random walk
+around the patch happens to end
+(@sec:appendix-submodel-movement) becomes its new
+direction of travel, which is more likely to point back into the tunnel
+than the bee's original, unaffected heading would have been. Because this
+effect depends on a bee first happening to encounter the bridge and then on
+the incidental outcome of its foraging walk, rather than on a deterministic
+physical obstruction, it is a much weaker and noisier lever than a barrier.
+Its effect was correspondingly much smaller (0.0175 improvement) and the
+search plateaued after roughly 50 generations, suggesting the
+bridge-placement landscape offers the optimiser far less to work with once
+bridges have been concentrated in the small number of positions where
+top-performing configurations consistently placed them -- near the hive and
+towards the far end of the two middle crop rows (@fig:best-layouts). We have
+a mechanistic account of why the near-hive cluster helps (above); we have
+not established, e.g. by ablation, that the far-tunnel-end cluster is
+itself driving the fitness gain rather than being an incidental feature of
+the top-ranked configurations.
+
+A less expected result was that jointly evolving barriers and bridges
+together produced a slightly *worse* median fitness (-0.7353) than evolving
+barriers alone (-0.7490), despite bridges alone being a strictly beneficial
+intervention on their own. One plausible explanation is not an antagonistic
+interaction between the two mechanisms as such, but simply that the combined
+condition asks the search to place 30 objects (20 barriers + 10 bridges)
+rather than 20, within the same fixed budget of 400 generations $\times$ 400
+individuals -- effectively a harder search problem for no larger budget. This
+would be consistent with the barriers-only condition still improving steadily
+at generation 400 (@fig:fitnessovergens-20X), implying the search had not yet
+converged even in the simpler 20-parameter case. We cannot distinguish this
+search-budget explanation from a genuine (if mild) interference effect
+between barriers and bridges with the data collected here; doing so would
+require re-running the combined condition with a larger evaluation budget.
+
+The flowmap and occupancy-heatmap analyses (@sec:flowfield-analysis,
+@sec:effect-of-barriers-and-bridges-on-bee-coverage-of-the-environment) help
+explain *why* barriers were so much more effective than bridges at improving
+pollination coverage specifically. Bridges mainly worked by intercepting bees
+that would otherwise have flown straight past the tunnel entrance, increasing
+the proportion that entered the tunnel at all -- a first-order, "more bees in
+the system" effect. Barriers, by contrast, acted on bees already foraging
+inside the tunnel, in two complementary ways: they diverted some bees away
+from the two central crop rows (which bees reach first and default to under
+baseline conditions) towards the two outer rows, which were comparatively
+under-visited in the baseline heatmap; and, for bees that continued along the
+two central aisles, barriers placed near the row entrances
+(@fig:best-layout-20X-1 -- @fig:best-layout-20X-3) blocked the nearest
+flowers and pushed them further along those aisles before landing, increasing
+visitation at the far end of the central rows as well. Since the fitness
+metric rewards the *fraction* of all flowers
+receiving a successful number of visits, redistributing existing foraging
+effort across all four rows is a more direct route to improving that fraction
+than simply increasing the number of bees entering the tunnel.
+
+Several limitations qualify these conclusions. First, barrier placement was
+freely evolved with no penalty for barriers overlapping tunnel walls or the hive
+itself (@sec:exptconds); some fraction of evolved solutions may therefore rely
+on placements that would not be physically realisable in practice, and we have
+not quantified how common this is among the top-performing configurations shown
+in @fig:best-layouts. Second, although the bee perceptual and cognitive
+abilities were modelled according to studies of real bees, more calibration
+work, and possibly the addition of other factors in the model, would be needed
+before we could claim that the model accurately reflects the movement and
+behaviour of real bees foraging in polytunnels. Third, all four conditions were
+evaluated in a single fixed tunnel topology (one tunnel, one unnetted entrance,
+one hive) -- it remains untested whether the same barrier and bridge strategies,
+or similarly large effect sizes, would transfer to polytunnels with different
+dimensions, multiple entrances, or multiple hives.
 
 # Conclusion
 
-Summary of findings and future work.
+These experiments demonstrate that evolutionarily searching over the physical
+configuration of a polytunnel -- without changing any aspect of individual bee
+behaviour -- can substantially improve the homogeneity of crop pollination.
+Evolved barriers were the clearly stronger of the two interventions tested,
+delivering a large and consistent improvement in successful visitation over the
+baseline by funnelling bees both towards the previously under-visited outer
+rows and further along the two central aisles, away from the flowers nearest
+the tunnel entrance that bees would otherwise default to. Evolved bridges were also
+significantly better than baseline, but far less effective, since their
+influence on a bee's movement is indirect and contingent on the bee first
+choosing to forage there. Combining both interventions did not improve on
+barriers alone, an unexpected result discussed above (@sec:overallstats).
 
-**TO DO**
+The most immediate open question raised by these results is whether that
+shortfall in the combined condition reflects a genuine interference between
+barriers and bridges, or is simply an artefact of asking the same fixed search
+budget to place more objects at once; distinguishing the two would need
+re-running the combined condition with a substantially larger budget. More
+broadly, this initial study used a single fixed tunnel layout with one hive and
+one entrance, and evolved barrier placements without penalising physically
+unrealisable configurations; extending the approach to a wider range of
+polytunnel geometries, and validating it against real observed bee movement,
+are natural next steps towards using `polybee` as a practical design tool for
+polytunnel growers.
 
 # Appendix A: Full ODD Description of the PolyBee Simulation Model {#sec:appendix-full-odd}
 
@@ -1533,10 +1697,12 @@ despite migration parameters being set.
 
 # Appendix C: Additional figures from analysis of results {#sec:appendix-additional-figures}
 
-## Evolution of fitness over generations
-
-## Flowfield analysis of bee movements under each condition
-
+Alternative versions of the flowmaps shown in
+@fig:bee-flowmap-size-10-all-conditions, using different levels of resolution
+(i.e. different cell sizes for recording the flow data), are shown in
+@fig:bee-flowmap-size-25-all-conditions (cell size 25x25) and
+@fig:bee-flowmap-size-50-all-conditions (cell size 50x50). The version shown in
+the main text, @fig:bee-flowmap-size-10-all-conditions, uses cell size 10x10.
 
 ::: {#fig:bee-flowmap-size-25-all-conditions}
 ![Baseline (no barriers or bridges)](figures/bee-flowmap-size-25-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz25-baseline width=45%}
@@ -1552,7 +1718,6 @@ despite migration parameters being set.
 Flowmaps showing predominant directions of bee movement, recorded at the resolution of 25x25 unit cells.
 :::
 
-
 ::: {#fig:bee-flowmap-size-50-all-conditions}
 ![Baseline (no barriers or bridges)](figures/bee-flowmap-size-50-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz50-baseline width=45%}
 ![Evolved 10 bridges only](figures/bee-flowmap-size-50-intra-condition-merged-evolve-10B-400gen-400pop-100epi-2000its.png){#fig:bee-flowmap-sz50-10B width=45%}
@@ -1566,23 +1731,6 @@ Flowmaps showing predominant directions of bee movement, recorded at the resolut
 
 Flowmaps showing predominant directions of bee movement, recorded at the resolution of 50x50 unit cells.
 :::
-
-
-::: {#fig:angdelta-heatmap-size-50-all-conditions}
-![Baseline bee movements (no barriers or bridges)](figures/bee-flowmap-size-10-intra-condition-merged-baseline-runs-2000its.png){#fig:bee-flowmap-sz10-baseline3 width=45%}
-![Angular deltas for Evolved 10 bridges only](figures/angdelta-heatmap-sz50-nothresh-cross-analysis-evolve-10B-vs-baseline.png){#fig:angdelta-heatmap-sz50-10B width=45%}
-
-```{=latex}
-\mbox{}\\
-```
-
-![Angular deltas for Evolved 20 barriers only](figures/angdelta-heatmap-sz50-nothresh-cross-analysis-evolve-20X-vs-baseline.png){#fig:angdelta-heatmap-sz50-20X width=45%}
-![Angular deltas for Evolved 20 barriers and 10 bridges](figures/angdelta-heatmap-sz50-nothresh-cross-analysis-evolve-20X-10B-vs-baseline.png){#fig:angdelta-heatmap-sz50-20X-10B width=45%}
-
-Analysis of change in bee movements caused by barriers and bridges, recorded at the resolution of 50x50 units cells.
-:::
-
-## Analysis of change in bee movements caused by barriers and bridges
 
 
 # Appendix D: How Bee-Movement Flowmaps Are Generated and Merged {#sec:appendix-flowmap-merging}
@@ -1776,5 +1924,57 @@ Usage: `python3 bootstrap_median_test.py [--n-resamples N] [--seed S]
 expects the same per-condition `fitness-data-agg/` layout). The RNG seed
 defaults to a fixed value for reproducibility.
 
+
+# Appendix G: Statement on the Use of AI in this Project {#sec:appendix-ai-use}
+
+In the interests of transparency, this appendix summarises how AI --
+specifically Claude (Anthropic), primarily via the Claude Code CLI tool --
+was used over the course of this project, which ran from September 2025 to
+August 2026. In every case described below, the authors directed the work,
+reviewed its output, and take full responsibility for the final content of
+the code, the experiments, and this report; nothing described here was
+generated or executed autonomously without the authors' direction and
+review.
+
+**Programming of the simulation.** The `polybee` C++ simulation and its
+evolutionary optimisation layer (`PolyBeeEvolve`) were designed by the
+authors, building on the design of an earlier model, `evobee`, developed
+previously by the authors (see @sec:appendix-overview). Claude Code was used
+extensively throughout implementation, as an interactive coding assistant:
+writing and refactoring C++ code to the authors' specifications, helping
+debug specific issues, and occasionally suggesting implementation approaches
+(e.g. for the island-model migration scheme) that the authors then adapted
+and integrated. The behavioural rules, model structure, and experimental
+logic remain the authors' own design.
+
+**Analysis scripts.** The Python and shell tooling used to run experiment
+batches, and to generate and merge the heatmaps, flowmaps, angular-delta
+comparisons, and statistical summaries reported in this document (the
+`tools/` directory) was likewise developed with extensive assistance from
+Claude Code, again working interactively from the authors' specifications
+and under the authors' review.
+
+**Performing and analysing experiments.** The design of the four
+experimental conditions (@sec:exptconds), the choice of evolutionary search
+parameters (@sec:evosearch), and the interpretation of the results in
+@sec:results and the Discussion are the authors' own. Claude Code assisted
+in building the automation around running and aggregating the experiment
+batches on the Monash M3 HPC cluster, and, in later stages of the project,
+in an interactive analysis session with the authors, helped devise and
+implement the nonparametric bootstrap significance test described in
+@sec:appendix-bootstrap and draft the accompanying descriptions of results
+in @sec:results, which the authors then checked against the underlying data
+and revised.
+
+**Writing of this report.** Portions of this report -- including parts of
+the Discussion and Conclusion, some descriptions of results in
+@sec:results, and the condensed entity descriptions in
+@sec:system-design -- were drafted interactively with Claude Code, in each
+case starting from the authors' data, figures, and instructions about what
+should be conveyed. All AI-drafted text was reviewed, fact-checked against
+the underlying results, edited, and explicitly approved by the authors
+before inclusion; several early drafts were revised by the authors, in
+discussion with Claude, to correct inaccuracies or overstated claims before
+being accepted into the report.
 
 # References
